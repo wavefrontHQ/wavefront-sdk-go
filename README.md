@@ -1,6 +1,6 @@
 # wavefront-sdk-go
 
-This library provides support for sending metrics, histograms and opentracing spans to Wavefront via proxy or direct ingestion using the `Sender` interface.
+This library provides support for sending metrics, histograms and tracing spans to Wavefront via proxy or direct ingestion using the `Sender` interface.
 
 ## Usage
 
@@ -55,7 +55,8 @@ func main() {
         // Optional configuration properties. Default values should suffice for most use cases.
         // override the defaults only if you wish to set higher values.
 
-        // max batch of data sent per flush interval. defaults to 10,000. recommended not to exceed 40,000.
+        // max batch of data sent per flush interval. defaults to 10,000.
+        // recommended not to exceed 40,000.
         BatchSize : 10000,
 
         // size of internal buffer beyond which received data is dropped.
@@ -93,8 +94,8 @@ sender.SendMetric("new-york.power.usage", 42422.0, 0, "go_test", map[string]stri
 
 // Wavefront delta counter format
 // <metricName> <metricValue> source=<source> [pointTags]
-// Example: "lambda.thumbnail.generate 10 source=lambda_thumbnail_service image-format=jpeg"
-sender.SendDeltaCounter("lambda.thumbnail.generate", 10.0, "lambda_thumbnail_service", map[string]string{"image-format" : "jpeg"});
+// Example: "lambda.thumbnail.generate 10 source=thumbnail_service image-format=jpeg"
+sender.SendDeltaCounter("lambda.thumbnail.generate", 10.0, "thumbnail_service", map[string]string{"format" : "jpeg"});
 ```
 
 #### Distributions
