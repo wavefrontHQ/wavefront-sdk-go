@@ -113,7 +113,7 @@ func spanLine(name string, startMillis, durationMillis int64, source, traceId, s
 		source = defaultSource
 	}
 
-	//TODO: verify if certain strings are uuid (using length)
+	//TODO: verify if strings are uuid?
 
 	var sb strings.Builder
 	sb.WriteString(strconv.Quote(name))
