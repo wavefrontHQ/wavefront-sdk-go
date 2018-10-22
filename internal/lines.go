@@ -23,7 +23,10 @@ type LineHandler struct {
 func (lh *LineHandler) Start() {
 	go func() {
 		for range lh.FlushTicker.C {
-			lh.Flush()
+			err := lh.Flush()
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	}()
 }
@@ -40,24 +43,24 @@ func (lh *LineHandler) HandleLine(line string) error {
 	return nil
 }
 
-func (lh *LineHandler) Flush() {
+func (lh *LineHandler) Flush() error {
 	batch := lh.linesBatch()
 	if len(batch) == 0 {
-		return
+		return nil
 	}
 	batchStr := strings.Join(batch, "")
 	resp, err := lh.Reporter.Report(lh.Format, batchStr)
 
 	if err != nil || (400 <= resp.StatusCode && resp.StatusCode <= 599) {
 		atomic.AddInt64(&lh.failures, 1)
-		if err != nil {
-			log.Printf("error reporting %s format data to Wavefront: %q", lh.Format, err)
-		} else {
-			log.Printf("error reporting %s format data to Wavefront. status=%d.", lh.Format, resp.StatusCode)
-		}
 		lh.bufferLines(batch)
-		return
+		if err != nil {
+			return fmt.Errorf("error reporting %s format data to Wavefront: %q", lh.Format, err)
+		} else {
+			return fmt.Errorf("error reporting %s format data to Wavefront. status=%d", lh.Format, resp.StatusCode)
+		}
 	}
+	return nil
 }
 
 func (lh *LineHandler) linesBatch() []string {

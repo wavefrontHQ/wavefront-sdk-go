@@ -104,7 +104,22 @@ func (sender *directSender) Close() {
 }
 
 func (sender *directSender) Flush() error {
-	// no-op
+	errStr := ""
+	err := sender.pointHandler.Flush()
+	if err != nil {
+		errStr = errStr + err.Error() + "\n"
+	}
+	err = sender.histoHandler.Flush()
+	if err != nil {
+		errStr = errStr + err.Error() + "\n"
+	}
+	err = sender.spanHandler.Flush()
+	if err != nil {
+		errStr = errStr + err.Error()
+	}
+	if errStr != "" {
+		return fmt.Errorf(errStr)
+	}
 	return nil
 }
 

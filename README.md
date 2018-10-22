@@ -2,6 +2,9 @@
 
 This library provides support for sending metrics, histograms and tracing spans to Wavefront via proxy or direct ingestion using the `Sender` interface.
 
+## Requirements
+- Go 1.10 or higher
+
 ## Usage
 
 Import the `senders` package and create a proxy or direct sender as given below.
@@ -13,7 +16,7 @@ import (
 ```
 
 ### Proxy Sender
-Depending on the data you wish to send to Wavefront (metrics, distribution and/or tracing), enable the relevant ports on the proxy and initialize the proxy sender as follows:
+Depending on the data you wish to send to Wavefront (metrics, distributions and/or spans), enable the relevant ports on the proxy and initialize the proxy sender as follows:
 
 ```go
 import (
