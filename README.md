@@ -3,7 +3,7 @@
 This library provides support for sending metrics, histograms and tracing spans to Wavefront via proxy or direct ingestion using the `Sender` interface.
 
 ## Requirements
-- Go 1.10 or higher
+- Go 1.9 or higher
 
 ## Usage
 
