@@ -93,12 +93,12 @@ Use the `Sender` interface for sending data to Wavefront.
 // Wavefront metrics data format
 // <metricName> <metricValue> [<timestamp>] source=<source> [pointTags]
 // Example: "new-york.power.usage 42422 1533529977 source=localhost datacenter=dc1"
-sender.SendMetric("new-york.power.usage", 42422.0, 0, "go_test", map[string]string{"env", "test"});
+sender.SendMetric("new-york.power.usage", 42422.0, 0, "go_test", map[string]string{"env", "test"})
 
 // Wavefront delta counter format
 // <metricName> <metricValue> source=<source> [pointTags]
 // Example: "lambda.thumbnail.generate 10 source=thumbnail_service image-format=jpeg"
-sender.SendDeltaCounter("lambda.thumbnail.generate", 10.0, "thumbnail_service", map[string]string{"format" : "jpeg"});
+sender.SendDeltaCounter("lambda.thumbnail.generate", 10.0, "thumbnail_service", map[string]string{"format" : "jpeg"})
 ```
 
 #### Distributions
@@ -158,11 +158,11 @@ It is recommended to flush and close the sender before shutting down your applic
 
 ```go
 // failures observed while sending metrics/histograms/spans, can be obtained as follows:
-totalFailures := sender.GetFailureCount();
+totalFailures := sender.GetFailureCount()
 
 // on-demand buffer flush
-sender.Flush();
+sender.Flush()
 
 // close the sender before shutting down your application
-sender.Close();
+sender.Close()
 ```

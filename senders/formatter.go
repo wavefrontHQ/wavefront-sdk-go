@@ -1,9 +1,9 @@
 package senders
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
-	"strings"
 )
 
 // Gets a metric line in the Wavefront metrics data format:
@@ -19,7 +19,7 @@ func metricLine(name string, value float64, ts int64, source string, tags map[st
 		source = defaultSource
 	}
 
-	var sb strings.Builder
+	sb := bytes.NewBufferString("")
 	sb.WriteString(strconv.Quote(name))
 	sb.WriteString(" ")
 	sb.WriteString(strconv.FormatFloat(value, 'f', -1, 64))
@@ -66,7 +66,7 @@ func histoLine(name string, centroids []Centroid, hgs map[HistogramGranularity]b
 		source = defaultSource
 	}
 
-	var sb strings.Builder
+	sb := bytes.NewBufferString("")
 	for hg := range hgs {
 		sb.WriteString(hg.String())
 		if ts != 0 {
@@ -115,7 +115,7 @@ func spanLine(name string, startMillis, durationMillis int64, source, traceId, s
 
 	//TODO: verify if strings are uuid?
 
-	var sb strings.Builder
+	sb := bytes.NewBufferString("")
 	sb.WriteString(strconv.Quote(name))
 	sb.WriteString(" source=")
 	sb.WriteString(strconv.Quote(source))

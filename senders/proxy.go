@@ -33,7 +33,7 @@ func NewProxySender(cfg *ProxyConfiguration) (Sender, error) {
 	}
 
 	return &proxySender{
-		defaultSource: internal.GetHostnmae("wavefront_proxy_sender"),
+		defaultSource: internal.GetHostname("wavefront_proxy_sender"),
 		metricHandler: metricHandler,
 		histoHandler:  histoHandler,
 		spanHandler:   spanHandler,

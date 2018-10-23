@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -16,44 +15,59 @@ type LineHandler struct {
 	FlushTicker   *time.Ticker
 	Format        string
 	failures      int64
-	mtx           sync.Mutex
-	lines         []string
+	buffer        chan string
+	done          chan bool
 }
 
 func (lh *LineHandler) Start() {
+	lh.buffer = make(chan string, lh.MaxBufferSize)
+	lh.done = make(chan bool)
+
 	go func() {
-		for range lh.FlushTicker.C {
-			err := lh.Flush()
-			if err != nil {
-				log.Println(err)
+		for {
+			select {
+			case <-lh.FlushTicker.C:
+				err := lh.Flush()
+				if err != nil {
+					log.Println(err)
+				}
+			case <-lh.done:
+				return
 			}
 		}
 	}()
 }
 
 func (lh *LineHandler) HandleLine(line string) error {
-	lh.mtx.Lock()
-	defer lh.mtx.Unlock()
-
-	if len(lh.lines) >= lh.MaxBufferSize {
+	select {
+	case lh.buffer <- line:
+		return nil
+	default:
 		atomic.AddInt64(&lh.failures, 1)
 		return fmt.Errorf("buffer full, dropping line: %s", line)
 	}
-	lh.lines = append(lh.lines, line)
-	return nil
 }
 
 func (lh *LineHandler) Flush() error {
-	batch := lh.linesBatch()
-	if len(batch) == 0 {
-		return nil
+	bufLen := len(lh.buffer)
+	if bufLen > 0 {
+		size := min(bufLen, lh.BatchSize)
+		lines := make([]string, size)
+		for i := 0; i < size; i++ {
+			lines[i] = <-lh.buffer
+		}
+		return lh.report(lines)
 	}
-	batchStr := strings.Join(batch, "")
-	resp, err := lh.Reporter.Report(lh.Format, batchStr)
+	return nil
+}
+
+func (lh *LineHandler) report(lines []string) error {
+	strLines := strings.Join(lines, "")
+	resp, err := lh.Reporter.Report(lh.Format, strLines)
 
 	if err != nil || (400 <= resp.StatusCode && resp.StatusCode <= 599) {
 		atomic.AddInt64(&lh.failures, 1)
-		lh.bufferLines(batch)
+		lh.bufferLines(lines)
 		if err != nil {
 			return fmt.Errorf("error reporting %s format data to Wavefront: %q", lh.Format, err)
 		} else {
@@ -63,27 +77,10 @@ func (lh *LineHandler) Flush() error {
 	return nil
 }
 
-func (lh *LineHandler) linesBatch() []string {
-	lh.mtx.Lock()
-	defer lh.mtx.Unlock()
-
-	currLen := len(lh.lines)
-	batchSize := min(currLen, lh.BatchSize)
-	batchLines := lh.lines[:batchSize]
-	lh.lines = lh.lines[batchSize:currLen]
-	return batchLines
-}
-
 func (lh *LineHandler) bufferLines(batch []string) {
-	lh.mtx.Lock()
-	defer lh.mtx.Unlock()
-
-	currLen := len(lh.lines)
-	remaining := lh.MaxBufferSize - currLen
-	if remaining > 0 {
-		drainLen := min(remaining, len(batch))
-		drainLines := batch[:drainLen]
-		lh.lines = append(lh.lines, drainLines...)
+	log.Println("error reporting to Wavefront. buffering lines.")
+	for _, line := range batch {
+		lh.HandleLine(line)
 	}
 }
 
@@ -92,12 +89,7 @@ func (lh *LineHandler) GetFailureCount() int64 {
 }
 
 func (lh *LineHandler) Stop() {
+	lh.Flush()
+	close(lh.done)
 	lh.FlushTicker.Stop()
-}
-
-func min(x, y int) int {
-	if x < y {
-		return x
-	}
-	return y
 }

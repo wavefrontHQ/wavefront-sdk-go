@@ -38,7 +38,7 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 	}
 	reporter := internal.NewDirectReporter(cfg.Server, cfg.Token)
 	sender := &directSender{
-		defaultSource: internal.GetHostnmae("wavefront_direct_sender"),
+		defaultSource: internal.GetHostname("wavefront_direct_sender"),
 		pointHandler:  makeLineHandler(reporter, cfg, metricFormat),
 		histoHandler:  makeLineHandler(reporter, cfg, histogramFormat),
 		spanHandler:   makeLineHandler(reporter, cfg, traceFormat),
