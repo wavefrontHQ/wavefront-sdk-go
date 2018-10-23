@@ -59,6 +59,10 @@ func (handler *ProxyConnectionHandler) Flush() error {
 	handler.mtx.RLock()
 	handler.mtx.RUnlock()
 
+	if handler.writer == nil {
+		log.Println("empty proxy connection.")
+	}
+
 	if handler.writer != nil {
 		err := handler.writer.Flush()
 		if err != nil {
@@ -78,6 +82,7 @@ func (handler *ProxyConnectionHandler) SendData(lines string) error {
 	defer func() {
 		if r := recover(); r != nil {
 			// we couldn't write the line so something is wrong with the connection
+			log.Println("error sending data", r)
 			handler.resetConnection()
 		}
 	}()
