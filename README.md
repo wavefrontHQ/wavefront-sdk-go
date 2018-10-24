@@ -71,7 +71,7 @@ func main() {
 
         // interval (in seconds) at which to flush data to Wavefront. defaults to 1 Second.
         // together with batch size controls the max theoretical throughput of the sender.
-        FlushIntervalSeconds : time.Second * 1,
+        FlushIntervalSeconds : 1,
     }
 
     sender, err := wavefront.NewDirectSender(directCfg)

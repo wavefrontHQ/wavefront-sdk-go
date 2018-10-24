@@ -1,11 +1,9 @@
 package senders
 
-import "time"
-
 const (
 	defaultBatchSize     = 10000
 	defaultBufferSize    = 50000
-	defaultFlushInterval = time.Second * 1
+	defaultFlushInterval = 1
 )
 
 // Configuration for the direct ingestion sender
@@ -28,7 +26,7 @@ type DirectConfiguration struct {
 
 	// interval (in seconds) at which to flush data to Wavefront. defaults to 1 Second.
 	// together with batch size controls the max theoretical throughput of the sender.
-	FlushIntervalSeconds time.Duration
+	FlushIntervalSeconds int
 }
 
 // Configuration for the proxy sender

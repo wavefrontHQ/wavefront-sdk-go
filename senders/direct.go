@@ -52,7 +52,7 @@ func makeLineHandler(reporter internal.Reporter, cfg *DirectConfiguration, forma
 		Reporter:      reporter,
 		BatchSize:     cfg.BatchSize,
 		MaxBufferSize: cfg.MaxBufferSize,
-		FlushTicker:   time.NewTicker(cfg.FlushIntervalSeconds),
+		FlushTicker:   time.NewTicker(time.Second * time.Duration(cfg.FlushIntervalSeconds)),
 		Format:        format,
 	}
 }
