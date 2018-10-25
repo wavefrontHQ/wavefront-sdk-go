@@ -59,10 +59,6 @@ func (handler *ProxyConnectionHandler) Flush() error {
 	handler.mtx.RLock()
 	handler.mtx.RUnlock()
 
-	if handler.writer == nil {
-		log.Println("empty proxy connection.")
-	}
-
 	if handler.writer != nil {
 		err := handler.writer.Flush()
 		if err != nil {
@@ -70,7 +66,7 @@ func (handler *ProxyConnectionHandler) Flush() error {
 		}
 		return err
 	}
-	return nil
+	return fmt.Errorf("flush error: empty proxy connection")
 }
 
 func (handler *ProxyConnectionHandler) GetFailureCount() int64 {
@@ -97,7 +93,7 @@ func (handler *ProxyConnectionHandler) SendData(lines string) error {
 		}
 		return err
 	}
-	return nil
+	return fmt.Errorf("failed to send data: invalid wavefront proxy connection")
 }
 
 func (handler *ProxyConnectionHandler) resetConnection() {
