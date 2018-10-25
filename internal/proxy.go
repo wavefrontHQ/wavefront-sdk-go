@@ -45,6 +45,11 @@ func (handler *ProxyConnectionHandler) Connected() bool {
 }
 
 func (handler *ProxyConnectionHandler) Close() {
+	err := handler.Flush()
+	if err != nil {
+		log.Println(err)
+	}
+
 	handler.mtx.RLock()
 	defer handler.mtx.RUnlock()
 
