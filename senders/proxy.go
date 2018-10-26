@@ -3,6 +3,7 @@ package senders
 import (
 	"fmt"
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
+	"time"
 )
 
 type proxySender struct {
@@ -13,31 +14,55 @@ type proxySender struct {
 }
 
 func NewProxySender(cfg *ProxyConfiguration) (Sender, error) {
+	if cfg.FlushIntervalSeconds == 0 {
+		cfg.FlushIntervalSeconds = defaultFlushInterval
+	}
+
 	var metricHandler internal.ConnectionHandler
 	if cfg.MetricsPort != 0 {
-		metricHandler = internal.NewProxyConnectionHandler(fmt.Sprintf("%s:%d", cfg.Host, cfg.MetricsPort))
+		metricHandler = makeConnHandler(cfg.Host, cfg.MetricsPort, cfg.FlushIntervalSeconds)
 	}
 
 	var histoHandler internal.ConnectionHandler
 	if cfg.DistributionPort != 0 {
-		histoHandler = internal.NewProxyConnectionHandler(fmt.Sprintf("%s:%d", cfg.Host, cfg.DistributionPort))
+		histoHandler = makeConnHandler(cfg.Host, cfg.DistributionPort, cfg.FlushIntervalSeconds)
 	}
 
 	var spanHandler internal.ConnectionHandler
 	if cfg.TracingPort != 0 {
-		spanHandler = internal.NewProxyConnectionHandler(fmt.Sprintf("%s:%d", cfg.Host, cfg.TracingPort))
+		spanHandler = makeConnHandler(cfg.Host, cfg.TracingPort, cfg.FlushIntervalSeconds)
 	}
 
 	if metricHandler == nil && histoHandler == nil && spanHandler == nil {
 		return nil, fmt.Errorf("at least one proxy port should be enabled")
 	}
 
-	return &proxySender{
+	sender := &proxySender{
 		defaultSource: internal.GetHostname("wavefront_proxy_sender"),
 		metricHandler: metricHandler,
 		histoHandler:  histoHandler,
 		spanHandler:   spanHandler,
-	}, nil
+	}
+	sender.Start()
+	return sender, nil
+}
+
+func makeConnHandler(host string, port, interval int) internal.ConnectionHandler {
+	addr := fmt.Sprintf("%s:%d", host, port)
+	ticker := time.NewTicker(time.Second * time.Duration(interval))
+	return internal.NewProxyConnectionHandler(addr, ticker)
+}
+
+func (sender *proxySender) Start() {
+	if sender.metricHandler != nil {
+		sender.metricHandler.Start()
+	}
+	if sender.histoHandler != nil {
+		sender.histoHandler.Start()
+	}
+	if sender.spanHandler != nil {
+		sender.spanHandler.Start()
+	}
 }
 
 func (sender *proxySender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {

@@ -31,6 +31,8 @@ func main() {
         MetricsPort : 2878,      // set this (typically 2878) to send metrics
         DistributionPort: 40000, // set this (typically 40000) to send distributions
         TracingPort : 50000,     // set this to send tracing spans
+
+        FlushIntervalSeconds: 1 // flush the buffer periodically, defaults to 1 second.
     }
 
     sender, err := wavefront.NewProxySender(proxyCfg)
@@ -38,7 +40,6 @@ func main() {
         // handle error
     }
     // send data (see below for usage)
-    sender.Flush() // flush the buffer
 }
 ```
 

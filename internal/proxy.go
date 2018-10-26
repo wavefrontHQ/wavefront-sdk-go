@@ -11,17 +11,40 @@ import (
 )
 
 type ProxyConnectionHandler struct {
-	address  string
-	failures int64
-	mtx      sync.RWMutex
-	conn     net.Conn
-	writer   *bufio.Writer
+	address     string
+	failures    int64
+	flushTicker *time.Ticker
+	done        chan bool
+	mtx         sync.RWMutex
+	conn        net.Conn
+	writer      *bufio.Writer
 }
 
-func NewProxyConnectionHandler(address string) ConnectionHandler {
+func NewProxyConnectionHandler(address string, ticker *time.Ticker) ConnectionHandler {
 	return &ProxyConnectionHandler{
-		address: address,
+		address:     address,
+		flushTicker: ticker,
 	}
+}
+
+func (handler *ProxyConnectionHandler) Start() {
+	handler.done = make(chan bool)
+
+	go func() {
+		for {
+			select {
+			case <-handler.flushTicker.C:
+				err := handler.Flush()
+				if err != nil {
+					log.Println(err)
+				}
+			case <-handler.done:
+				//TODO: remove
+				log.Println("done running flushing")
+				return
+			}
+		}
+	}()
 }
 
 func (handler *ProxyConnectionHandler) Connect() error {
@@ -49,6 +72,9 @@ func (handler *ProxyConnectionHandler) Close() {
 	if err != nil {
 		log.Println(err)
 	}
+
+	close(handler.done)
+	handler.flushTicker.Stop()
 
 	handler.mtx.RLock()
 	defer handler.mtx.RUnlock()

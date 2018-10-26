@@ -43,7 +43,7 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 		histoHandler:  makeLineHandler(reporter, cfg, histogramFormat),
 		spanHandler:   makeLineHandler(reporter, cfg, traceFormat),
 	}
-	sender.start()
+	sender.Start()
 	return sender, nil
 }
 
@@ -57,7 +57,7 @@ func makeLineHandler(reporter internal.Reporter, cfg *DirectConfiguration, forma
 	}
 }
 
-func (sender *directSender) start() {
+func (sender *directSender) Start() {
 	sender.pointHandler.Start()
 	sender.histoHandler.Start()
 	sender.spanHandler.Start()

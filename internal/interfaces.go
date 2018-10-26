@@ -11,6 +11,7 @@ type Reporter interface {
 type Flusher interface {
 	Flush() error
 	GetFailureCount() int64
+	Start()
 }
 
 type ConnectionHandler interface {
