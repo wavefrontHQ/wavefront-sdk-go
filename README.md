@@ -1,4 +1,4 @@
-# wavefront-sdk-go
+# wavefront-sdk-go [![Build Status](https://travis-ci.com/wavefrontHQ/wavefront-sdk-go.svg?branch=master)](https://travis-ci.com/wavefrontHQ/wavefront-sdk-go)
 
 This library provides support for sending metrics, histograms and tracing spans to Wavefront via proxy or direct ingestion using the `Sender` interface.
 
