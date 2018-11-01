@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bytes"
+	"compress/gzip"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -15,15 +16,17 @@ var (
 )
 
 const (
-	contentType    = "Content-Type"
-	authzHeader    = "Authorization"
-	bearer         = "Bearer "
-	textPlain      = "text/plain"
-	reportEndpoint = "/report"
-	formatKey      = "f"
+	contentType     = "Content-Type"
+	contentEncoding = "Content-Encoding"
+	authzHeader     = "Authorization"
+	bearer          = "Bearer "
+	gzipFormat      = "gzip"
+	octetStream     = "application/octet-stream"
+	reportEndpoint  = "/report"
+	formatKey       = "f"
 )
 
-// The implementation of a DirectReporter that reports points directly to a Wavefront server.
+// The implementation of a Reporter that reports points directly to a Wavefront server.
 type directReporter struct {
 	serverURL string
 	token     string
@@ -38,9 +41,22 @@ func (reporter directReporter) Report(format string, pointLines string) (*http.R
 		return nil, reportError
 	}
 
+	// compress
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+	_, err := zw.Write([]byte(pointLines))
+	if err != nil {
+		zw.Close()
+		return nil, err
+	}
+	if err = zw.Close(); err != nil {
+		return nil, err
+	}
+
 	apiURL := reporter.serverURL + reportEndpoint
-	req, err := http.NewRequest("POST", apiURL, bytes.NewBufferString(pointLines))
-	req.Header.Set(contentType, textPlain)
+	req, err := http.NewRequest("POST", apiURL, &buf)
+	req.Header.Set(contentType, octetStream)
+	req.Header.Set(contentEncoding, gzipFormat)
 	req.Header.Set(authzHeader, bearer+reporter.token)
 	if err != nil {
 		return &http.Response{}, err
