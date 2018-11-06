@@ -1,4 +1,4 @@
-# wavefront-sdk-go [![Build Status](https://travis-ci.com/wavefrontHQ/wavefront-sdk-go.svg?branch=master)](https://travis-ci.com/wavefrontHQ/wavefront-sdk-go)
+# wavefront-sdk-go [![build status][ci-img]][ci] [![GoDoc][godoc-img]][godoc]
 
 This library provides support for sending metrics, histograms and tracing spans to Wavefront via proxy or direct ingestion using the `Sender` interface.
 
@@ -167,3 +167,8 @@ sender.Flush()
 // close the sender before shutting down your application
 sender.Close()
 ```
+
+[ci-img]: https://travis-ci.com/wavefrontHQ/wavefront-sdk-go.svg?branch=master
+[ci]: https://travis-ci.com/wavefrontHQ/wavefront-sdk-go
+[godoc]: https://godoc.org/github.com/wavefrontHQ/wavefront-sdk-go/senders
+[godoc-img]: https://godoc.org/github.com/wavefrontHQ/wavefront-sdk-go/senders?status.svg
