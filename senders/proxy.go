@@ -15,7 +15,7 @@ type proxySender struct {
 
 func NewProxySender(cfg *ProxyConfiguration) (Sender, error) {
 	if cfg.FlushIntervalSeconds == 0 {
-		cfg.FlushIntervalSeconds = defaultFlushInterval
+		cfg.FlushIntervalSeconds = defaultProxyFlushInterval
 	}
 
 	var metricHandler internal.ConnectionHandler

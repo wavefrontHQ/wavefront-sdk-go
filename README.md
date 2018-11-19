@@ -32,7 +32,7 @@ func main() {
         DistributionPort: 40000, // set this (typically 40000) to send distributions
         TracingPort : 50000,     // set this to send tracing spans
 
-        FlushIntervalSeconds: 1 // flush the buffer periodically, defaults to 1 second.
+        FlushIntervalSeconds: 10 // flush the buffer periodically, defaults to 5 seconds.
     }
 
     sender, err := wavefront.NewProxySender(proxyCfg)
@@ -66,7 +66,6 @@ func main() {
         // size of internal buffer beyond which received data is dropped.
         // helps with handling brief increases in data and buffering on errors.
         // separate buffers are maintained per data type (metrics, spans and distributions)
-        // buffers are not pre-allocated to max size and vary based on actual usage.
         // defaults to 50,000. higher values could use more memory.
         MaxBufferSize : 50000,
 

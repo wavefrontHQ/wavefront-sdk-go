@@ -1,9 +1,10 @@
 package senders
 
 const (
-	defaultBatchSize     = 10000
-	defaultBufferSize    = 50000
-	defaultFlushInterval = 1
+	defaultBatchSize          = 10000
+	defaultBufferSize         = 50000
+	defaultFlushInterval      = 1
+	defaultProxyFlushInterval = 5
 )
 
 // Configuration for the direct ingestion sender
