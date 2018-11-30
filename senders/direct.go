@@ -23,6 +23,7 @@ type directSender struct {
 	spanHandler   *internal.LineHandler
 }
 
+// Creates and returns a Wavefront Direct Ingestion Sender instance
 func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 	if cfg.Server == "" || cfg.Token == "" {
 		return nil, fmt.Errorf("server and token cannot be empty")

@@ -13,6 +13,7 @@ type proxySender struct {
 	defaultSource string
 }
 
+// Creates and returns a Wavefront Proxy Sender instance
 func NewProxySender(cfg *ProxyConfiguration) (Sender, error) {
 	if cfg.FlushIntervalSeconds == 0 {
 		cfg.FlushIntervalSeconds = defaultProxyFlushInterval
