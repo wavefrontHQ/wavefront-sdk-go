@@ -39,8 +39,6 @@ func (handler *ProxyConnectionHandler) Start() {
 					log.Println(err)
 				}
 			case <-handler.done:
-				//TODO: remove
-				log.Println("done running flushing")
 				return
 			}
 		}
