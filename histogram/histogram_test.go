@@ -1,4 +1,4 @@
-package histograms
+package histogram
 
 import (
 	"math/rand"
