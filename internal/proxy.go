@@ -39,8 +39,6 @@ func (handler *ProxyConnectionHandler) Start() {
 					log.Println(err)
 				}
 			case <-handler.done:
-				//TODO: remove
-				log.Println("done running flushing")
 				return
 			}
 		}
@@ -57,6 +55,7 @@ func (handler *ProxyConnectionHandler) Connect() error {
 		handler.conn = nil
 		return fmt.Errorf("unable to connect to Wavefront proxy at address: %s, err: %q", handler.address, err)
 	}
+	log.Printf("connected to Wavefront proxy at address: %s", handler.address)
 	handler.writer = bufio.NewWriter(handler.conn)
 	return nil
 }
@@ -97,7 +96,7 @@ func (handler *ProxyConnectionHandler) Flush() error {
 		}
 		return err
 	}
-	return fmt.Errorf("flush error: empty proxy connection")
+	return nil
 }
 
 func (handler *ProxyConnectionHandler) GetFailureCount() int64 {

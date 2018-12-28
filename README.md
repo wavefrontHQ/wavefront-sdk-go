@@ -1,4 +1,4 @@
-# wavefront-sdk-go [![build status][ci-img]][ci] [![GoDoc][godoc-img]][godoc]
+# wavefront-sdk-go [![build status][ci-img]][ci] [![Go Report Card][go-report-img]][go-report] [![GoDoc][godoc-img]][godoc]
 
 This library provides support for sending metrics, histograms and tracing spans to Wavefront via proxy or direct ingestion using the `Sender` interface.
 
@@ -32,7 +32,7 @@ func main() {
         DistributionPort: 40000, // set this (typically 40000) to send distributions
         TracingPort : 50000,     // set this to send tracing spans
 
-        FlushIntervalSeconds: 1 // flush the buffer periodically, defaults to 1 second.
+        FlushIntervalSeconds: 10 // flush the buffer periodically, defaults to 5 seconds.
     }
 
     sender, err := wavefront.NewProxySender(proxyCfg)
@@ -66,7 +66,6 @@ func main() {
         // size of internal buffer beyond which received data is dropped.
         // helps with handling brief increases in data and buffering on errors.
         // separate buffers are maintained per data type (metrics, spans and distributions)
-        // buffers are not pre-allocated to max size and vary based on actual usage.
         // defaults to 50,000. higher values could use more memory.
         MaxBufferSize : 50000,
 
@@ -172,3 +171,5 @@ sender.Close()
 [ci]: https://travis-ci.com/wavefrontHQ/wavefront-sdk-go
 [godoc]: https://godoc.org/github.com/wavefrontHQ/wavefront-sdk-go/senders
 [godoc-img]: https://godoc.org/github.com/wavefrontHQ/wavefront-sdk-go/senders?status.svg
+[go-report-img]: https://goreportcard.com/badge/github.com/wavefronthq/wavefront-sdk-go
+[go-report]: https://goreportcard.com/report/github.com/wavefronthq/wavefront-sdk-go
