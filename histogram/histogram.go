@@ -9,14 +9,55 @@ import (
 	tdigest "github.com/caio/go-tdigest"
 )
 
-type Histogram struct {
+type Histogram interface {
+	Update(v float64)
+	Distributions() []Distribution
+}
+
+type HistogramOption func(*histogramImpl)
+
+func Granularity(g time.Duration) HistogramOption {
+	return func(args *histogramImpl) {
+		args.granularity = g
+	}
+}
+
+func Compression(c uint32) HistogramOption {
+	return func(args *histogramImpl) {
+		args.compression = c
+	}
+}
+
+func MaxBins(c int) HistogramOption {
+	return func(args *histogramImpl) {
+		args.maxBins = c
+	}
+}
+
+func defaultHistogramImpl() *histogramImpl {
+	return &histogramImpl{maxBins: 10, granularity: time.Minute, compression: 5}
+}
+
+func NewHistogram() Histogram {
+	return defaultHistogramImpl()
+}
+
+func NewHistogramWithOptions(setters ...HistogramOption) Histogram {
+	h := defaultHistogramImpl()
+	for _, setter := range setters {
+		setter(h)
+	}
+	return h
+}
+
+type histogramImpl struct {
 	mutex              sync.Mutex
 	priorTimedBinsList []*timedBin
 	currentTimedBin    *timedBin
 
-	Granularity time.Duration
-	Compression uint32
-	MaxBins     int
+	granularity time.Duration
+	compression uint32
+	maxBins     int
 }
 
 type timedBin struct {
@@ -29,17 +70,12 @@ type Distribution struct {
 	Timestamp time.Time
 }
 
-func NewHistogram() *Histogram {
-	h := &Histogram{MaxBins: 10, Granularity: time.Minute, Compression: 5}
-	return h
-}
-
-func (h *Histogram) Add(v float64) {
+func (h *histogramImpl) Update(v float64) {
 	h.rotateCurrentTDigestIfNeedIt()
 	h.currentTimedBin.tdigest.Add(v)
 }
 
-func (h *Histogram) Distributions() []Distribution {
+func (h *histogramImpl) Distributions() []Distribution {
 	h.rotateCurrentTDigestIfNeedIt()
 
 	h.mutex.Lock()
@@ -58,7 +94,7 @@ func (h *Histogram) Distributions() []Distribution {
 	return distributions
 }
 
-func (h *Histogram) rotateCurrentTDigestIfNeedIt() {
+func (h *histogramImpl) rotateCurrentTDigestIfNeedIt() {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
@@ -66,18 +102,18 @@ func (h *Histogram) rotateCurrentTDigestIfNeedIt() {
 		h.currentTimedBin = h.newTimedBin()
 	} else if h.currentTimedBin.timestamp != h.now() {
 		h.priorTimedBinsList = append(h.priorTimedBinsList, h.currentTimedBin)
-		if len(h.priorTimedBinsList) > h.MaxBins {
+		if len(h.priorTimedBinsList) > h.maxBins {
 			h.priorTimedBinsList = h.priorTimedBinsList[1:]
 		}
 		h.currentTimedBin = h.newTimedBin()
 	}
 }
 
-func (h *Histogram) now() time.Time {
-	return time.Now().Truncate(h.Granularity)
+func (h *histogramImpl) now() time.Time {
+	return time.Now().Truncate(h.granularity)
 }
 
-func (h *Histogram) newTimedBin() *timedBin {
-	td, _ := tdigest.New(tdigest.Compression(h.Compression))
+func (h *histogramImpl) newTimedBin() *timedBin {
+	td, _ := tdigest.New(tdigest.Compression(h.compression))
 	return &timedBin{timestamp: h.now(), tdigest: td}
 }

@@ -7,13 +7,11 @@ import (
 )
 
 func TestHistogram(t *testing.T) {
-	h := NewHistogram()
-	h.MaxBins = 3
-	h.Granularity = time.Second
+	h := NewHistogramWithOptions(MaxBins(3), Granularity(time.Second))
 
 	for i := 0; i < 5; i++ {
 		for i := 0; i < 1000; i++ {
-			h.Add(rand.Float64())
+			h.Update(rand.Float64())
 		}
 		time.Sleep(time.Second)
 	}
