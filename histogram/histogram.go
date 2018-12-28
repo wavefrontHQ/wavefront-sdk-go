@@ -4,8 +4,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/wavefronthq/wavefront-sdk-go/senders"
-
 	tdigest "github.com/caio/go-tdigest"
 )
 
@@ -66,7 +64,7 @@ type timedBin struct {
 }
 
 type Distribution struct {
-	Centroids []senders.Centroid
+	Centroids []Centroid
 	Timestamp time.Time
 }
 
@@ -83,9 +81,9 @@ func (h *histogramImpl) Distributions() []Distribution {
 
 	distributions := make([]Distribution, len(h.priorTimedBinsList))
 	for idx, bin := range h.priorTimedBinsList {
-		var centroids []senders.Centroid
+		var centroids []Centroid
 		bin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
-			centroids = append(centroids, senders.Centroid{Value: mean, Count: int(count)})
+			centroids = append(centroids, Centroid{Value: mean, Count: int(count)})
 			return true
 		})
 		distributions[idx] = Distribution{Timestamp: bin.timestamp, Centroids: centroids}

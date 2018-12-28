@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+
+	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 )
 
 // Gets a metric line in the Wavefront metrics data format:
@@ -48,7 +50,7 @@ func metricLine(name string, value float64, ts int64, source string, tags map[st
 // Gets a histogram line in the Wavefront histogram data format:
 // {!M | !H | !D} [<timestamp>] #<count> <mean> [centroids] <histogramName> source=<source> [pointTags]
 // Example: "!M 1533531013 #20 30.0 #10 5.1 request.latency source=appServer1 region=us-west"
-func histoLine(name string, centroids []Centroid, hgs map[HistogramGranularity]bool, ts int64, source string, tags map[string]string, defaultSource string) (string, error) {
+func histoLine(name string, centroids []histogram.Centroid, hgs map[histogram.HistogramGranularity]bool, ts int64, source string, tags map[string]string, defaultSource string) (string, error) {
 
 	if name == "" {
 		return "", fmt.Errorf("empty distribution name")

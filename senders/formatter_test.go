@@ -1,6 +1,10 @@
 package senders
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/wavefronthq/wavefront-sdk-go/histogram"
+)
 
 func TestMetricLine(t *testing.T) {
 	line, err := metricLine("foo.metric", 1.2, 1533529977, "test_source",
@@ -17,27 +21,27 @@ func TestMetricLine(t *testing.T) {
 func TestHistoLine(t *testing.T) {
 	centroids := makeCentroids()
 
-	line, err := histoLine("request.latency", centroids, map[HistogramGranularity]bool{MINUTE: true},
+	line, err := histoLine("request.latency", centroids, map[histogram.HistogramGranularity]bool{histogram.MINUTE: true},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
 	expected := "!M 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
 	assertEquals(expected, line, err, t)
 
-	line, err = histoLine("request.latency", centroids, map[HistogramGranularity]bool{MINUTE: true},
+	line, err = histoLine("request.latency", centroids, map[histogram.HistogramGranularity]bool{histogram.MINUTE: true},
 		1533529977, "", map[string]string{"env": "test"}, "default")
 	expected = "!M 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assertEquals(expected, line, err, t)
 
-	line, err = histoLine("request.latency", centroids, map[HistogramGranularity]bool{HOUR: true},
+	line, err = histoLine("request.latency", centroids, map[histogram.HistogramGranularity]bool{histogram.HOUR: true},
 		1533529977, "", map[string]string{"env": "test"}, "default")
 	expected = "!H 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assertEquals(expected, line, err, t)
 
-	line, err = histoLine("request.latency", centroids, map[HistogramGranularity]bool{DAY: true},
+	line, err = histoLine("request.latency", centroids, map[histogram.HistogramGranularity]bool{histogram.DAY: true},
 		1533529977, "", map[string]string{"env": "test"}, "default")
 	expected = "!D 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assertEquals(expected, line, err, t)
 
-	line, err = histoLine("request.latency", centroids, map[HistogramGranularity]bool{MINUTE: true, HOUR: true},
+	line, err = histoLine("request.latency", centroids, map[histogram.HistogramGranularity]bool{histogram.MINUTE: true, histogram.HOUR: true},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
 	expected = "!M 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n" +
 		"!H 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
@@ -79,8 +83,8 @@ func assertEquals(expected, actual string, err error, t *testing.T) {
 	}
 }
 
-func makeCentroids() []Centroid {
-	centroids := []Centroid{
+func makeCentroids() []histogram.Centroid {
+	centroids := []histogram.Centroid{
 		{
 			Value: 30.0,
 			Count: 20,
