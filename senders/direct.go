@@ -65,7 +65,7 @@ func (sender *directSender) Start() {
 }
 
 func (sender *directSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
-	line, err := metricLine(name, value, ts, source, tags, sender.defaultSource)
+	line, err := MetricLine(name, value, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (sender *directSender) SendDeltaCounter(name string, value float64, source 
 }
 
 func (sender *directSender) SendDistribution(name string, centroids []Centroid, hgs map[HistogramGranularity]bool, ts int64, source string, tags map[string]string) error {
-	line, err := histoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
+	line, err := HistoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (sender *directSender) SendDistribution(name string, centroids []Centroid, 
 }
 
 func (sender *directSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
-	line, err := spanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
+	line, err := SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
 	if err != nil {
 		return err
 	}

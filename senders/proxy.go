@@ -2,8 +2,9 @@ package senders
 
 import (
 	"fmt"
-	"github.com/wavefronthq/wavefront-sdk-go/internal"
 	"time"
+
+	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
 type proxySender struct {
@@ -78,7 +79,7 @@ func (sender *proxySender) SendMetric(name string, value float64, ts int64, sour
 		}
 	}
 
-	line, err := metricLine(name, value, ts, source, tags, sender.defaultSource)
+	line, err := MetricLine(name, value, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		return err
 	}
@@ -108,7 +109,7 @@ func (sender *proxySender) SendDistribution(name string, centroids []Centroid, h
 		}
 	}
 
-	line, err := histoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
+	line, err := HistoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		return err
 	}
@@ -128,7 +129,7 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 		}
 	}
 
-	line, err := spanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
+	line, err := SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
 	if err != nil {
 		return err
 	}

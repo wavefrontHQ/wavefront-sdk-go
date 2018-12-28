@@ -9,7 +9,7 @@ import (
 // Gets a metric line in the Wavefront metrics data format:
 // <metricName> <metricValue> [<timestamp>] source=<source> [pointTags]
 // Example: "new-york.power.usage 42422.0 1533531013 source=localhost datacenter=dc1"
-func metricLine(name string, value float64, ts int64, source string, tags map[string]string, defaultSource string) (string, error) {
+func MetricLine(name string, value float64, ts int64, source string, tags map[string]string, defaultSource string) (string, error) {
 
 	if name == "" {
 		return "", fmt.Errorf("empty metric name")
@@ -48,7 +48,7 @@ func metricLine(name string, value float64, ts int64, source string, tags map[st
 // Gets a histogram line in the Wavefront histogram data format:
 // {!M | !H | !D} [<timestamp>] #<count> <mean> [centroids] <histogramName> source=<source> [pointTags]
 // Example: "!M 1533531013 #20 30.0 #10 5.1 request.latency source=appServer1 region=us-west"
-func histoLine(name string, centroids []Centroid, hgs map[HistogramGranularity]bool, ts int64, source string, tags map[string]string, defaultSource string) (string, error) {
+func HistoLine(name string, centroids []Centroid, hgs map[HistogramGranularity]bool, ts int64, source string, tags map[string]string, defaultSource string) (string, error) {
 
 	if name == "" {
 		return "", fmt.Errorf("empty distribution name")
@@ -103,7 +103,7 @@ func histoLine(name string, centroids []Centroid, hgs map[HistogramGranularity]b
 // Example:
 // "getAllUsers source=localhost traceId=7b3bf470-9456-11e8-9eb6-529269fb1459 spanId=0313bafe-9457-11e8-9eb6-529269fb1459
 //    parent=2f64e538-9457-11e8-9eb6-529269fb1459 application=Wavefront http.method=GET 1533531013 343500"
-func spanLine(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog, defaultSource string) (string, error) {
+func SpanLine(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog, defaultSource string) (string, error) {
 
 	if name == "" {
 		return "", fmt.Errorf("empty span name")
