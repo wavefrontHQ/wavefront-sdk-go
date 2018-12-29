@@ -75,8 +75,8 @@ func (handler *ProxyConnectionHandler) Close() {
 	close(handler.done)
 	handler.flushTicker.Stop()
 
-	handler.mtx.RLock()
-	defer handler.mtx.RUnlock()
+	handler.mtx.Lock()
+	defer handler.mtx.Unlock()
 
 	if handler.conn != nil {
 		handler.conn.Close()
@@ -86,8 +86,8 @@ func (handler *ProxyConnectionHandler) Close() {
 }
 
 func (handler *ProxyConnectionHandler) Flush() error {
-	handler.mtx.RLock()
-	handler.mtx.RUnlock()
+	handler.mtx.Lock()
+	defer handler.mtx.Unlock()
 
 	if handler.writer != nil {
 		err := handler.writer.Flush()
