@@ -109,7 +109,9 @@ func (handler *ProxyConnectionHandler) SendData(lines string) error {
 		if r := recover(); r != nil {
 			// we couldn't write the line so something is wrong with the connection
 			log.Println("error sending data", r)
+			handler.mtx.Lock()
 			handler.resetConnection()
+			handler.mtx.Unlock()
 		}
 	}()
 
@@ -128,8 +130,6 @@ func (handler *ProxyConnectionHandler) SendData(lines string) error {
 
 func (handler *ProxyConnectionHandler) resetConnection() {
 	log.Println("resetting wavefront proxy connection")
-	handler.mtx.Lock()
-	defer handler.mtx.Unlock()
 	handler.conn = nil
 	handler.writer = nil
 }
