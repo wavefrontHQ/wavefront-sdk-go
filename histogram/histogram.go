@@ -116,7 +116,7 @@ func (h *histogramImpl) Max() float64 {
 	return max
 }
 
-// Max returns the minimun Value of samples on this histogram.
+// Min returns the minimun Value of samples on this histogram.
 func (h *histogramImpl) Min() float64 {
 	h.rotateCurrentTDigestIfNeedIt()
 
@@ -131,19 +131,19 @@ func (h *histogramImpl) Min() float64 {
 	return min
 }
 
-// Max returns the sum of all values on this histogram.
+// Sum returns the sum of all values on this histogram.
 func (h *histogramImpl) Sum() float64 {
 	h.rotateCurrentTDigestIfNeedIt()
 
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
-	sum := float64(0)
+	Sum := float64(0)
 	h.currentTimedBin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
-		sum += mean * float64(count)
+		Sum += mean * float64(count)
 		return true
 	})
-	return sum
+	return Sum
 }
 
 // Count returns the maen values of samples on this histogram.
