@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
@@ -97,7 +98,7 @@ func (sender *proxySender) SendDeltaCounter(name string, value float64, source s
 	return sender.SendMetric(name, value, 0, source, tags)
 }
 
-func (sender *proxySender) SendDistribution(name string, centroids []Centroid, hgs map[HistogramGranularity]bool, ts int64, source string, tags map[string]string) error {
+func (sender *proxySender) SendDistribution(name string, centroids []histogram.Centroid, hgs map[histogram.HistogramGranularity]bool, ts int64, source string, tags map[string]string) error {
 	if sender.histoHandler == nil {
 		return fmt.Errorf("proxy distribution port not provided, cannot send distribution data")
 	}

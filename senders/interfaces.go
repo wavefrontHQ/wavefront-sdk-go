@@ -2,7 +2,10 @@
 // the Wavefront proxy or via direct ingestion.
 package senders
 
-import "github.com/wavefronthq/wavefront-sdk-go/internal"
+import (
+	"github.com/wavefronthq/wavefront-sdk-go/histogram"
+	"github.com/wavefronthq/wavefront-sdk-go/internal"
+)
 
 // Interface for sending metrics to Wavefront
 type MetricSender interface {
@@ -21,7 +24,7 @@ type DistributionSender interface {
 	// and the second dimension the count of points in the centroid.
 	// The granularity informs the set of intervals (minute, hour, and/or day) by which the
 	// histogram data should be aggregated.
-	SendDistribution(name string, centroids []Centroid, hgs map[HistogramGranularity]bool, ts int64, source string, tags map[string]string) error
+	SendDistribution(name string, centroids []histogram.Centroid, hgs map[histogram.HistogramGranularity]bool, ts int64, source string, tags map[string]string) error
 }
 
 // Interface for sending tracing spans to Wavefront
