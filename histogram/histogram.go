@@ -138,12 +138,12 @@ func (h *histogramImpl) Sum() float64 {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
-	sun := float64(0)
+	sum := float64(0)
 	h.currentTimedBin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
-		sun += mean * float64(count)
+		sum += mean * float64(count)
 		return true
 	})
-	return sun
+	return sum
 }
 
 // Count returns the maen values of samples on this histogram.
