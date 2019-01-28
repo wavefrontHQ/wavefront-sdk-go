@@ -7,7 +7,7 @@ import (
 )
 
 func TestHistogram(t *testing.T) {
-	h := NewHistogramWithOptions(MaxBins(3), Granularity(time.Second))
+	h := New(MaxBins(3), Granularity(SECOND))
 
 	for i := 0; i < 5; i++ {
 		for i := 0; i < 1000; i++ {
