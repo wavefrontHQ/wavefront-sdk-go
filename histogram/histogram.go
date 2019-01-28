@@ -18,13 +18,14 @@ type Histogram interface {
 	Min() float64
 	Sum() float64
 	Mean() float64
+	Granularity() HistogramGranularity
 }
 
 // Option allow histogram customization
 type Option func(*histogramImpl)
 
 // Granularity of the histogram
-func Granularity(g time.Duration) Option {
+func Granularity(g HistogramGranularity) Option {
 	return func(args *histogramImpl) {
 		args.granularity = g
 	}
@@ -45,16 +46,11 @@ func MaxBins(c int) Option {
 }
 
 func defaultHistogramImpl() *histogramImpl {
-	return &histogramImpl{maxBins: 10, granularity: time.Minute, compression: 5}
+	return &histogramImpl{maxBins: 10, granularity: MINUTE, compression: 5}
 }
 
-// NewHistogram create a histogram
-func NewHistogram() Histogram {
-	return defaultHistogramImpl()
-}
-
-// NewHistogramWithOptions create a custom histogram
-func NewHistogramWithOptions(setters ...Option) Histogram {
+// New create a histogram
+func New(setters ...Option) Histogram {
 	h := defaultHistogramImpl()
 	for _, setter := range setters {
 		setter(h)
@@ -67,7 +63,7 @@ type histogramImpl struct {
 	priorTimedBinsList []*timedBin
 	currentTimedBin    *timedBin
 
-	granularity time.Duration
+	granularity HistogramGranularity
 	compression uint32
 	maxBins     int
 }
@@ -163,6 +159,10 @@ func (h *histogramImpl) Mean() float64 {
 	return t / float64(c)
 }
 
+func (h *histogramImpl) Granularity() HistogramGranularity {
+	return h.granularity
+}
+
 // Snapshot returns a copy of all samples on comlepted time slices
 func (h *histogramImpl) Snapshot() []Distribution {
 	return h.distributions(false)
@@ -210,7 +210,7 @@ func (h *histogramImpl) rotateCurrentTDigestIfNeedIt() {
 }
 
 func (h *histogramImpl) now() time.Time {
-	return time.Now().Truncate(h.granularity)
+	return time.Now().Truncate(h.granularity.Duration())
 }
 
 func (h *histogramImpl) newTimedBin() *timedBin {
