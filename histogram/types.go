@@ -40,5 +40,4 @@ func (hg *HistogramGranularity) String() string {
 	default: // DAY
 		return "!D"
 	}
-	return ""
 }
