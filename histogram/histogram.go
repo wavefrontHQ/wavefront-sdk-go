@@ -12,6 +12,7 @@ import (
 type Histogram interface {
 	Update(v float64)
 	Distributions() []Distribution
+	Snapshot() []Distribution
 	Count() uint64
 	Quantile(q float64) float64
 	Max() float64
@@ -120,10 +121,12 @@ func (h *histogramImpl) Min() float64 {
 	defer h.mutex.Unlock()
 
 	min := math.MaxFloat64
-	h.currentTimedBin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
-		min = math.Min(min, mean)
-		return true
-	})
+	for _, bin := range append(h.priorTimedBinsList, h.currentTimedBin) {
+		bin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
+			min = math.Min(min, mean)
+			return true
+		})
+	}
 	return min
 }
 
@@ -135,14 +138,16 @@ func (h *histogramImpl) Sum() float64 {
 	defer h.mutex.Unlock()
 
 	sum := float64(0)
-	h.currentTimedBin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
-		sum += mean * float64(count)
-		return true
-	})
+	for _, bin := range append(h.priorTimedBinsList, h.currentTimedBin) {
+		bin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
+			sum += mean * float64(count)
+			return true
+		})
+	}
 	return sum
 }
 
-// Count returns the maen values of samples on this histogram.
+// Mean returns the mean values of samples on this histogram.
 func (h *histogramImpl) Mean() float64 {
 	h.rotateCurrentTDigestIfNeedIt()
 
@@ -151,14 +156,17 @@ func (h *histogramImpl) Mean() float64 {
 
 	t := float64(0)
 	c := uint32(0)
-	h.currentTimedBin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
-		t += mean * float64(count)
-		c += count
-		return true
-	})
+	for _, bin := range append(h.priorTimedBinsList, h.currentTimedBin) {
+		bin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
+			t += mean * float64(count)
+			c += count
+			return true
+		})
+	}
 	return t / float64(c)
 }
 
+// Granularity value
 func (h *histogramImpl) Granularity() HistogramGranularity {
 	return h.granularity
 }
