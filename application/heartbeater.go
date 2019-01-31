@@ -7,7 +7,7 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
-// HeartbeatService sends a heartbeat metric each 5 mins
+// HeartbeatService sends a heartbeat metric every 5 mins
 type HeartbeatService interface {
 	Close()
 }

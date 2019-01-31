@@ -1,6 +1,6 @@
 package application
 
-// Tags applicatio info
+// Encapsulates application details
 type Tags struct {
 	Application string
 	Service     string
@@ -9,7 +9,7 @@ type Tags struct {
 	CustomTags  map[string]string
 }
 
-// New creates a new ApplicationTags with application and serice names
+// Creates a new Tags with application and service name
 func New(application, service string) Tags {
 	return Tags{
 		Application: application,

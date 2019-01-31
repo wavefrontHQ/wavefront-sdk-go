@@ -104,6 +104,8 @@ sender.SendDeltaCounter("lambda.thumbnail.generate", 10.0, "thumbnail_service", 
 #### Distributions
 
 ```go
+import "github.com/wavefronthq/wavefront-sdk-go/histogram"
+
 // Wavefront Histogram data format
 // {!M | !H | !D} [<timestamp>] #<count> <mean> [centroids] <histogramName> source=<source> [pointTags]
 // Example: You can choose to send to at most 3 bins - Minute/Hour/Day
@@ -111,7 +113,7 @@ sender.SendDeltaCounter("lambda.thumbnail.generate", 10.0, "thumbnail_service", 
 // "!H 1533529977 #20 30.0 #10 5.1 request.latency source=appServer1 region=us-west"
 // "!D 1533529977 #20 30.0 #10 5.1 request.latency source=appServer1 region=us-west"
 
-centroids := []wavefront.Centroid {
+centroids := []histogram.Centroid {
       {
         Value : 30.0,
         Count : 20,
@@ -122,10 +124,10 @@ centroids := []wavefront.Centroid {
       },
 }
 
-hgs := map[wavefront.HistogramGranularity]bool {
-    wavefront.MINUTE : true,
-    wavefront.HOUR   : true,
-    wavefront.DAY    : true,
+hgs := map[histogram.Granularity]bool {
+    histogram.MINUTE : true,
+    histogram.HOUR   : true,
+    histogram.DAY    : true,
 }
 
 sender.SendDistribution("request.latency", centroids, hgs, 0, "appServer1", map[string]string {"region" : "us-west"})

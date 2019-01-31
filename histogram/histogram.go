@@ -22,7 +22,7 @@ type Histogram interface {
 	Granularity() Granularity
 }
 
-// Option allow histogram customization
+// Option allows histogram customization
 type Option func(*histogramImpl)
 
 // GranularityOption of the histogram
@@ -50,7 +50,7 @@ func defaultHistogramImpl() *histogramImpl {
 	return &histogramImpl{maxBins: 10, granularity: MINUTE, compression: 5}
 }
 
-// New create a histogram
+// Creates a new Wavefront histogram
 func New(setters ...Option) Histogram {
 	h := defaultHistogramImpl()
 	for _, setter := range setters {
@@ -74,7 +74,7 @@ type timedBin struct {
 	timestamp time.Time
 }
 
-// Distribution holds the samples and its timestamp
+// Distribution holds the samples and its timestamp.
 type Distribution struct {
 	Centroids []Centroid
 	Timestamp time.Time
@@ -98,7 +98,7 @@ func (h *histogramImpl) Quantile(q float64) float64 {
 	return h.currentTimedBin.tdigest.Quantile(q)
 }
 
-// Max returns the maximun Value of samples on this histogram.
+// Max returns the maximum value of samples on this histogram.
 func (h *histogramImpl) Max() float64 {
 	h.rotateCurrentTDigestIfNeedIt()
 
@@ -113,7 +113,7 @@ func (h *histogramImpl) Max() float64 {
 	return max
 }
 
-// Min returns the minimun Value of samples on this histogram.
+// Min returns the minimum value of samples on this histogram.
 func (h *histogramImpl) Min() float64 {
 	h.rotateCurrentTDigestIfNeedIt()
 
