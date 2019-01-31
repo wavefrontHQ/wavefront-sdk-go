@@ -21,27 +21,27 @@ func TestMetricLine(t *testing.T) {
 func TestHistoLine(t *testing.T) {
 	centroids := makeCentroids()
 
-	line, err := HistoLine("request.latency", centroids, map[histogram.HistogramGranularity]bool{histogram.MINUTE: true},
+	line, err := HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
 	expected := "!M 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
 	assertEquals(expected, line, err, t)
 
-	line, err = HistoLine("request.latency", centroids, map[histogram.HistogramGranularity]bool{histogram.MINUTE: true},
+	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
 		1533529977, "", map[string]string{"env": "test"}, "default")
 	expected = "!M 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assertEquals(expected, line, err, t)
 
-	line, err = HistoLine("request.latency", centroids, map[histogram.HistogramGranularity]bool{histogram.HOUR: true},
+	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.HOUR: true},
 		1533529977, "", map[string]string{"env": "test"}, "default")
 	expected = "!H 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assertEquals(expected, line, err, t)
 
-	line, err = HistoLine("request.latency", centroids, map[histogram.HistogramGranularity]bool{histogram.DAY: true},
+	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.DAY: true},
 		1533529977, "", map[string]string{"env": "test"}, "default")
 	expected = "!D 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assertEquals(expected, line, err, t)
 
-	line, err = HistoLine("request.latency", centroids, map[histogram.HistogramGranularity]bool{histogram.MINUTE: true, histogram.HOUR: true},
+	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: true},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
 	expected = "!M 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n" +
 		"!H 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"

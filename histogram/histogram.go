@@ -12,19 +12,21 @@ import (
 type Histogram interface {
 	Update(v float64)
 	Distributions() []Distribution
+	Snapshot() []Distribution
 	Count() uint64
 	Quantile(q float64) float64
 	Max() float64
 	Min() float64
 	Sum() float64
 	Mean() float64
+	Granularity() Granularity
 }
 
 // Option allow histogram customization
 type Option func(*histogramImpl)
 
-// Granularity of the histogram
-func Granularity(g time.Duration) Option {
+// GranularityOption of the histogram
+func GranularityOption(g Granularity) Option {
 	return func(args *histogramImpl) {
 		args.granularity = g
 	}
@@ -45,16 +47,11 @@ func MaxBins(c int) Option {
 }
 
 func defaultHistogramImpl() *histogramImpl {
-	return &histogramImpl{maxBins: 10, granularity: time.Minute, compression: 5}
+	return &histogramImpl{maxBins: 10, granularity: MINUTE, compression: 5}
 }
 
-// NewHistogram create a histogram
-func NewHistogram() Histogram {
-	return defaultHistogramImpl()
-}
-
-// NewHistogramWithOptions create a custom histogram
-func NewHistogramWithOptions(setters ...Option) Histogram {
+// New create a histogram
+func New(setters ...Option) Histogram {
 	h := defaultHistogramImpl()
 	for _, setter := range setters {
 		setter(h)
@@ -67,7 +64,7 @@ type histogramImpl struct {
 	priorTimedBinsList []*timedBin
 	currentTimedBin    *timedBin
 
-	granularity time.Duration
+	granularity Granularity
 	compression uint32
 	maxBins     int
 }
@@ -124,10 +121,12 @@ func (h *histogramImpl) Min() float64 {
 	defer h.mutex.Unlock()
 
 	min := math.MaxFloat64
-	h.currentTimedBin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
-		min = math.Min(min, mean)
-		return true
-	})
+	for _, bin := range append(h.priorTimedBinsList, h.currentTimedBin) {
+		bin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
+			min = math.Min(min, mean)
+			return true
+		})
+	}
 	return min
 }
 
@@ -139,14 +138,16 @@ func (h *histogramImpl) Sum() float64 {
 	defer h.mutex.Unlock()
 
 	sum := float64(0)
-	h.currentTimedBin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
-		sum += mean * float64(count)
-		return true
-	})
+	for _, bin := range append(h.priorTimedBinsList, h.currentTimedBin) {
+		bin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
+			sum += mean * float64(count)
+			return true
+		})
+	}
 	return sum
 }
 
-// Count returns the maen values of samples on this histogram.
+// Mean returns the mean values of samples on this histogram.
 func (h *histogramImpl) Mean() float64 {
 	h.rotateCurrentTDigestIfNeedIt()
 
@@ -155,12 +156,19 @@ func (h *histogramImpl) Mean() float64 {
 
 	t := float64(0)
 	c := uint32(0)
-	h.currentTimedBin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
-		t += mean * float64(count)
-		c += count
-		return true
-	})
+	for _, bin := range append(h.priorTimedBinsList, h.currentTimedBin) {
+		bin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
+			t += mean * float64(count)
+			c += count
+			return true
+		})
+	}
 	return t / float64(c)
+}
+
+// Granularity value
+func (h *histogramImpl) Granularity() Granularity {
+	return h.granularity
 }
 
 // Snapshot returns a copy of all samples on comlepted time slices
@@ -210,7 +218,7 @@ func (h *histogramImpl) rotateCurrentTDigestIfNeedIt() {
 }
 
 func (h *histogramImpl) now() time.Time {
-	return time.Now().Truncate(h.granularity)
+	return time.Now().Truncate(h.granularity.Duration())
 }
 
 func (h *histogramImpl) newTimedBin() *timedBin {

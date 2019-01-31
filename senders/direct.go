@@ -83,7 +83,7 @@ func (sender *directSender) SendDeltaCounter(name string, value float64, source 
 	return sender.SendMetric(name, value, 0, source, tags)
 }
 
-func (sender *directSender) SendDistribution(name string, centroids []histogram.Centroid, hgs map[histogram.HistogramGranularity]bool, ts int64, source string, tags map[string]string) error {
+func (sender *directSender) SendDistribution(name string, centroids []histogram.Centroid, hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
 	line, err := HistoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		return err
