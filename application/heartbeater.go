@@ -1,29 +1,28 @@
-package heartbeater
+package application
 
 import (
 	"log"
 	"time"
 
-	"github.com/wavefronthq/wavefront-sdk-go/application"
 	"github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
-// Service sends a beat metric each 5 mins
-type Service interface {
+// HeartbeatService sends a heartbeat metric each 5 mins
+type HeartbeatService interface {
 	Close()
 }
 
 type heartbeater struct {
 	sender      senders.Sender
-	application application.Tags
+	application Tags
 	source      string
 
 	ticker *time.Ticker
 	stop   chan bool
 }
 
-// Start will create and start a new Heartbeater.Service
-func Start(sender senders.Sender, application application.Tags, source string) Service {
+// StartHeartbeatService will create and start a new HeartbeatService
+func StartHeartbeatService(sender senders.Sender, application Tags, source string) HeartbeatService {
 	hb := &heartbeater{
 		sender:      sender,
 		application: application,
@@ -55,10 +54,8 @@ func (hb *heartbeater) Close() {
 func (hb *heartbeater) beat() {
 	tags := hb.application.Map()
 	tags["component"] = "wavefront-generated"
-	error := hb.sender.SendMetric("~component.heartbeat", 1, 0, hb.source, tags)
-	if error != nil {
-		log.Printf("heartbeater SendMetric error: %v\n", error)
-	} else {
-		log.Printf("heartbeater beat OK\n")
+	err := hb.sender.SendMetric("~component.heartbeat", 1, 0, hb.source, tags)
+	if err != nil {
+		log.Printf("heartbeater SendMetric error: %v\n", err)
 	}
 }
