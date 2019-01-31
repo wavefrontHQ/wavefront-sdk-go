@@ -2,26 +2,24 @@ package histogram
 
 import "time"
 
-// A centroid encapsulates a mean value and the count of points associated with that value.
+// Centroid encapsulates a mean value and the count of points associated with that value.
 type Centroid struct {
 	Value float64
 	Count int
 }
 
-// The interval (MINUTE, HOUR and/or DAY) by which the histogram data should be aggregated.
-type HistogramGranularity int8
+// Granularity is the interval (MINUTE, HOUR and/or DAY) by which the histogram data should be aggregated.
+type Granularity int8
 
 const (
-	SECOND HistogramGranularity = iota
-	MINUTE
+	MINUTE Granularity = iota
 	HOUR
 	DAY
 )
 
-func (hg *HistogramGranularity) Duration() time.Duration {
+// Duration of the Granularity
+func (hg *Granularity) Duration() time.Duration {
 	switch *hg {
-	case SECOND: // just for testing
-		return time.Second
 	case MINUTE:
 		return time.Minute
 	case HOUR:
@@ -31,7 +29,7 @@ func (hg *HistogramGranularity) Duration() time.Duration {
 	}
 }
 
-func (hg *HistogramGranularity) String() string {
+func (hg *Granularity) String() string {
 	switch *hg {
 	case MINUTE:
 		return "!M"

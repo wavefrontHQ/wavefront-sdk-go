@@ -19,14 +19,14 @@ type Histogram interface {
 	Min() float64
 	Sum() float64
 	Mean() float64
-	Granularity() HistogramGranularity
+	Granularity() Granularity
 }
 
 // Option allow histogram customization
 type Option func(*histogramImpl)
 
-// Granularity of the histogram
-func Granularity(g HistogramGranularity) Option {
+// GranularityOption of the histogram
+func GranularityOption(g Granularity) Option {
 	return func(args *histogramImpl) {
 		args.granularity = g
 	}
@@ -64,7 +64,7 @@ type histogramImpl struct {
 	priorTimedBinsList []*timedBin
 	currentTimedBin    *timedBin
 
-	granularity HistogramGranularity
+	granularity Granularity
 	compression uint32
 	maxBins     int
 }
@@ -167,7 +167,7 @@ func (h *histogramImpl) Mean() float64 {
 }
 
 // Granularity value
-func (h *histogramImpl) Granularity() HistogramGranularity {
+func (h *histogramImpl) Granularity() Granularity {
 	return h.granularity
 }
 

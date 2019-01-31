@@ -24,7 +24,7 @@ type DistributionSender interface {
 	// and the second dimension the count of points in the centroid.
 	// The granularity informs the set of intervals (minute, hour, and/or day) by which the
 	// histogram data should be aggregated.
-	SendDistribution(name string, centroids []histogram.Centroid, hgs map[histogram.HistogramGranularity]bool, ts int64, source string, tags map[string]string) error
+	SendDistribution(name string, centroids []histogram.Centroid, hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error
 }
 
 // Interface for sending tracing spans to Wavefront
