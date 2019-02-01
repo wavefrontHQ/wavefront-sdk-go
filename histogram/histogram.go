@@ -83,18 +83,30 @@ type Distribution struct {
 // Update registers a new sample in the histogram.
 func (h *histogramImpl) Update(v float64) {
 	h.rotateCurrentTDigestIfNeedIt()
+
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
 	h.currentTimedBin.tdigest.Add(v)
 }
 
 // Count returns the total number of samples on this histogram.
 func (h *histogramImpl) Count() uint64 {
 	h.rotateCurrentTDigestIfNeedIt()
+
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
 	return h.currentTimedBin.tdigest.Count()
 }
 
 // Quantile returns the desired percentile estimation.
 func (h *histogramImpl) Quantile(q float64) float64 {
 	h.rotateCurrentTDigestIfNeedIt()
+
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
 	return h.currentTimedBin.tdigest.Quantile(q)
 }
 

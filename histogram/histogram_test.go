@@ -7,6 +7,10 @@ import (
 )
 
 func TestHistogram(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Histogram tests in short mode")
+	}
+
 	h := New(MaxBins(3), GranularityOption(MINUTE))
 
 	for i := 0; i < 5; i++ {
