@@ -115,10 +115,13 @@ func (handler *ProxyConnectionHandler) SendData(lines string) error {
 		}
 	}()
 
-	handler.mtx.RLock()
-	defer handler.mtx.RUnlock()
+	// bufio.Writer isn't thread safe
+	handler.mtx.Lock()
+	defer handler.mtx.Unlock()
 
 	if handler.conn != nil {
+		// Set a generous timeout to the write
+		handler.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 		_, err := fmt.Fprint(handler.writer, lines)
 		if err != nil {
 			atomic.AddInt64(&handler.failures, 1)
