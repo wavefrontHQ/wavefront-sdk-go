@@ -9,7 +9,7 @@ type Tags struct {
 	CustomTags  map[string]string
 }
 
-// Creates a new Tags with application and service name
+// New creates a new application Tags with application and service name
 func New(application, service string) Tags {
 	return Tags{
 		Application: application,
@@ -32,6 +32,6 @@ func (a Tags) Map() map[string]string {
 	for k, v := range a.CustomTags {
 		allTags[k] = v
 	}
-	
+
 	return allTags
 }
