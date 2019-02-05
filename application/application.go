@@ -14,8 +14,8 @@ func New(application, service string) Tags {
 	return Tags{
 		Application: application,
 		Service:     service,
-		Cluster = "none",
-		Shard = "none",
+		Cluster:     "none",
+		Shard:       "none",
 		CustomTags:  make(map[string]string, 0),
 	}
 }
