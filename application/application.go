@@ -23,7 +23,6 @@ func New(application, service string) Tags {
 // Map with all values
 func (a Tags) Map() map[string]string {
 	allTags := make(map[string]string)
-
 	allTags["application"] = a.Application
 	allTags["service"] = a.Service
 	allTags["cluster"] = a.Cluster
@@ -32,6 +31,5 @@ func (a Tags) Map() map[string]string {
 	for k, v := range a.CustomTags {
 		allTags[k] = v
 	}
-
 	return allTags
 }
