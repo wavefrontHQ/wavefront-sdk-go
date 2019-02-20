@@ -10,7 +10,7 @@ To implement this choice:
 
     ```
     import (
-        wavefront "github.com/wavefronthq/wavefront-sdk-go/senders"
+        "github.com/wavefronthq/wavefront-sdk-go/senders"
     )
     ```
 2. Create a `Sender` instance:
@@ -43,11 +43,11 @@ You should override the defaults _only_ to set higher values.
 ```go
 import (
     time
-    wavefront "github.com/wavefronthq/wavefront-sdk-go/senders"
+    "github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
 func main() {
-    directCfg := &wavefront.DirectConfiguration {
+    directCfg := &senders.DirectConfiguration {
         // Your Wavefront instance URL
         Server : "https://INSTANCE.wavefront.com", 
         
@@ -65,7 +65,7 @@ func main() {
     }
 
     // Create the direct sender
-    sender, err := wavefront.NewDirectSender(directCfg)
+    sender, err := senders.NewDirectSender(directCfg)
     if err != nil {
         // handle error
     }
@@ -86,11 +86,11 @@ To create a proxy `Sender`, you configure it with a `ProxyConfiguration` that in
 
 ```go
 import (
-    wavefront "github.com/wavefronthq/wavefront-sdk-go/senders"
+    "github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
 func main() {
-    proxyCfg := &wavefront.ProxyConfiguration {
+    proxyCfg := &senders.ProxyConfiguration {
         // The proxy hostname or address
         Host : "proxyHostname or proxyIPAddress",
 
@@ -111,7 +111,7 @@ func main() {
     }
 
     // Create the proxy sender
-    sender, err := wavefront.NewProxySender(proxyCfg)
+    sender, err := senders.NewProxySender(proxyCfg)
     if err != nil {
         // handle error
     }
@@ -137,23 +137,7 @@ If you are using multiple Wavefront Go SDKs within the same process, you can cre
 <!--- 
 For example, the following snippet shows how to use the same `Sender` when setting up the [wavefront-opentracing-sdk-go](https://github.com/wavefrontHQ/wavefront-opentracing-sdk-go) and XXX SDKs.
 
-```java
-
-// Create a Wavefront Sender
-WavefrontSender wavefrontSender = buildProxyOrDirectSender(); // pseudocode
-
-// Create a WavefrontSpanReporter for the OpenTracing SDK
-Reporter spanReporter = new WavefrontSpanReporter.Builder().
-   withSource("wavefront-tracing-example").
-   build(wavefrontSender);
-
-// Create a Wavefront reporter for the Dropwizard Metrics SDK
-MetricRegistry registry = new MetricRegistry();
-DropwizardMetricsReporter.Builder builder =   
-DropwizardMetricsReporter metricsReporter =
-   DropwizardMetricsReporter.forRegistry(registry).
-   build(wavefrontSender);
-...
+```
 ```
 --->
 **Note:** If you use SDKs in different processes, you must create one `Sender` instance per process.
