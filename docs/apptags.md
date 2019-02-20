@@ -28,13 +28,3 @@ To set the optional `cluster` and `shard` tags:
 appTags.Cluster = "us-west-2"
 appTags.Shard = "primary"
 ```
-
-<!---
-String cluster = "us-west-2";
-String shard = "secondary";
-
-Map<String, String> customTags = new HashMap<String, String>() {{
-  put("location", "Oregon");
-  put("env", "Staging");
-}};
---->
