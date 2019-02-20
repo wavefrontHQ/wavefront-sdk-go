@@ -1,3 +1,5 @@
+// Package application provides functionality for encapsulating details about your Go application.
+// The application details can be reported to Wavefront in the form of tags.
 package application
 
 // Encapsulates application details

@@ -1,3 +1,4 @@
+// Package histogram provides an histogram interface and a Wavefront histogram implementation (https://docs.wavefront.com/proxies_histograms.html).
 package histogram
 
 import (
