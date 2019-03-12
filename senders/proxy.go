@@ -50,10 +50,10 @@ func NewProxySender(cfg *ProxyConfiguration) (Sender, error) {
 	return sender, nil
 }
 
-func makeConnHandler(host string, port, interval int) internal.ConnectionHandler {
+func makeConnHandler(host string, port, flushIntervalSeconds int) internal.ConnectionHandler {
 	addr := fmt.Sprintf("%s:%d", host, port)
-	ticker := time.NewTicker(time.Second * time.Duration(interval))
-	return internal.NewProxyConnectionHandler(addr, ticker)
+	flushInterval := time.Second * time.Duration(flushIntervalSeconds)
+	return internal.NewProxyConnectionHandler(addr, flushInterval)
 }
 
 func (sender *proxySender) Start() {
@@ -73,11 +73,9 @@ func (sender *proxySender) SendMetric(name string, value float64, ts int64, sour
 		return fmt.Errorf("proxy metrics port not provided, cannot send metric data")
 	}
 
-	if !sender.metricHandler.Connected() {
-		err := sender.metricHandler.Connect()
-		if err != nil {
-			return err
-		}
+	err := sender.metricHandler.Connect()
+	if err != nil {
+		return err
 	}
 
 	line, err := MetricLine(name, value, ts, source, tags, sender.defaultSource)
@@ -103,11 +101,9 @@ func (sender *proxySender) SendDistribution(name string, centroids []histogram.C
 		return fmt.Errorf("proxy distribution port not provided, cannot send distribution data")
 	}
 
-	if !sender.histoHandler.Connected() {
-		err := sender.histoHandler.Connect()
-		if err != nil {
-			return err
-		}
+	err := sender.histoHandler.Connect()
+	if err != nil {
+		return err
 	}
 
 	line, err := HistoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
@@ -123,11 +119,9 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 		return fmt.Errorf("proxy tracing port not provided, cannot send span data")
 	}
 
-	if !sender.spanHandler.Connected() {
-		err := sender.spanHandler.Connect()
-		if err != nil {
-			return err
-		}
+	err := sender.spanHandler.Connect()
+	if err != nil {
+		return err
 	}
 
 	line, err := SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)

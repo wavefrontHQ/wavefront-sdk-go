@@ -21,7 +21,7 @@ func MetricLine(name string, value float64, ts int64, source string, tags map[st
 		source = defaultSource
 	}
 
-	sb := bytes.NewBufferString("")
+	sb := bytes.Buffer{}
 	sb.WriteString(strconv.Quote(name))
 	sb.WriteString(" ")
 	sb.WriteString(strconv.FormatFloat(value, 'f', -1, 64))
@@ -68,36 +68,41 @@ func HistoLine(name string, centroids []histogram.Centroid, hgs map[histogram.Gr
 		source = defaultSource
 	}
 
-	sb := bytes.NewBufferString("")
-	for hg := range hgs {
-		sb.WriteString(hg.String())
-		if ts != 0 {
-			sb.WriteString(" ")
-			sb.WriteString(strconv.FormatInt(ts, 10))
-		}
-		for _, centroid := range centroids {
-			sb.WriteString(" #")
-			sb.WriteString(strconv.Itoa(centroid.Count))
-			sb.WriteString(" ")
-			sb.WriteString(strconv.FormatFloat(centroid.Value, 'f', -1, 64))
+	// Preprocess line. We know len(hgs) > 0 here.
+	sb := bytes.Buffer{}
+	if ts != 0 {
+		sb.WriteString(" ")
+		sb.WriteString(strconv.FormatInt(ts, 10))
+	}
+	for _, centroid := range centroids {
+		sb.WriteString(" #")
+		sb.WriteString(strconv.Itoa(centroid.Count))
+		sb.WriteString(" ")
+		sb.WriteString(strconv.FormatFloat(centroid.Value, 'f', -1, 64))
+	}
+	sb.WriteString(" ")
+	sb.WriteString(strconv.Quote(name))
+	sb.WriteString(" source=")
+	sb.WriteString(strconv.Quote(source))
+
+	for k, v := range tags {
+		if v == "" {
+			return "", fmt.Errorf("histogram tag value cannot be blank")
 		}
 		sb.WriteString(" ")
-		sb.WriteString(strconv.Quote(name))
-		sb.WriteString(" source=")
-		sb.WriteString(strconv.Quote(source))
-
-		for k, v := range tags {
-			if v == "" {
-				return "", fmt.Errorf("histogram tag value cannot be blank")
-			}
-			sb.WriteString(" ")
-			sb.WriteString(strconv.Quote(k))
-			sb.WriteString("=")
-			sb.WriteString(strconv.Quote(v))
-		}
-		sb.WriteString("\n")
+		sb.WriteString(strconv.Quote(k))
+		sb.WriteString("=")
+		sb.WriteString(strconv.Quote(v))
 	}
-	return sb.String(), nil
+	sbBytes := sb.Bytes()
+
+	sbg := bytes.Buffer{}
+	for hg := range hgs {
+		sbg.WriteString(hg.String())
+		sbg.Write(sbBytes)
+		sbg.WriteString("\n")
+	}
+	return sbg.String(), nil
 }
 
 // Gets a span line in the Wavefront span data format:
@@ -117,7 +122,7 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 
 	//TODO: verify if strings are uuid?
 
-	sb := bytes.NewBufferString("")
+	sb := bytes.Buffer{}
 	sb.WriteString(strconv.Quote(name))
 	sb.WriteString(" source=")
 	sb.WriteString(strconv.Quote(source))

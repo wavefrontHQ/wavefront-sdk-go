@@ -2,7 +2,6 @@ package senders
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
@@ -18,7 +17,6 @@ const (
 type directSender struct {
 	reporter      internal.Reporter
 	defaultSource string
-	mtx           sync.Mutex
 	pointHandler  *internal.LineHandler
 	histoHandler  *internal.LineHandler
 	spanHandler   *internal.LineHandler
@@ -50,13 +48,8 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 }
 
 func makeLineHandler(reporter internal.Reporter, cfg *DirectConfiguration, format string) *internal.LineHandler {
-	return &internal.LineHandler{
-		Reporter:      reporter,
-		BatchSize:     cfg.BatchSize,
-		MaxBufferSize: cfg.MaxBufferSize,
-		FlushTicker:   time.NewTicker(time.Second * time.Duration(cfg.FlushIntervalSeconds)),
-		Format:        format,
-	}
+	flushInterval := time.Second * time.Duration(cfg.FlushIntervalSeconds)
+	return internal.NewLineHandler(reporter, format, flushInterval, cfg.BatchSize, cfg.MaxBufferSize)
 }
 
 func (sender *directSender) Start() {

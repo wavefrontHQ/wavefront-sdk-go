@@ -19,7 +19,7 @@ type heartbeater struct {
 	components  []string
 
 	ticker *time.Ticker
-	stop   chan bool
+	stop   chan struct{}
 }
 
 // StartHeartbeatService will create and start a new HeartbeatService
@@ -30,7 +30,7 @@ func StartHeartbeatService(sender senders.Sender, application Tags, source strin
 		source:      source,
 		components:  components,
 		ticker:      time.NewTicker(5 * time.Minute),
-		stop:        make(chan bool, 1),
+		stop:        make(chan struct{}),
 	}
 
 	go func() {
@@ -49,7 +49,8 @@ func StartHeartbeatService(sender senders.Sender, application Tags, source strin
 }
 
 func (hb *heartbeater) Close() {
-	hb.stop <- true
+	hb.ticker.Stop()
+	hb.stop <- struct{}{} // block until goroutine exits
 }
 
 func (hb *heartbeater) beat() {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -12,21 +13,32 @@ type LineHandler struct {
 	Reporter      Reporter
 	BatchSize     int
 	MaxBufferSize int
-	FlushTicker   *time.Ticker
 	Format        string
+	flushTicker   *time.Ticker
+	mtx           sync.Mutex
 	failures      int64
 	buffer        chan string
-	done          chan bool
+	done          chan struct{}
+}
+
+func NewLineHandler(reporter Reporter, format string, flushInterval time.Duration, batchSize, maxBufferSize int) *LineHandler {
+	return &LineHandler{
+		Reporter:      reporter,
+		BatchSize:     batchSize,
+		MaxBufferSize: maxBufferSize,
+		flushTicker:   time.NewTicker(flushInterval),
+		Format:        format,
+	}
 }
 
 func (lh *LineHandler) Start() {
 	lh.buffer = make(chan string, lh.MaxBufferSize)
-	lh.done = make(chan bool)
+	lh.done = make(chan struct{})
 
 	go func() {
 		for {
 			select {
-			case <-lh.FlushTicker.C:
+			case <-lh.flushTicker.C:
 				err := lh.Flush()
 				if err != nil {
 					log.Println(err)
@@ -49,11 +61,27 @@ func (lh *LineHandler) HandleLine(line string) error {
 }
 
 func (lh *LineHandler) Flush() error {
+	lh.mtx.Lock()
+	defer lh.mtx.Unlock()
 	bufLen := len(lh.buffer)
 	if bufLen > 0 {
 		size := min(bufLen, lh.BatchSize)
 		lines := make([]string, size)
 		for i := 0; i < size; i++ {
+			lines[i] = <-lh.buffer
+		}
+		return lh.report(lines)
+	}
+	return nil
+}
+
+func (lh *LineHandler) FlushAll() error {
+	lh.mtx.Lock()
+	defer lh.mtx.Unlock()
+	bufLen := len(lh.buffer)
+	if bufLen > 0 {
+		lines := make([]string, bufLen)
+		for i := 0; i < bufLen; i++ {
 			lines[i] = <-lh.buffer
 		}
 		return lh.report(lines)
@@ -89,7 +117,11 @@ func (lh *LineHandler) GetFailureCount() int64 {
 }
 
 func (lh *LineHandler) Stop() {
-	lh.Flush()
-	close(lh.done)
-	lh.FlushTicker.Stop()
+	lh.flushTicker.Stop()
+	lh.done <- struct{}{} // block until goroutine exits
+	if err := lh.FlushAll(); err != nil {
+		log.Println(err)
+	}
+	lh.done = nil
+	lh.buffer = nil
 }
