@@ -141,9 +141,9 @@ sender.SendDistribution("request.latency", centroids, hgs, 0, "appServer1", map[
 // Example:
 // "getAllUsers source=localhost traceId=7b3bf470-9456-11e8-9eb6-529269fb1459
 // spanId=0313bafe-9457-11e8-9eb6-529269fb1459 parent=2f64e538-9457-11e8-9eb6-529269fb1459
-// application=Wavefront http.method=GET 1533529977 343500"
+// application=Wavefront http.method=GET 1552949776000 343"
 
-sender.SendSpan("getAllUsers", 0, 343500, "localhost",
+sender.SendSpan("getAllUsers", 1552949776000, 343, "localhost",
     "7b3bf470-9456-11e8-9eb6-529269fb1459",
     "0313bafe-9457-11e8-9eb6-529269fb1459",
     []string {"2f64e538-9457-11e8-9eb6-529269fb1459"},
