@@ -2,7 +2,7 @@ package senders
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"strconv"
 
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
@@ -14,7 +14,7 @@ import (
 func MetricLine(name string, value float64, ts int64, source string, tags map[string]string, defaultSource string) (string, error) {
 
 	if name == "" {
-		return "", fmt.Errorf("empty metric name")
+		return "", errors.New("empty metric name")
 	}
 
 	if source == "" {
@@ -36,7 +36,7 @@ func MetricLine(name string, value float64, ts int64, source string, tags map[st
 
 	for k, v := range tags {
 		if v == "" {
-			return "", fmt.Errorf("metric point tag value cannot be blank")
+			return "", errors.New("metric point tag value cannot be blank")
 		}
 		sb.WriteString(" ")
 		sb.WriteString(strconv.Quote(k))
@@ -53,15 +53,15 @@ func MetricLine(name string, value float64, ts int64, source string, tags map[st
 func HistoLine(name string, centroids []histogram.Centroid, hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string, defaultSource string) (string, error) {
 
 	if name == "" {
-		return "", fmt.Errorf("empty distribution name")
+		return "", errors.New("empty distribution name")
 	}
 
 	if len(centroids) == 0 {
-		return "", fmt.Errorf("distribution should have at least one centroid")
+		return "", errors.New("distribution should have at least one centroid")
 	}
 
 	if len(hgs) == 0 {
-		return "", fmt.Errorf("histogram granularities cannot be empty")
+		return "", errors.New("histogram granularities cannot be empty")
 	}
 
 	if source == "" {
@@ -87,7 +87,7 @@ func HistoLine(name string, centroids []histogram.Centroid, hgs map[histogram.Gr
 
 	for k, v := range tags {
 		if v == "" {
-			return "", fmt.Errorf("histogram tag value cannot be blank")
+			return "", errors.New("histogram tag value cannot be blank")
 		}
 		sb.WriteString(" ")
 		sb.WriteString(strconv.Quote(k))
@@ -113,14 +113,19 @@ func HistoLine(name string, centroids []histogram.Centroid, hgs map[histogram.Gr
 func SpanLine(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog, defaultSource string) (string, error) {
 
 	if name == "" {
-		return "", fmt.Errorf("empty span name")
+		return "", errors.New("empty span name")
 	}
 
 	if source == "" {
 		source = defaultSource
 	}
 
-	//TODO: verify if strings are uuid?
+	if !isUUIDFormat(traceId) {
+		return "", errors.New("traceId is not in UUID format")
+	}
+	if !isUUIDFormat(spanId) {
+		return "", errors.New("spanId is not in UUID format")
+	}
 
 	sb := bytes.Buffer{}
 	sb.WriteString(strconv.Quote(name))
@@ -143,7 +148,7 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 
 	for _, tag := range tags {
 		if tag.Key == "" || tag.Value == "" {
-			return "", fmt.Errorf("span tag key/value cannot be blank")
+			return "", errors.New("span tag key/value cannot be blank")
 		}
 		sb.WriteString(" ")
 		sb.WriteString(strconv.Quote(tag.Key))
@@ -157,4 +162,22 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 	sb.WriteString("\n")
 
 	return sb.String(), nil
+}
+
+func isUUIDFormat(str string) bool {
+	l := len(str)
+	if l != 36 {
+		return false
+	}
+	for i := 0; i < l; i++ {
+		c := str[i]
+		if i == 8 || i == 13 || i == 18 || i == 23 {
+			if c != '-' {
+				return false
+			}
+		} else if !(('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F')) {
+			return false
+		}
+	}
+	return true
 }

@@ -80,11 +80,21 @@ func (lh *LineHandler) FlushAll() error {
 	defer lh.mtx.Unlock()
 	bufLen := len(lh.buffer)
 	if bufLen > 0 {
-		lines := make([]string, bufLen)
+		var imod int
+		size := min(bufLen, lh.BatchSize)
+		lines := make([]string, size)
 		for i := 0; i < bufLen; i++ {
-			lines[i] = <-lh.buffer
+			imod = i % size
+			lines[imod] = <-lh.buffer
+			if imod == size-1 { // report batch
+				if err := lh.report(lines); err != nil {
+					return err
+				}
+			}
 		}
-		return lh.report(lines)
+		if imod < size-1 { // report remaining
+			return lh.report(lines[0 : imod+1])
+		}
 	}
 	return nil
 }

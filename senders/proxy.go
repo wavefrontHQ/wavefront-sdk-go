@@ -1,7 +1,8 @@
 package senders
 
 import (
-	"fmt"
+	"errors"
+	"strconv"
 	"time"
 
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
@@ -37,7 +38,7 @@ func NewProxySender(cfg *ProxyConfiguration) (Sender, error) {
 	}
 
 	if metricHandler == nil && histoHandler == nil && spanHandler == nil {
-		return nil, fmt.Errorf("at least one proxy port should be enabled")
+		return nil, errors.New("at least one proxy port should be enabled")
 	}
 
 	sender := &proxySender{
@@ -51,7 +52,7 @@ func NewProxySender(cfg *ProxyConfiguration) (Sender, error) {
 }
 
 func makeConnHandler(host string, port, flushIntervalSeconds int) internal.ConnectionHandler {
-	addr := fmt.Sprintf("%s:%d", host, port)
+	addr := host + ":" + strconv.FormatInt(int64(port), 10)
 	flushInterval := time.Second * time.Duration(flushIntervalSeconds)
 	return internal.NewProxyConnectionHandler(addr, flushInterval)
 }
@@ -70,12 +71,13 @@ func (sender *proxySender) Start() {
 
 func (sender *proxySender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
 	if sender.metricHandler == nil {
-		return fmt.Errorf("proxy metrics port not provided, cannot send metric data")
+		return errors.New("proxy metrics port not provided, cannot send metric data")
 	}
 
-	err := sender.metricHandler.Connect()
-	if err != nil {
-		return err
+	if !sender.metricHandler.Connected() {
+		if err := sender.metricHandler.Connect(); err != nil {
+			return err
+		}
 	}
 
 	line, err := MetricLine(name, value, ts, source, tags, sender.defaultSource)
@@ -88,7 +90,7 @@ func (sender *proxySender) SendMetric(name string, value float64, ts int64, sour
 
 func (sender *proxySender) SendDeltaCounter(name string, value float64, source string, tags map[string]string) error {
 	if name == "" {
-		return fmt.Errorf("empty metric name")
+		return errors.New("empty metric name")
 	}
 	if !internal.HasDeltaPrefix(name) {
 		name = internal.DeltaCounterName(name)
@@ -98,12 +100,13 @@ func (sender *proxySender) SendDeltaCounter(name string, value float64, source s
 
 func (sender *proxySender) SendDistribution(name string, centroids []histogram.Centroid, hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
 	if sender.histoHandler == nil {
-		return fmt.Errorf("proxy distribution port not provided, cannot send distribution data")
+		return errors.New("proxy distribution port not provided, cannot send distribution data")
 	}
 
-	err := sender.histoHandler.Connect()
-	if err != nil {
-		return err
+	if !sender.histoHandler.Connected() {
+		if err := sender.histoHandler.Connect(); err != nil {
+			return err
+		}
 	}
 
 	line, err := HistoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
@@ -116,12 +119,13 @@ func (sender *proxySender) SendDistribution(name string, centroids []histogram.C
 
 func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
 	if sender.spanHandler == nil {
-		return fmt.Errorf("proxy tracing port not provided, cannot send span data")
+		return errors.New("proxy tracing port not provided, cannot send span data")
 	}
 
-	err := sender.spanHandler.Connect()
-	if err != nil {
-		return err
+	if !sender.spanHandler.Connected() {
+		if err := sender.spanHandler.Connect(); err != nil {
+			return err
+		}
 	}
 
 	line, err := SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
@@ -165,7 +169,7 @@ func (sender *proxySender) Flush() error {
 		}
 	}
 	if errStr != "" {
-		return fmt.Errorf(errStr)
+		return errors.New(errStr)
 	}
 	return nil
 }
