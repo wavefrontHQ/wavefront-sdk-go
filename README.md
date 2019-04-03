@@ -29,8 +29,8 @@ func main() {
 
         // At least one port should be set below.
         MetricsPort : 2878,      // set this (typically 2878) to send metrics
-        DistributionPort: 40000, // set this (typically 40000) to send distributions
-        TracingPort : 50000,     // set this to send tracing spans
+        DistributionPort: 2878,  // set this (typically 2878) to send distributions
+        TracingPort : 30000,     // set this to send tracing spans
 
         FlushIntervalSeconds: 10 // flush the buffer periodically, defaults to 5 seconds.
     }
