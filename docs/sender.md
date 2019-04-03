@@ -99,8 +99,8 @@ func main() {
         // Set the proxy port to send metrics to. Default: 2878
         MetricsPort : 2878, 
         
-        // Set a proxy port to send histograms to.  Recommended: 40000
-        DistributionPort: 40000,
+        // Set a proxy port to send histograms to.  Recommended: 2878
+        DistributionPort: 2878,
         
         // Set a proxy port to send trace data to. Recommended: 30000
         TracingPort : 50000,
