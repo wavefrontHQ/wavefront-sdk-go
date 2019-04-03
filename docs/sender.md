@@ -103,7 +103,7 @@ func main() {
         DistributionPort: 2878,
         
         // Set a proxy port to send trace data to. Recommended: 30000
-        TracingPort : 50000,
+        TracingPort : 30000,
         
         // Optional: Set a nondefault interval (in seconds) for flushing data from the sender to the proxy. Default: 5 seconds
         FlushIntervalSeconds: 10 
