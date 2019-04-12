@@ -182,7 +182,7 @@ func SpanLogJSON(traceId, spanId string, spanLogs []SpanLog) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(out[:]), nil
+	return string(out[:]) + "\n", nil
 }
 
 func isUUIDFormat(str string) bool {
