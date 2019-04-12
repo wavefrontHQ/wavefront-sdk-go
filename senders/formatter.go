@@ -2,6 +2,7 @@ package senders
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"strconv"
 
@@ -146,6 +147,13 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 		sb.WriteString(item)
 	}
 
+	if len(spanLogs) > 0 {
+		sb.WriteString(" ")
+		sb.WriteString(strconv.Quote("spanLogs"))
+		sb.WriteString("=")
+		sb.WriteString(strconv.Quote("true"))
+	}
+
 	for _, tag := range tags {
 		if tag.Key == "" || tag.Value == "" {
 			return "", errors.New("span tag key/value cannot be blank")
@@ -162,6 +170,19 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 	sb.WriteString("\n")
 
 	return sb.String(), nil
+}
+
+func SpanLogJSON(traceId, spanId string, spanLogs []SpanLog) (string, error) {
+	l := SpanLogs{
+		TraceId: traceId,
+		SpanId:  spanId,
+		Logs:    spanLogs,
+	}
+	out, err := json.Marshal(l)
+	if err != nil {
+		return "", err
+	}
+	return string(out[:]) + "\n", nil
 }
 
 func isUUIDFormat(str string) bool {

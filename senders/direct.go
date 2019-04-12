@@ -12,14 +12,16 @@ const (
 	metricFormat    = "wavefront"
 	histogramFormat = "histogram"
 	traceFormat     = "trace"
+	spanLogsFormat  = "spanLogs"
 )
 
 type directSender struct {
-	reporter      internal.Reporter
-	defaultSource string
-	pointHandler  *internal.LineHandler
-	histoHandler  *internal.LineHandler
-	spanHandler   *internal.LineHandler
+	reporter       internal.Reporter
+	defaultSource  string
+	pointHandler   *internal.LineHandler
+	histoHandler   *internal.LineHandler
+	spanHandler    *internal.LineHandler
+	spanLogHandler *internal.LineHandler
 }
 
 // Creates and returns a Wavefront Direct Ingestion Sender instance
@@ -38,10 +40,11 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 	}
 	reporter := internal.NewDirectReporter(cfg.Server, cfg.Token)
 	sender := &directSender{
-		defaultSource: internal.GetHostname("wavefront_direct_sender"),
-		pointHandler:  makeLineHandler(reporter, cfg, metricFormat),
-		histoHandler:  makeLineHandler(reporter, cfg, histogramFormat),
-		spanHandler:   makeLineHandler(reporter, cfg, traceFormat),
+		defaultSource:  internal.GetHostname("wavefront_direct_sender"),
+		pointHandler:   makeLineHandler(reporter, cfg, metricFormat),
+		histoHandler:   makeLineHandler(reporter, cfg, histogramFormat),
+		spanHandler:    makeLineHandler(reporter, cfg, traceFormat),
+		spanLogHandler: makeLineHandler(reporter, cfg, spanLogsFormat),
 	}
 	sender.Start()
 	return sender, nil
@@ -56,6 +59,7 @@ func (sender *directSender) Start() {
 	sender.pointHandler.Start()
 	sender.histoHandler.Start()
 	sender.spanHandler.Start()
+	sender.spanLogHandler.Start()
 }
 
 func (sender *directSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
@@ -89,13 +93,26 @@ func (sender *directSender) SendSpan(name string, startMillis, durationMillis in
 	if err != nil {
 		return err
 	}
-	return sender.spanHandler.HandleLine(line)
+	err = sender.spanHandler.HandleLine(line)
+	if err != nil {
+		return err
+	}
+
+	if len(spanLogs) > 0 {
+		logs, err := SpanLogJSON(traceId, spanId, spanLogs)
+		if err != nil {
+			return err
+		}
+		return sender.spanLogHandler.HandleLine(logs)
+	}
+	return nil
 }
 
 func (sender *directSender) Close() {
 	sender.pointHandler.Stop()
 	sender.histoHandler.Stop()
 	sender.spanHandler.Stop()
+	sender.spanLogHandler.Stop()
 }
 
 func (sender *directSender) Flush() error {
@@ -112,6 +129,10 @@ func (sender *directSender) Flush() error {
 	if err != nil {
 		errStr = errStr + err.Error()
 	}
+	err = sender.spanLogHandler.Flush()
+	if err != nil {
+		errStr = errStr + err.Error()
+	}
 	if errStr != "" {
 		return fmt.Errorf(errStr)
 	}
@@ -121,5 +142,6 @@ func (sender *directSender) Flush() error {
 func (sender *directSender) GetFailureCount() int64 {
 	return sender.pointHandler.GetFailureCount() +
 		sender.histoHandler.GetFailureCount() +
-		sender.spanHandler.GetFailureCount()
+		sender.spanHandler.GetFailureCount() +
+		sender.spanLogHandler.GetFailureCount()
 }

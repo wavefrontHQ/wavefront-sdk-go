@@ -133,7 +133,18 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 		return err
 	}
 	err = sender.spanHandler.SendData(line)
-	return err
+	if err != nil {
+		return err
+	}
+
+	if len(spanLogs) > 0 {
+		logs, err := SpanLogJSON(traceId, spanId, spanLogs)
+		if err != nil {
+			return err
+		}
+		return sender.spanHandler.SendData(logs)
+	}
+	return nil
 }
 
 func (sender *proxySender) Close() {
