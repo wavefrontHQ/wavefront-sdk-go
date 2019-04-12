@@ -32,7 +32,7 @@ func main() {
         DistributionPort: 2878,  // set this (typically 2878) to send distributions
         TracingPort : 30000,     // set this to send tracing spans
 
-        FlushIntervalSeconds: 10 // flush the buffer periodically, defaults to 5 seconds.
+        FlushIntervalSeconds: 10, // flush the buffer periodically, defaults to 5 seconds.
     }
 
     sender, err := wavefront.NewProxySender(proxyCfg)
@@ -93,7 +93,7 @@ Use the `Sender` interface for sending data to Wavefront.
 // Wavefront metrics data format
 // <metricName> <metricValue> [<timestamp>] source=<source> [pointTags]
 // Example: "new-york.power.usage 42422 1533529977 source=localhost datacenter=dc1"
-sender.SendMetric("new-york.power.usage", 42422.0, 0, "go_test", map[string]string{"env", "test"})
+sender.SendMetric("new-york.power.usage", 42422.0, 0, "go_test", map[string]string{"env" : "test"})
 
 // Wavefront delta counter format
 // <metricName> <metricValue> source=<source> [pointTags]
