@@ -6,6 +6,12 @@ type SpanTag struct {
 }
 
 type SpanLog struct {
-	Timestamp int64
-	Fields    map[string]string
+	Timestamp int64             `json:"timestamp"`
+	Fields    map[string]string `json:"fields"`
+}
+
+type SpanLogs struct {
+	TraceId string    `json:"traceId"`
+	SpanId  string    `json:"spanId"`
+	Logs    []SpanLog `json:"logs"`
 }
