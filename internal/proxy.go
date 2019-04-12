@@ -14,21 +14,21 @@ type ProxyConnectionHandler struct {
 	address     string
 	failures    int64
 	flushTicker *time.Ticker
-	done        chan bool
+	done        chan struct{}
 	mtx         sync.RWMutex
 	conn        net.Conn
 	writer      *bufio.Writer
 }
 
-func NewProxyConnectionHandler(address string, ticker *time.Ticker) ConnectionHandler {
+func NewProxyConnectionHandler(address string, flushInterval time.Duration) ConnectionHandler {
 	return &ProxyConnectionHandler{
 		address:     address,
-		flushTicker: ticker,
+		flushTicker: time.NewTicker(flushInterval),
 	}
 }
 
 func (handler *ProxyConnectionHandler) Start() {
-	handler.done = make(chan bool)
+	handler.done = make(chan struct{})
 
 	go func() {
 		for {
@@ -49,6 +49,11 @@ func (handler *ProxyConnectionHandler) Connect() error {
 	handler.mtx.Lock()
 	defer handler.mtx.Unlock()
 
+	// Skip if already connected
+	if handler.conn != nil {
+		return nil
+	}
+
 	var err error
 	handler.conn, err = net.DialTimeout("tcp", handler.address, time.Second*10)
 	if err != nil {
@@ -67,17 +72,18 @@ func (handler *ProxyConnectionHandler) Connected() bool {
 }
 
 func (handler *ProxyConnectionHandler) Close() {
+	handler.flushTicker.Stop()
+	handler.done <- struct{}{} // block until goroutine exits
+
 	err := handler.Flush()
 	if err != nil {
 		log.Println(err)
 	}
 
-	close(handler.done)
-	handler.flushTicker.Stop()
-
 	handler.mtx.Lock()
 	defer handler.mtx.Unlock()
 
+	handler.done = nil
 	if handler.conn != nil {
 		handler.conn.Close()
 		handler.conn = nil
@@ -133,6 +139,7 @@ func (handler *ProxyConnectionHandler) SendData(lines string) error {
 
 func (handler *ProxyConnectionHandler) resetConnection() {
 	log.Println("resetting wavefront proxy connection")
+	handler.conn.Close()
 	handler.conn = nil
 	handler.writer = nil
 }
