@@ -149,7 +149,7 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 
 	if len(spanLogs) > 0 {
 		sb.WriteString(" ")
-		sb.WriteString(strconv.Quote("spanLogs"))
+		sb.WriteString(strconv.Quote("_spanLogs"))
 		sb.WriteString("=")
 		sb.WriteString(strconv.Quote("true"))
 	}
