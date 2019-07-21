@@ -6,6 +6,22 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 )
 
+var line string
+
+func BenchmarkMetricLine(b *testing.B) {
+	name := "foo.metric"
+	value := 1.2
+	ts := int64(1533529977)
+	src := "test_source"
+	tags := map[string]string{"env": "test"}
+
+	var r string
+	for n := 0; n < b.N; n++ {
+		r, _ = MetricLine(name, value, ts, src, tags, "")
+	}
+	line = r
+}
+
 func TestMetricLine(t *testing.T) {
 	line, err := MetricLine("foo.metric", 1.2, 1533529977, "test_source",
 		map[string]string{"env": "test"}, "")
@@ -16,6 +32,21 @@ func TestMetricLine(t *testing.T) {
 		map[string]string{"env": "test"}, "default")
 	expected = "\"foo.metric\" 1.2 1533529977 source=\"default\" \"env\"=\"test\"\n"
 	assertEquals(expected, line, err, t)
+}
+
+func BenchmarkHistoLine(b *testing.B) {
+	name := "request.latency"
+	centroids := makeCentroids()
+	hgs := map[histogram.Granularity]bool{histogram.MINUTE: true}
+	ts := int64(1533529977)
+	src := "test_source"
+	tags := map[string]string{"env": "test"}
+
+	var r string
+	for n := 0; n < b.N; n++ {
+		r, _ = HistoLine(name, centroids, hgs, ts, src, tags, "")
+	}
+	line = r
 }
 
 func TestHistoLine(t *testing.T) {
@@ -48,6 +79,20 @@ func TestHistoLine(t *testing.T) {
 	if len(line) != len(expected) {
 		t.Errorf("lines don't match. expected: %s, actual: %s", expected, line)
 	}
+}
+
+func BenchmarkSpanLine(b *testing.B) {
+	name := "order.shirts"
+	start := int64(1533531013)
+	dur := int64(343500)
+	src := "test_source"
+	traceId := "7b3bf470-9456-11e8-9eb6-529269fb1459"
+
+	var r string
+	for n := 0; n < b.N; n++ {
+		r, _ = SpanLine(name, start, dur, src, traceId, traceId, []string{traceId}, nil, nil, nil, "")
+	}
+	line = r
 }
 
 func TestSpanLine(t *testing.T) {

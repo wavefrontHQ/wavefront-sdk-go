@@ -18,7 +18,7 @@ type DirectConfiguration struct {
 	// max batch of data sent per flush interval. defaults to 10,000. recommended not to exceed 40,000.
 	BatchSize int
 
-	// size of internal buffer beyond which received data is dropped.
+	// size of internal buffers beyond which received data is dropped.
 	// helps with handling brief increases in data and buffering on errors.
 	// separate buffers are maintained per data type (metrics, spans and distributions)
 	// buffers are not pre-allocated to max size and vary based on actual usage.

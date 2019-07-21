@@ -1,7 +1,6 @@
 package senders
 
 import (
-	"fmt"
 	"io"
 	"net"
 	"os"
@@ -15,7 +14,6 @@ var proxy Sender
 func netcat(addr string, keepopen bool) {
 	laddr, _ := net.ResolveTCPAddr("tcp", addr)
 	lis, _ := net.ListenTCP("tcp", laddr)
-	fmt.Println("Listening @", addr)
 	for loop := true; loop; loop = keepopen {
 		conn, _ := lis.Accept()
 		io.Copy(os.Stdout, conn)
