@@ -64,6 +64,7 @@ func NewMetricRegistry(sender internalSender, setters ...RegistryOption) *Metric
 		sender:       sender,
 		metrics:      make(map[string]interface{}),
 		reportTicker: time.NewTicker(time.Second * 60),
+		done:         make(chan struct{}),
 	}
 	for _, setter := range setters {
 		setter(registry)
