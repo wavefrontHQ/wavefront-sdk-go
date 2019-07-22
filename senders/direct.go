@@ -2,6 +2,8 @@ package senders
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
@@ -16,12 +18,13 @@ const (
 )
 
 type directSender struct {
-	reporter       internal.Reporter
-	defaultSource  string
-	pointHandler   *internal.LineHandler
-	histoHandler   *internal.LineHandler
-	spanHandler    *internal.LineHandler
-	spanLogHandler *internal.LineHandler
+	reporter         internal.Reporter
+	defaultSource    string
+	pointHandler     *internal.LineHandler
+	histoHandler     *internal.LineHandler
+	spanHandler      *internal.LineHandler
+	spanLogHandler   *internal.LineHandler
+	internalRegistry *internal.MetricRegistry
 }
 
 // Creates and returns a Wavefront Direct Ingestion Sender instance
@@ -39,20 +42,29 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 		cfg.FlushIntervalSeconds = defaultFlushInterval
 	}
 	reporter := internal.NewDirectReporter(cfg.Server, cfg.Token)
+
 	sender := &directSender{
-		defaultSource:  internal.GetHostname("wavefront_direct_sender"),
-		pointHandler:   makeLineHandler(reporter, cfg, metricFormat),
-		histoHandler:   makeLineHandler(reporter, cfg, histogramFormat),
-		spanHandler:    makeLineHandler(reporter, cfg, traceFormat),
-		spanLogHandler: makeLineHandler(reporter, cfg, spanLogsFormat),
+		defaultSource: internal.GetHostname("wavefront_direct_sender"),
 	}
+	sender.internalRegistry = internal.NewMetricRegistry(
+		sender,
+		internal.SetPrefix("~sdk.go.core.sender.direct"),
+		internal.SetTag("pid", strconv.Itoa(os.Getpid())),
+	)
+	sender.pointHandler = makeLineHandler(reporter, cfg, metricFormat, "points", sender.internalRegistry)
+	sender.histoHandler = makeLineHandler(reporter, cfg, histogramFormat, "histograms", sender.internalRegistry)
+	sender.spanHandler = makeLineHandler(reporter, cfg, traceFormat, "spans", sender.internalRegistry)
+	sender.spanLogHandler = makeLineHandler(reporter, cfg, spanLogsFormat, "span_logs", sender.internalRegistry)
+
 	sender.Start()
 	return sender, nil
 }
 
-func makeLineHandler(reporter internal.Reporter, cfg *DirectConfiguration, format string) *internal.LineHandler {
+func makeLineHandler(reporter internal.Reporter, cfg *DirectConfiguration, format, prefix string,
+	registry *internal.MetricRegistry) *internal.LineHandler {
 	flushInterval := time.Second * time.Duration(cfg.FlushIntervalSeconds)
-	return internal.NewLineHandler(reporter, format, flushInterval, cfg.BatchSize, cfg.MaxBufferSize)
+	return internal.NewLineHandler(reporter, format, flushInterval, cfg.BatchSize, cfg.MaxBufferSize,
+		internal.SetHandlerPrefix(prefix), internal.SetRegistry(registry))
 }
 
 func (sender *directSender) Start() {
@@ -60,6 +72,7 @@ func (sender *directSender) Start() {
 	sender.histoHandler.Start()
 	sender.spanHandler.Start()
 	sender.spanLogHandler.Start()
+	sender.internalRegistry.Start()
 }
 
 func (sender *directSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
@@ -80,7 +93,8 @@ func (sender *directSender) SendDeltaCounter(name string, value float64, source 
 	return sender.SendMetric(name, value, 0, source, tags)
 }
 
-func (sender *directSender) SendDistribution(name string, centroids []histogram.Centroid, hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
+func (sender *directSender) SendDistribution(name string, centroids []histogram.Centroid,
+	hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
 	line, err := HistoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		return err
@@ -88,7 +102,8 @@ func (sender *directSender) SendDistribution(name string, centroids []histogram.
 	return sender.histoHandler.HandleLine(line)
 }
 
-func (sender *directSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
+func (sender *directSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
+	parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
 	line, err := SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
 	if err != nil {
 		return err
@@ -113,6 +128,7 @@ func (sender *directSender) Close() {
 	sender.histoHandler.Stop()
 	sender.spanHandler.Stop()
 	sender.spanLogHandler.Stop()
+	sender.internalRegistry.Stop()
 }
 
 func (sender *directSender) Flush() error {

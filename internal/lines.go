@@ -15,20 +15,50 @@ type LineHandler struct {
 	MaxBufferSize int
 	Format        string
 	flushTicker   *time.Ticker
-	mtx           sync.Mutex
-	failures      int64
-	buffer        chan string
-	done          chan struct{}
+
+	internalRegistry *MetricRegistry
+	prefix           string
+
+	mtx      sync.Mutex
+	failures int64
+	buffer   chan string
+	done     chan struct{}
 }
 
-func NewLineHandler(reporter Reporter, format string, flushInterval time.Duration, batchSize, maxBufferSize int) *LineHandler {
-	return &LineHandler{
+type LineHandlerOption func(*LineHandler)
+
+func SetRegistry(registry *MetricRegistry) LineHandlerOption {
+	return func(handler *LineHandler) {
+		handler.internalRegistry = registry
+	}
+}
+
+func SetHandlerPrefix(prefix string) LineHandlerOption {
+	return func(handler *LineHandler) {
+		handler.prefix = prefix
+	}
+}
+
+func NewLineHandler(reporter Reporter, format string, flushInterval time.Duration, batchSize, maxBufferSize int, setters ...LineHandlerOption) *LineHandler {
+	lh := &LineHandler{
 		Reporter:      reporter,
 		BatchSize:     batchSize,
 		MaxBufferSize: maxBufferSize,
 		flushTicker:   time.NewTicker(flushInterval),
 		Format:        format,
 	}
+	for _, setter := range setters {
+		setter(lh)
+	}
+	if lh.internalRegistry != nil {
+		lh.internalRegistry.NewGauge(lh.prefix+".queue.size", func() int64 {
+			return int64(len(lh.buffer))
+		})
+		lh.internalRegistry.NewGauge(lh.prefix+".queue.remaining_capacity", func() int64 {
+			return int64(lh.MaxBufferSize - len(lh.buffer))
+		})
+	}
+	return lh
 }
 
 func (lh *LineHandler) Start() {
