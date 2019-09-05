@@ -188,6 +188,28 @@ func SpanLogJSON(traceId, spanId string, spanLogs []SpanLog) (string, error) {
 	return string(out[:]) + "\n", nil
 }
 
+// TODO: tags and source
+// EventLine encode the event to a wf format
+func EventLine(name string, startMillis, endMillis int64, source string, tags map[string]string) (string, error) {
+	l := map[string]interface{}{
+		"name":      name,
+		"startTime": startMillis,
+		"endTime":   endMillis,
+		"annotations": map[string]string{
+			"severity": "info",
+			"type":     "event type",
+			"details":  "description",
+		},
+	}
+	jsonData, err := json.Marshal(l)
+	if err != nil {
+		return "", err
+	}
+
+	println("event -> ", string(jsonData))
+	return string(jsonData), nil
+}
+
 func isUUIDFormat(str string) bool {
 	l := len(str)
 	if l != 36 {

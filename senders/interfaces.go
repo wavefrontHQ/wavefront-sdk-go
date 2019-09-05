@@ -7,7 +7,7 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
-// Interface for sending metrics to Wavefront
+// MetricSender Interface for sending metrics to Wavefront
 type MetricSender interface {
 	// Sends a single metric to Wavefront with optional timestamp and tags.
 	SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error
@@ -17,7 +17,7 @@ type MetricSender interface {
 	SendDeltaCounter(name string, value float64, source string, tags map[string]string) error
 }
 
-// Interface for sending distributions to Wavefront
+// DistributionSender Interface for sending distributions to Wavefront
 type DistributionSender interface {
 	// Sends a distribution of metrics to Wavefront with optional timestamp and tags.
 	// Each centroid is a 2-dimensional entity with the first dimension the mean value
@@ -27,7 +27,7 @@ type DistributionSender interface {
 	SendDistribution(name string, centroids []histogram.Centroid, hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error
 }
 
-// Interface for sending tracing spans to Wavefront
+// SpanSender Interface for sending tracing spans to Wavefront
 type SpanSender interface {
 	// Sends a tracing span to Wavefront.
 	// traceId, spanId, parentIds and preceding spanIds are expected to be UUID strings.
@@ -37,17 +37,18 @@ type SpanSender interface {
 	SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error
 }
 
-// Interface for sending events to Wavefront. NOT yet supported.
+// EventSender Interface for sending events to Wavefront. NOT yet supported.
 type EventSender interface {
 	// Sends an event to Wavefront with optional tags
 	SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string) error
 }
 
-// Interface for sending metrics, distributions and spans to Wavefront
+// Sender Interface for sending metrics, distributions and spans to Wavefront
 type Sender interface {
 	MetricSender
 	DistributionSender
 	SpanSender
+	EventSender
 	internal.Flusher
 	Close()
 }

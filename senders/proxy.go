@@ -147,6 +147,10 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 	return nil
 }
 
+func (sender *proxySender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string) error {
+	return errors.New("'SendEvent' not supported on Proxy sender")
+}
+
 func (sender *proxySender) Close() {
 	if sender.metricHandler != nil {
 		sender.metricHandler.Close()
