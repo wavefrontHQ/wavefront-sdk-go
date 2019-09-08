@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
@@ -147,7 +148,7 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 	return nil
 }
 
-func (sender *proxySender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string) error {
+func (sender *proxySender) SendEvent(name string, startMillis, endMillis int64, source string, tags []string, setters ...event.Annotation) error {
 	return errors.New("'SendEvent' not supported on Proxy sender")
 }
 

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
@@ -135,8 +136,8 @@ func (sender *directSender) SendSpan(name string, startMillis, durationMillis in
 	return nil
 }
 
-func (sender *directSender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string) error {
-	line, err := EventLine(name, startMillis, endMillis, source, tags)
+func (sender *directSender) SendEvent(name string, startMillis, endMillis int64, source string, tags []string, setters ...event.Annotation) error {
+	line, err := EventLine(name, startMillis, endMillis, source, tags, setters...)
 	if err != nil {
 		return err
 	}

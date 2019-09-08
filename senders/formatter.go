@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strconv"
 
+	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 )
 
@@ -188,19 +189,30 @@ func SpanLogJSON(traceId, spanId string, spanLogs []SpanLog) (string, error) {
 	return string(out[:]) + "\n", nil
 }
 
-// TODO: tags and source
+// TODO: creatorType ?
 // EventLine encode the event to a wf format
-func EventLine(name string, startMillis, endMillis int64, source string, tags map[string]string) (string, error) {
-	l := map[string]interface{}{
-		"name":      name,
-		"startTime": startMillis,
-		"endTime":   endMillis,
-		"annotations": map[string]string{
-			"severity": "info",
-			"type":     "event type",
-			"details":  "description",
-		},
+func EventLine(name string, startMillis, endMillis int64, source string, tags []string, setters ...event.Annotation) (string, error) {
+
+	annotations := map[string]string{}
+	for _, set := range setters {
+		set(annotations)
 	}
+
+	l := map[string]interface{}{
+		"name":        name,
+		"startTime":   startMillis,
+		"endTime":     endMillis,
+		"annotations": annotations,
+	}
+
+	if len(tags) > 0 {
+		l["tags"] = tags
+	}
+
+	if len(source) > 0 {
+		l["hosts"] = []string{source}
+	}
+
 	jsonData, err := json.Marshal(l)
 	if err != nil {
 		return "", err

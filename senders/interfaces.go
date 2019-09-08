@@ -3,6 +3,7 @@
 package senders
 
 import (
+	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
@@ -40,7 +41,7 @@ type SpanSender interface {
 // EventSender Interface for sending events to Wavefront. NOT yet supported.
 type EventSender interface {
 	// Sends an event to Wavefront with optional tags
-	SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string) error
+	SendEvent(name string, startMillis, endMillis int64, source string, tags []string, setters ...event.Annotation) error
 }
 
 // Sender Interface for sending metrics, distributions and spans to Wavefront
