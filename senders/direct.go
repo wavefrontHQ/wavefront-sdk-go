@@ -15,6 +15,7 @@ const (
 	histogramFormat = "histogram"
 	traceFormat     = "trace"
 	spanLogsFormat  = "spanLogs"
+	eventFormat     = "event"
 )
 
 type directSender struct {
@@ -44,11 +45,7 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 	}
 
 	reporter := internal.NewDirectReporter(cfg.Server, cfg.Token)
-	eventReporter := internal.NewDirectReporter(cfg.Server, cfg.Token,
-		internal.SetEndpoint("/api/v2/event"),
-		internal.SetContentType("application/json"),
-		internal.EnableGZip(false),
-	)
+	eventReporter := internal.NewDirectEventReporter(cfg.Server, cfg.Token)
 
 	sender := &directSender{
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
@@ -62,7 +59,7 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 	sender.histoHandler = makeLineHandler(reporter, cfg, histogramFormat, "histograms", sender.internalRegistry)
 	sender.spanHandler = makeLineHandler(reporter, cfg, traceFormat, "spans", sender.internalRegistry)
 	sender.spanLogHandler = makeLineHandler(reporter, cfg, spanLogsFormat, "span_logs", sender.internalRegistry)
-	sender.eventHandler = makeLineHandler(eventReporter, cfg, "event", "events", sender.internalRegistry)
+	sender.eventHandler = makeLineHandler(eventReporter, cfg, eventFormat, "events", sender.internalRegistry)
 
 	sender.Start()
 	return sender, nil
@@ -71,11 +68,13 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 func makeLineHandler(reporter internal.Reporter, cfg *DirectConfiguration, format, prefix string,
 	registry *internal.MetricRegistry) *internal.LineHandler {
 	flushInterval := time.Second * time.Duration(cfg.FlushIntervalSeconds)
-	if format == "event" {
-		return internal.NewLineHandler(reporter, format, flushInterval, 1, cfg.MaxBufferSize,
-			internal.SetHandlerPrefix(prefix), internal.SetRegistry(registry))
+
+	batchSize := cfg.BatchSize
+	if format == eventFormat {
+		batchSize = 1
 	}
-	return internal.NewLineHandler(reporter, format, flushInterval, cfg.BatchSize, cfg.MaxBufferSize,
+
+	return internal.NewLineHandler(reporter, format, flushInterval, batchSize, cfg.MaxBufferSize,
 		internal.SetHandlerPrefix(prefix), internal.SetRegistry(registry))
 }
 

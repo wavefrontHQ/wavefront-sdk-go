@@ -21,10 +21,6 @@ func (reporter *fakeReporter) Report(format string, pointLines string) (*http.Re
 	return &http.Response{StatusCode: 200}, nil
 }
 
-func (reporter *fakeReporter) Server() string {
-	return "fake"
-}
-
 func TestCapacity(t *testing.T) {
 	lh := makeLineHandler(100, 10) // cap: 100, batchSize: 10
 	checkLength(lh.buffer, 0, "non-empty lines length", t)

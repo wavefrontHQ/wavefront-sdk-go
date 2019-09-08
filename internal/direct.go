@@ -22,55 +22,25 @@ const (
 	authzHeader     = "Authorization"
 	bearer          = "Bearer "
 	gzipFormat      = "gzip"
-	formatKey       = "f"
+
+	octetStream     = "application/octet-stream"
+	applicationJSON = "application/json"
+
+	reportEndpoint = "/report"
+	eventEndpoint  = "/api/v2/event"
+
+	formatKey = "f"
 )
 
 // The implementation of a Reporter that reports points directly to a Wavefront server.
 type directReporter struct {
-	serverURL   string
-	token       string
-	endpoint    string
-	contentType string
-	gzip        bool
+	serverURL string
+	token     string
 }
 
-// ReporterOption allows Reporter configuration
-type ReporterOption func(*directReporter)
-
-// SetEndpoint set the Reporter endpoint, '/report' by default
-func SetEndpoint(endpoint string) ReporterOption {
-	return func(reporter *directReporter) {
-		reporter.endpoint = endpoint
-	}
-}
-
-// SetContentType set the Reporter contentType, 'application/octet-stream' by default
-func SetContentType(contentType string) ReporterOption {
-	return func(reporter *directReporter) {
-		reporter.contentType = contentType
-	}
-}
-
-// EnableGZip set the Reporter gzip compression, 'true' by default
-func EnableGZip(gzip bool) ReporterOption {
-	return func(reporter *directReporter) {
-		reporter.gzip = gzip
-	}
-}
-
-// NewDirectReporter create a Reporter
-func NewDirectReporter(server string, token string, setters ...ReporterOption) Reporter {
-	dr := &directReporter{
-		serverURL:   server,
-		token:       token,
-		endpoint:    "/report",
-		contentType: "application/octet-stream",
-		gzip:        true,
-	}
-	for _, setter := range setters {
-		setter(dr)
-	}
-	return dr
+// NewDirectReporter create a metrics Reporter
+func NewDirectReporter(server string, token string) Reporter {
+	return &directReporter{serverURL: server, token: token}
 }
 
 func (reporter directReporter) Report(format string, pointLines string) (*http.Response, error) {
@@ -78,41 +48,64 @@ func (reporter directReporter) Report(format string, pointLines string) (*http.R
 		return nil, errReport
 	}
 
-	var buf io.Reader
-	if reporter.gzip {
-		var gzbuf bytes.Buffer
-		zw := gzip.NewWriter(&gzbuf)
-		_, err := zw.Write([]byte(pointLines))
-		if err != nil {
-			zw.Close()
-			return nil, err
-		}
-		if err = zw.Close(); err != nil {
-			return nil, err
-		}
-		buf = &gzbuf
-	} else {
-		buf = strings.NewReader(pointLines)
+	// compress
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+	_, err := zw.Write([]byte(pointLines))
+	if err != nil {
+		zw.Close()
+		return nil, err
+	}
+	if err = zw.Close(); err != nil {
+		return nil, err
 	}
 
-	apiURL := reporter.serverURL + reporter.endpoint
-	req, err := http.NewRequest("POST", apiURL, buf)
+	apiURL := reporter.serverURL + reportEndpoint
+	req, err := http.NewRequest("POST", apiURL, &buf)
 	if err != nil {
 		return &http.Response{}, err
 	}
 
-	req.Header.Set(contentType, reporter.contentType)
+	req.Header.Set(contentType, octetStream)
+	req.Header.Set(contentEncoding, gzipFormat)
 	req.Header.Set(authzHeader, bearer+reporter.token)
-	if reporter.gzip {
-		req.Header.Set(contentEncoding, gzipFormat)
+
+	q := req.URL.Query()
+	q.Add(formatKey, format)
+	req.URL.RawQuery = q.Encode()
+
+	return execute(req)
+}
+
+type directEventReporter struct {
+	serverURL string
+	token     string
+}
+
+// NewDirectEventReporter create a event Reporter
+func NewDirectEventReporter(server string, token string) Reporter {
+	return &directEventReporter{serverURL: server, token: token}
+}
+
+func (reporter directEventReporter) Report(format string, event string) (*http.Response, error) {
+	if event == "" {
+		return nil, errReport
 	}
 
-	if format != "event" {
-		q := req.URL.Query()
-		q.Add(formatKey, format)
-		req.URL.RawQuery = q.Encode()
+	apiURL := reporter.serverURL + eventEndpoint
+	req, err := http.NewRequest("POST", apiURL, strings.NewReader(event))
+	if err != nil {
+		return &http.Response{}, err
 	}
 
+	req.Header.Set(contentType, applicationJSON)
+	req.Header.Set(contentEncoding, gzipFormat)
+	req.Header.Set(authzHeader, bearer+reporter.token)
+
+	return execute(req)
+}
+
+func execute(req *http.Request) (*http.Response, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		return resp, err
@@ -120,8 +113,4 @@ func (reporter directReporter) Report(format string, pointLines string) (*http.R
 	io.Copy(ioutil.Discard, resp.Body)
 	defer resp.Body.Close()
 	return resp, nil
-}
-
-func (reporter directReporter) Server() string {
-	return reporter.serverURL
 }
