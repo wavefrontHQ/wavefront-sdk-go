@@ -147,14 +147,15 @@ func (lh *LineHandler) report(lines []string) error {
 	strLines := strings.Join(lines, "")
 	resp, err := lh.Reporter.Report(lh.Format, strLines)
 
-	if err != nil || (400 <= resp.StatusCode && resp.StatusCode <= 599) {
+	if err != nil {
+		return fmt.Errorf("error reporting %s format data to Wavefront: %q", lh.Format, err)
+	}
+
+	if 400 <= resp.StatusCode && resp.StatusCode <= 599 {
 		atomic.AddInt64(&lh.failures, 1)
 		lh.bufferLines(lines)
 		if resp.StatusCode == 406 {
 			return errThrottled
-		}
-		if err != nil {
-			return fmt.Errorf("error reporting %s format data to Wavefront: %q", lh.Format, err)
 		}
 		return fmt.Errorf("error reporting %s format data to Wavefront. status=%d", lh.Format, resp.StatusCode)
 	}
