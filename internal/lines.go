@@ -148,6 +148,7 @@ func (lh *LineHandler) report(lines []string) error {
 	resp, err := lh.Reporter.Report(lh.Format, strLines)
 
 	if err != nil {
+		lh.bufferLines(lines)
 		return fmt.Errorf("error reporting %s format data to Wavefront: %q", lh.Format, err)
 	}
 
