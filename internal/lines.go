@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -19,11 +20,15 @@ type LineHandler struct {
 	internalRegistry *MetricRegistry
 	prefix           string
 
-	mtx      sync.Mutex
-	failures int64
-	buffer   chan string
-	done     chan struct{}
+	mtx       sync.Mutex
+	failures  int64
+	throttled int64
+	buffer    chan string
+	done      chan struct{}
 }
+
+var throttledSleepDuration = time.Duration(time.Second * 30)
+var errThrottled = errors.New("error: throttled event creation")
 
 type LineHandlerOption func(*LineHandler)
 
@@ -72,6 +77,15 @@ func (lh *LineHandler) Start() {
 				err := lh.Flush()
 				if err != nil {
 					log.Println(err)
+					if err == errThrottled {
+						go func() {
+							lh.mtx.Lock()
+							atomic.AddInt64(&lh.throttled, 1)
+							log.Printf("sleeping for %v, buffer size: %d\n", throttledSleepDuration, len(lh.buffer))
+							time.Sleep(throttledSleepDuration)
+							lh.mtx.Unlock()
+						}()
+					}
 				}
 			case <-lh.done:
 				return
@@ -136,11 +150,13 @@ func (lh *LineHandler) report(lines []string) error {
 	if err != nil || (400 <= resp.StatusCode && resp.StatusCode <= 599) {
 		atomic.AddInt64(&lh.failures, 1)
 		lh.bufferLines(lines)
+		if resp.StatusCode == 406 {
+			return errThrottled
+		}
 		if err != nil {
 			return fmt.Errorf("error reporting %s format data to Wavefront: %q", lh.Format, err)
-		} else {
-			return fmt.Errorf("error reporting %s format data to Wavefront. status=%d", lh.Format, resp.StatusCode)
 		}
+		return fmt.Errorf("error reporting %s format data to Wavefront. status=%d", lh.Format, resp.StatusCode)
 	}
 	return nil
 }
@@ -154,6 +170,11 @@ func (lh *LineHandler) bufferLines(batch []string) {
 
 func (lh *LineHandler) GetFailureCount() int64 {
 	return atomic.LoadInt64(&lh.failures)
+}
+
+// GetThrottledCount returns the number of Throttled errors received.
+func (lh *LineHandler) GetThrottledCount() int64 {
+	return atomic.LoadInt64(&lh.throttled)
 }
 
 func (lh *LineHandler) Stop() {

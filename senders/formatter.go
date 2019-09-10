@@ -218,7 +218,6 @@ func EventLine(name string, startMillis, endMillis int64, source string, tags []
 		return "", err
 	}
 
-	println("event -> ", string(jsonData))
 	return string(jsonData), nil
 }
 
