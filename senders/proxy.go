@@ -148,7 +148,7 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 	return nil
 }
 
-func (sender *proxySender) SendEvent(name string, startMillis, endMillis int64, source string, tags []string, setters ...event.Annotation) error {
+func (sender *proxySender) SendEvent(name string, startMillis, endMillis int64, source string, tags []string, setters ...event.Option) error {
 	return errors.New("'SendEvent' not supported on Proxy sender")
 }
 

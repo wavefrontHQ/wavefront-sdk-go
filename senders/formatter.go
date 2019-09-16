@@ -189,21 +189,35 @@ func SpanLogJSON(traceId, spanId string, spanLogs []SpanLog) (string, error) {
 	return string(out[:]) + "\n", nil
 }
 
-// TODO: creatorType ?
 // EventLine encode the event to a wf format
-func EventLine(name string, startMillis, endMillis int64, source string, tags []string, setters ...event.Annotation) (string, error) {
+// set endMillis to 0 for a 'Instantaneous' event
+func EventLine(name string, startMillis, endMillis int64, source string, tags []string, setters ...event.Option) (string, error) {
 
 	annotations := map[string]string{}
-	for _, set := range setters {
-		set(annotations)
-	}
-
 	l := map[string]interface{}{
 		"name":        name,
 		"startTime":   startMillis,
-		"endTime":     endMillis,
 		"annotations": annotations,
 	}
+
+	for _, set := range setters {
+		set(l)
+	}
+
+	// secs to millis
+	if startMillis < 999999999999 {
+		startMillis = startMillis * 1000
+	}
+
+	if endMillis <= 999999999999 {
+		endMillis = endMillis * 1000
+	}
+
+	if endMillis == 0 {
+		endMillis = startMillis + 1
+	}
+
+	l["endTime"] = endMillis
 
 	if len(tags) > 0 {
 		l["tags"] = tags

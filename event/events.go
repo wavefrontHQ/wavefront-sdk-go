@@ -1,25 +1,28 @@
 package event
 
-// Annotation field configuration
-type Annotation func(map[string]string)
+// Option configuration
+type Option func(map[string]interface{})
 
 // Severity set the envet 'severity' annotation
-func Severity(severity string) Annotation {
-	return func(annotations map[string]string) {
+func Severity(severity string) Option {
+	return func(event map[string]interface{}) {
+		annotations := event["annotations"].(map[string]string)
 		annotations["severity"] = severity
 	}
 }
 
 // Type set the envet 'type' annotation
-func Type(t string) Annotation {
-	return func(annotations map[string]string) {
+func Type(t string) Option {
+	return func(event map[string]interface{}) {
+		annotations := event["annotations"].(map[string]string)
 		annotations["type"] = t
 	}
 }
 
 // Details set the envet 'details' annotation
-func Details(details string) Annotation {
-	return func(annotations map[string]string) {
+func Details(details string) Option {
+	return func(event map[string]interface{}) {
+		annotations := event["annotations"].(map[string]string)
 		annotations["details"] = details
 	}
 }
