@@ -31,6 +31,6 @@ notifications:
 # script always run to completion (set +e).
 script:
   - go get -t -v ./...
-  - diff -u <(echo -n) <(gofmt -d .)
+  - diff -u <(echo -n) <(gofmt -d $(go list -f {{.Dir}} ./... | grep -v /vendor/))
   - go test -timeout 10m -v -race ./...                   # Run all the tests with the race detector enabled
   - go vet ./...                             # go vet is the official Go static analyzer
