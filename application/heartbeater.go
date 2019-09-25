@@ -10,6 +10,7 @@ import (
 // HeartbeatService sends a heartbeat metric every 5 minutes
 type HeartbeatService interface {
 	Close()
+	Send(tags map[string]string)
 }
 
 type heartbeater struct {
@@ -56,15 +57,15 @@ func (hb *heartbeater) Close() {
 func (hb *heartbeater) beat() {
 	tags := hb.application.Map()
 	tags["component"] = "wavefront-generated"
-	hb.send(tags)
+	hb.Send(tags)
 
 	for _, component := range hb.components {
 		tags["component"] = component
-		hb.send(tags)
+		hb.Send(tags)
 	}
 }
 
-func (hb *heartbeater) send(tags map[string]string) {
+func (hb *heartbeater) Send(tags map[string]string) {
 	err := hb.sender.SendMetric("~component.heartbeat", 1, 0, hb.source, tags)
 	if err != nil {
 		log.Printf("heartbeater SendMetric error: %v\n", err)
