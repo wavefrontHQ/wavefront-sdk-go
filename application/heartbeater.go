@@ -19,8 +19,8 @@ type heartbeater struct {
 	application Tags
 	source      string
 	components  []string
-	customTags	[]map[string]string
-	mux sync.Mutex
+	customTags  []map[string]string
+	mux         sync.Mutex
 
 	ticker *time.Ticker
 	stop   chan struct{}
