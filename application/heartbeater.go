@@ -2,6 +2,7 @@ package application
 
 import (
 	"log"
+	"sync"
 	"time"
 
 	"github.com/wavefronthq/wavefront-sdk-go/senders"
@@ -18,6 +19,8 @@ type heartbeater struct {
 	application Tags
 	source      string
 	components  []string
+	customTags	[]map[string]string
+	mux sync.Mutex
 
 	ticker *time.Ticker
 	stop   chan struct{}
@@ -33,7 +36,6 @@ func StartHeartbeatService(sender senders.Sender, application Tags, source strin
 		ticker:      time.NewTicker(5 * time.Minute),
 		stop:        make(chan struct{}),
 	}
-
 	go func() {
 		for {
 			select {
@@ -57,12 +59,21 @@ func (hb *heartbeater) Close() {
 func (hb *heartbeater) beat() {
 	tags := hb.application.Map()
 	tags["component"] = "wavefront-generated"
-	hb.Send(tags)
+	hb.send(tags)
 
 	for _, component := range hb.components {
 		tags["component"] = component
-		hb.Send(tags)
+		hb.send(tags)
 	}
+
+	//send customTags heartbeat
+	hb.mux.Lock()
+	for len(hb.customTags) > 0 {
+		tags := hb.customTags[0]
+		hb.customTags = hb.customTags[1:]
+		hb.send(tags)
+	}
+	hb.mux.Unlock()
 }
 
 func (hb *heartbeater) send(tags map[string]string) {
@@ -73,7 +84,7 @@ func (hb *heartbeater) send(tags map[string]string) {
 }
 
 func (hb *heartbeater) AddCustomTags(tags map[string]string) {
-	for key, _ := range tags {
-		hb.application.CustomTags[key] = tags[key]
-	}
+	hb.mux.Lock()
+	hb.customTags = append(hb.customTags, tags)
+	hb.mux.Unlock()
 }
