@@ -2,6 +2,7 @@ package application
 
 import (
 	"log"
+	"reflect"
 	"sync"
 	"time"
 
@@ -19,8 +20,8 @@ type heartbeater struct {
 	application Tags
 	source      string
 	components  []string
-	customTags  []map[string]string
 	mux         sync.Mutex
+	customTags  []map[string]string
 
 	ticker *time.Ticker
 	stop   chan struct{}
@@ -85,6 +86,15 @@ func (hb *heartbeater) send(tags map[string]string) {
 
 func (hb *heartbeater) AddCustomTags(tags map[string]string) {
 	hb.mux.Lock()
-	hb.customTags = append(hb.customTags, tags)
+	exist := false
+	for _, existCustomTag := range hb.customTags {
+		if reflect.DeepEqual(existCustomTag, tags) {
+			exist = true
+			break
+		}
+	}
+	if !exist {
+		hb.customTags = append(hb.customTags, tags)
+	}
 	hb.mux.Unlock()
 }
