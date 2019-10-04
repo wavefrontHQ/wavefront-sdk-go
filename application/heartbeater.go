@@ -86,15 +86,11 @@ func (hb *heartbeater) send(tags map[string]string) {
 
 func (hb *heartbeater) AddCustomTags(tags map[string]string) {
 	hb.mux.Lock()
-	exist := false
+	defer hb.mux.Unlock()
 	for _, existCustomTag := range hb.customTags {
 		if reflect.DeepEqual(existCustomTag, tags) {
-			exist = true
-			break
+			return
 		}
 	}
-	if !exist {
-		hb.customTags = append(hb.customTags, tags)
-	}
-	hb.mux.Unlock()
+	hb.customTags = append(hb.customTags, tags)
 }
