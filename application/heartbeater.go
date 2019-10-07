@@ -2,6 +2,8 @@ package application
 
 import (
 	"log"
+	"reflect"
+	"sync"
 	"time"
 
 	"github.com/wavefronthq/wavefront-sdk-go/senders"
@@ -10,6 +12,7 @@ import (
 // HeartbeatService sends a heartbeat metric every 5 minutes
 type HeartbeatService interface {
 	Close()
+	AddCustomTags(tags map[string]string)
 }
 
 type heartbeater struct {
@@ -17,6 +20,8 @@ type heartbeater struct {
 	application Tags
 	source      string
 	components  []string
+	mux         sync.Mutex
+	customTags  []map[string]string
 
 	ticker *time.Ticker
 	stop   chan struct{}
@@ -32,7 +37,6 @@ func StartHeartbeatService(sender senders.Sender, application Tags, source strin
 		ticker:      time.NewTicker(5 * time.Minute),
 		stop:        make(chan struct{}),
 	}
-
 	go func() {
 		for {
 			select {
@@ -62,6 +66,15 @@ func (hb *heartbeater) beat() {
 		tags["component"] = component
 		hb.send(tags)
 	}
+
+	//send customTags heartbeat
+	hb.mux.Lock()
+	for len(hb.customTags) > 0 {
+		tags := hb.customTags[0]
+		hb.customTags = hb.customTags[1:]
+		hb.send(tags)
+	}
+	hb.mux.Unlock()
 }
 
 func (hb *heartbeater) send(tags map[string]string) {
@@ -69,4 +82,15 @@ func (hb *heartbeater) send(tags map[string]string) {
 	if err != nil {
 		log.Printf("heartbeater SendMetric error: %v\n", err)
 	}
+}
+
+func (hb *heartbeater) AddCustomTags(tags map[string]string) {
+	hb.mux.Lock()
+	defer hb.mux.Unlock()
+	for _, existCustomTag := range hb.customTags {
+		if reflect.DeepEqual(existCustomTag, tags) {
+			return
+		}
+	}
+	hb.customTags = append(hb.customTags, tags)
 }
