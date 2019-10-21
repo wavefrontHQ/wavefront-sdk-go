@@ -154,6 +154,8 @@ sender.SendSpan("getAllUsers", 1552949776000, 343, "localhost",
     },
     nil)
 ```
+Please note that the tracing and span SDK APIs are designed to serve as low-level endpoints. For most use cases, we recommend using 
+opentracing with the ```WavefrontTracer```. For more information on OpenTracing, please go to the OpenTracing project on GitHub: https://github.com/opentracing/opentracing-go For an example on how to use OpenTracing with Wavefront, please refer to this page: https://github.com/wavefrontHQ/wavefront-opentracing-sdk-go
 
 #### Closing the Sender
 It is recommended to flush and close the sender before shutting down your application.
