@@ -40,6 +40,10 @@ func main() {
         // handle error
     }
     // send data (see below for usage)
+    
+    time.Sleep(5 * time.Second)
+	sender.Flush()
+	sender.Close()
 }
 ```
 
