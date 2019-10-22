@@ -148,8 +148,23 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 	return nil
 }
 
-func (sender *proxySender) SendEvent(name string, startMillis, endMillis int64, source string, tags []string, setters ...event.Option) error {
-	return errors.New("'SendEvent' not supported on Proxy sender")
+func (sender *proxySender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
+	if sender.metricHandler == nil {
+		return errors.New("proxy metrics port not provided, cannot send metric data")
+	}
+
+	if !sender.metricHandler.Connected() {
+		if err := sender.metricHandler.Connect(); err != nil {
+			return err
+		}
+	}
+
+	line, err := EventLine(name, startMillis, endMillis, source, tags, setters...)
+	if err != nil {
+		return err
+	}
+	err = sender.metricHandler.SendData(line)
+	return err
 }
 
 func (sender *proxySender) Close() {

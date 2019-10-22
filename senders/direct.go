@@ -136,8 +136,8 @@ func (sender *directSender) SendSpan(name string, startMillis, durationMillis in
 	return nil
 }
 
-func (sender *directSender) SendEvent(name string, startMillis, endMillis int64, source string, tags []string, setters ...event.Option) error {
-	line, err := EventLine(name, startMillis, endMillis, source, tags, setters...)
+func (sender *directSender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
+	line, err := EventLineJSOM(name, startMillis, endMillis, source, tags, setters...)
 	if err != nil {
 		return err
 	}
