@@ -47,7 +47,6 @@ func main() {
 
 ```go
 import (
-    time
     wavefront "github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
