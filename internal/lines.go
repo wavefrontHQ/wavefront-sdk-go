@@ -4,10 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+)
+
+const (
+	MetricFormat    = "wavefront"
+	HistogramFormat = "histogram"
+	TraceFormat     = "trace"
+	SpanLogsFormat  = "spanLogs"
+	EventFormat     = "event"
 )
 
 type LineHandler struct {
@@ -20,11 +29,14 @@ type LineHandler struct {
 	internalRegistry *MetricRegistry
 	prefix           string
 
-	mtx       sync.Mutex
+	mtx                sync.Mutex
+	lockOnErrThrottled bool
+
 	failures  int64
 	throttled int64
-	buffer    chan string
-	done      chan struct{}
+
+	buffer chan string
+	done   chan struct{}
 }
 
 var throttledSleepDuration = time.Duration(time.Second * 30)
@@ -44,17 +56,26 @@ func SetHandlerPrefix(prefix string) LineHandlerOption {
 	}
 }
 
+func SetLockOnThrottledError(lock bool) LineHandlerOption {
+	return func(handler *LineHandler) {
+		handler.lockOnErrThrottled = lock
+	}
+}
+
 func NewLineHandler(reporter Reporter, format string, flushInterval time.Duration, batchSize, maxBufferSize int, setters ...LineHandlerOption) *LineHandler {
 	lh := &LineHandler{
-		Reporter:      reporter,
-		BatchSize:     batchSize,
-		MaxBufferSize: maxBufferSize,
-		flushTicker:   time.NewTicker(flushInterval),
-		Format:        format,
+		Reporter:           reporter,
+		BatchSize:          batchSize,
+		MaxBufferSize:      maxBufferSize,
+		flushTicker:        time.NewTicker(flushInterval),
+		Format:             format,
+		lockOnErrThrottled: false,
 	}
+
 	for _, setter := range setters {
 		setter(lh)
 	}
+
 	if lh.internalRegistry != nil {
 		lh.internalRegistry.NewGauge(lh.prefix+".queue.size", func() int64 {
 			return int64(len(lh.buffer))
@@ -76,8 +97,8 @@ func (lh *LineHandler) Start() {
 			case <-lh.flushTicker.C:
 				err := lh.Flush()
 				if err != nil {
-					log.Println(err)
-					if err == errThrottled {
+					log.Println(lh.lockOnErrThrottled, "---", err)
+					if err == errThrottled && lh.lockOnErrThrottled {
 						go func() {
 							lh.mtx.Lock()
 							atomic.AddInt64(&lh.throttled, 1)
@@ -145,7 +166,14 @@ func (lh *LineHandler) FlushAll() error {
 
 func (lh *LineHandler) report(lines []string) error {
 	strLines := strings.Join(lines, "")
-	resp, err := lh.Reporter.Report(lh.Format, strLines)
+	var resp *http.Response
+	var err error
+
+	if lh.Format == EventFormat {
+		resp, err = lh.Reporter.ReportEvent(strLines)
+	} else {
+		resp, err = lh.Reporter.Report(lh.Format, strLines)
+	}
 
 	if err != nil {
 		lh.bufferLines(lines)

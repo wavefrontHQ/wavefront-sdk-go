@@ -77,17 +77,7 @@ func (reporter directReporter) Report(format string, pointLines string) (*http.R
 	return execute(req)
 }
 
-type directEventReporter struct {
-	serverURL string
-	token     string
-}
-
-// NewDirectEventReporter create a event Reporter
-func NewDirectEventReporter(server string, token string) Reporter {
-	return &directEventReporter{serverURL: server, token: token}
-}
-
-func (reporter directEventReporter) Report(format string, event string) (*http.Response, error) {
+func (reporter directReporter) ReportEvent(event string) (*http.Response, error) {
 	if event == "" {
 		return nil, errReport
 	}

@@ -11,14 +11,6 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
-const (
-	metricFormat    = "wavefront"
-	histogramFormat = "histogram"
-	traceFormat     = "trace"
-	spanLogsFormat  = "spanLogs"
-	eventFormat     = "event"
-)
-
 type directSender struct {
 	reporter         internal.Reporter
 	defaultSource    string
@@ -46,7 +38,6 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 	}
 
 	reporter := internal.NewDirectReporter(cfg.Server, cfg.Token)
-	eventReporter := internal.NewDirectEventReporter(cfg.Server, cfg.Token)
 
 	sender := &directSender{
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
@@ -56,11 +47,11 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 		internal.SetPrefix("~sdk.go.core.sender.direct"),
 		internal.SetTag("pid", strconv.Itoa(os.Getpid())),
 	)
-	sender.pointHandler = makeLineHandler(reporter, cfg, metricFormat, "points", sender.internalRegistry)
-	sender.histoHandler = makeLineHandler(reporter, cfg, histogramFormat, "histograms", sender.internalRegistry)
-	sender.spanHandler = makeLineHandler(reporter, cfg, traceFormat, "spans", sender.internalRegistry)
-	sender.spanLogHandler = makeLineHandler(reporter, cfg, spanLogsFormat, "span_logs", sender.internalRegistry)
-	sender.eventHandler = makeLineHandler(eventReporter, cfg, eventFormat, "events", sender.internalRegistry)
+	sender.pointHandler = makeLineHandler(reporter, cfg, internal.MetricFormat, "points", sender.internalRegistry)
+	sender.histoHandler = makeLineHandler(reporter, cfg, internal.HistogramFormat, "histograms", sender.internalRegistry)
+	sender.spanHandler = makeLineHandler(reporter, cfg, internal.TraceFormat, "spans", sender.internalRegistry)
+	sender.spanLogHandler = makeLineHandler(reporter, cfg, internal.SpanLogsFormat, "span_logs", sender.internalRegistry)
+	sender.eventHandler = makeLineHandler(reporter, cfg, internal.EventFormat, "events", sender.internalRegistry)
 
 	sender.Start()
 	return sender, nil
@@ -70,13 +61,14 @@ func makeLineHandler(reporter internal.Reporter, cfg *DirectConfiguration, forma
 	registry *internal.MetricRegistry) *internal.LineHandler {
 	flushInterval := time.Second * time.Duration(cfg.FlushIntervalSeconds)
 
+	opts := []internal.LineHandlerOption{internal.SetHandlerPrefix(prefix), internal.SetRegistry(registry)}
 	batchSize := cfg.BatchSize
-	if format == eventFormat {
+	if format == internal.EventFormat {
 		batchSize = 1
+		opts = append(opts, internal.SetLockOnThrottledError(true))
 	}
 
-	return internal.NewLineHandler(reporter, format, flushInterval, batchSize, cfg.MaxBufferSize,
-		internal.SetHandlerPrefix(prefix), internal.SetRegistry(registry))
+	return internal.NewLineHandler(reporter, format, flushInterval, batchSize, cfg.MaxBufferSize, opts...)
 }
 
 func (sender *directSender) Start() {
@@ -141,11 +133,7 @@ func (sender *directSender) SendEvent(name string, startMillis, endMillis int64,
 	if err != nil {
 		return err
 	}
-	err = sender.eventHandler.HandleLine(line)
-	if err != nil {
-		return err
-	}
-	return nil
+	return sender.eventHandler.HandleLine(line)
 }
 
 func (sender *directSender) Close() {
