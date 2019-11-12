@@ -39,6 +39,7 @@ type ProxyConfiguration struct {
 	MetricsPort      int // metrics port on which the proxy is listening on, typically 2878.
 	DistributionPort int // distribution port on which the proxy is listening on, typically 40000.
 	TracingPort      int // tracing port on which the proxy is listening on.
+	EventsPort       int // events port on which the proxy is listening on.
 
 	FlushIntervalSeconds int // defaults to 1 second
 }
