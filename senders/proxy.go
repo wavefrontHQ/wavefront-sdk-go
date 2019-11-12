@@ -126,7 +126,7 @@ func (sender *proxySender) SendDistribution(name string, centroids []histogram.C
 }
 
 func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
-	handler := sender.handlers[histoHandler]
+	handler := sender.handlers[spanHandler]
 	if handler == nil {
 		return errors.New("proxy tracing port not provided, cannot send span data")
 	}
@@ -157,7 +157,7 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 }
 
 func (sender *proxySender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
-	handler := sender.handlers[histoHandler]
+	handler := sender.handlers[eventHandler]
 	if handler == nil {
 		return errors.New("proxy events port not provided, cannot send events data")
 	}
