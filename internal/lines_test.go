@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type fakeReporter struct {
@@ -21,8 +23,8 @@ func (reporter *fakeReporter) Report(format string, pointLines string) (*http.Re
 	return &http.Response{StatusCode: 200}, nil
 }
 
-func (reporter *fakeReporter) Server() string {
-	return "fake"
+func (reporter *fakeReporter) ReportEvent(event string) (*http.Response, error) {
+	return &http.Response{StatusCode: 200}, nil
 }
 
 func TestCapacity(t *testing.T) {
@@ -60,17 +62,17 @@ func TestFlush(t *testing.T) {
 
 	addLines(lh, 100, 100, t)
 	lh.Flush()
-	checkLength(lh.buffer, 90, "error flushing lines", t)
+	assert.Equal(t, 90, len(lh.buffer), "error flushing lines")
 
 	lh.Reporter = &fakeReporter{raiseError: true}
 	lh.Flush()
-	checkLength(lh.buffer, 90, "error flushing lines", t)
+	assert.Equal(t, 90, len(lh.buffer), "error flushing lines")
 
 	lh.Reporter = &fakeReporter{}
 	lh.buffer = make(chan string, 100)
 	addLines(lh, 5, 5, t)
 	lh.Flush()
-	checkLength(lh.buffer, 0, "error flushing lines", t)
+	assert.Equal(t, 0, len(lh.buffer), "error flushing lines")
 }
 
 func checkLength(buffer chan string, length int, msg string, t *testing.T) {

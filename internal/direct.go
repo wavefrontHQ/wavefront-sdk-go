@@ -7,12 +7,13 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
 var (
-	client      = &http.Client{Timeout: time.Second * 10}
-	reportError = errors.New("error: invalid Format or points")
+	client    = &http.Client{Timeout: time.Second * 10}
+	errReport = errors.New("error: invalid Format or points")
 )
 
 const (
@@ -21,9 +22,14 @@ const (
 	authzHeader     = "Authorization"
 	bearer          = "Bearer "
 	gzipFormat      = "gzip"
+
 	octetStream     = "application/octet-stream"
-	reportEndpoint  = "/report"
-	formatKey       = "f"
+	applicationJSON = "application/json"
+
+	reportEndpoint = "/report"
+	eventEndpoint  = "/api/v2/event"
+
+	formatKey = "f"
 )
 
 // The implementation of a Reporter that reports points directly to a Wavefront server.
@@ -32,13 +38,14 @@ type directReporter struct {
 	token     string
 }
 
+// NewDirectReporter create a metrics Reporter
 func NewDirectReporter(server string, token string) Reporter {
 	return &directReporter{serverURL: server, token: token}
 }
 
 func (reporter directReporter) Report(format string, pointLines string) (*http.Response, error) {
 	if format == "" || pointLines == "" {
-		return nil, reportError
+		return nil, errReport
 	}
 
 	// compress
@@ -55,17 +62,40 @@ func (reporter directReporter) Report(format string, pointLines string) (*http.R
 
 	apiURL := reporter.serverURL + reportEndpoint
 	req, err := http.NewRequest("POST", apiURL, &buf)
-	req.Header.Set(contentType, octetStream)
-	req.Header.Set(contentEncoding, gzipFormat)
-	req.Header.Set(authzHeader, bearer+reporter.token)
 	if err != nil {
 		return &http.Response{}, err
 	}
+
+	req.Header.Set(contentType, octetStream)
+	req.Header.Set(contentEncoding, gzipFormat)
+	req.Header.Set(authzHeader, bearer+reporter.token)
 
 	q := req.URL.Query()
 	q.Add(formatKey, format)
 	req.URL.RawQuery = q.Encode()
 
+	return execute(req)
+}
+
+func (reporter directReporter) ReportEvent(event string) (*http.Response, error) {
+	if event == "" {
+		return nil, errReport
+	}
+
+	apiURL := reporter.serverURL + eventEndpoint
+	req, err := http.NewRequest("POST", apiURL, strings.NewReader(event))
+	if err != nil {
+		return &http.Response{}, err
+	}
+
+	req.Header.Set(contentType, applicationJSON)
+	req.Header.Set(contentEncoding, gzipFormat)
+	req.Header.Set(authzHeader, bearer+reporter.token)
+
+	return execute(req)
+}
+
+func execute(req *http.Request) (*http.Response, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		return resp, err
@@ -73,8 +103,4 @@ func (reporter directReporter) Report(format string, pointLines string) (*http.R
 	io.Copy(ioutil.Discard, resp.Body)
 	defer resp.Body.Close()
 	return resp, nil
-}
-
-func (reporter directReporter) Server() string {
-	return reporter.serverURL
 }

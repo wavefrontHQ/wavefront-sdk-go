@@ -7,7 +7,7 @@ import "net/http"
 // Reporter is an interface for reporting data to a Wavefront service.
 type Reporter interface {
 	Report(format string, pointLines string) (*http.Response, error)
-	Server() string
+	ReportEvent(event string) (*http.Response, error)
 }
 
 type Flusher interface {

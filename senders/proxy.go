@@ -3,52 +3,62 @@ package senders
 import (
 	"errors"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
+const (
+	metricHandler int = iota
+	histoHandler
+	spanHandler
+	eventHandler
+	handlersCount
+)
+
 type proxySender struct {
-	metricHandler internal.ConnectionHandler
-	histoHandler  internal.ConnectionHandler
-	spanHandler   internal.ConnectionHandler
+	handlers      []internal.ConnectionHandler
 	defaultSource string
 }
 
 // Creates and returns a Wavefront Proxy Sender instance
 func NewProxySender(cfg *ProxyConfiguration) (Sender, error) {
+	sender := &proxySender{
+		defaultSource: internal.GetHostname("wavefront_proxy_sender"),
+		handlers:      make([]internal.ConnectionHandler, handlersCount),
+	}
+
 	if cfg.FlushIntervalSeconds == 0 {
 		cfg.FlushIntervalSeconds = defaultProxyFlushInterval
 	}
 
-	var metricHandler internal.ConnectionHandler
 	if cfg.MetricsPort != 0 {
-		metricHandler = makeConnHandler(cfg.Host, cfg.MetricsPort, cfg.FlushIntervalSeconds)
+		sender.handlers[metricHandler] = makeConnHandler(cfg.Host, cfg.MetricsPort, cfg.FlushIntervalSeconds)
 	}
 
-	var histoHandler internal.ConnectionHandler
 	if cfg.DistributionPort != 0 {
-		histoHandler = makeConnHandler(cfg.Host, cfg.DistributionPort, cfg.FlushIntervalSeconds)
+		sender.handlers[histoHandler] = makeConnHandler(cfg.Host, cfg.DistributionPort, cfg.FlushIntervalSeconds)
 	}
 
-	var spanHandler internal.ConnectionHandler
 	if cfg.TracingPort != 0 {
-		spanHandler = makeConnHandler(cfg.Host, cfg.TracingPort, cfg.FlushIntervalSeconds)
+		sender.handlers[spanHandler] = makeConnHandler(cfg.Host, cfg.TracingPort, cfg.FlushIntervalSeconds)
 	}
 
-	if metricHandler == nil && histoHandler == nil && spanHandler == nil {
-		return nil, errors.New("at least one proxy port should be enabled")
+	if cfg.EventsPort != 0 {
+		sender.handlers[eventHandler] = makeConnHandler(cfg.Host, cfg.EventsPort, cfg.FlushIntervalSeconds)
 	}
 
-	sender := &proxySender{
-		defaultSource: internal.GetHostname("wavefront_proxy_sender"),
-		metricHandler: metricHandler,
-		histoHandler:  histoHandler,
-		spanHandler:   spanHandler,
+	for _, h := range sender.handlers {
+		if h != nil {
+			sender.Start()
+			return sender, nil
+		}
 	}
-	sender.Start()
-	return sender, nil
+
+	return nil, errors.New("at least one proxy port should be enabled")
 }
 
 func makeConnHandler(host string, port, flushIntervalSeconds int) internal.ConnectionHandler {
@@ -58,24 +68,21 @@ func makeConnHandler(host string, port, flushIntervalSeconds int) internal.Conne
 }
 
 func (sender *proxySender) Start() {
-	if sender.metricHandler != nil {
-		sender.metricHandler.Start()
-	}
-	if sender.histoHandler != nil {
-		sender.histoHandler.Start()
-	}
-	if sender.spanHandler != nil {
-		sender.spanHandler.Start()
+	for _, h := range sender.handlers {
+		if h != nil {
+			h.Start()
+		}
 	}
 }
 
 func (sender *proxySender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
-	if sender.metricHandler == nil {
+	handler := sender.handlers[metricHandler]
+	if handler == nil {
 		return errors.New("proxy metrics port not provided, cannot send metric data")
 	}
 
-	if !sender.metricHandler.Connected() {
-		if err := sender.metricHandler.Connect(); err != nil {
+	if !handler.Connected() {
+		if err := handler.Connect(); err != nil {
 			return err
 		}
 	}
@@ -84,7 +91,7 @@ func (sender *proxySender) SendMetric(name string, value float64, ts int64, sour
 	if err != nil {
 		return err
 	}
-	err = sender.metricHandler.SendData(line)
+	err = handler.SendData(line)
 	return err
 }
 
@@ -99,12 +106,13 @@ func (sender *proxySender) SendDeltaCounter(name string, value float64, source s
 }
 
 func (sender *proxySender) SendDistribution(name string, centroids []histogram.Centroid, hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
-	if sender.histoHandler == nil {
+	handler := sender.handlers[histoHandler]
+	if handler == nil {
 		return errors.New("proxy distribution port not provided, cannot send distribution data")
 	}
 
-	if !sender.histoHandler.Connected() {
-		if err := sender.histoHandler.Connect(); err != nil {
+	if !handler.Connected() {
+		if err := handler.Connect(); err != nil {
 			return err
 		}
 	}
@@ -113,17 +121,18 @@ func (sender *proxySender) SendDistribution(name string, centroids []histogram.C
 	if err != nil {
 		return err
 	}
-	err = sender.histoHandler.SendData(line)
+	err = handler.SendData(line)
 	return err
 }
 
 func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
-	if sender.spanHandler == nil {
+	handler := sender.handlers[spanHandler]
+	if handler == nil {
 		return errors.New("proxy tracing port not provided, cannot send span data")
 	}
 
-	if !sender.spanHandler.Connected() {
-		if err := sender.spanHandler.Connect(); err != nil {
+	if !handler.Connected() {
+		if err := handler.Connect(); err != nil {
 			return err
 		}
 	}
@@ -132,7 +141,7 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 	if err != nil {
 		return err
 	}
-	err = sender.spanHandler.SendData(line)
+	err = handler.SendData(line)
 	if err != nil {
 		return err
 	}
@@ -142,59 +151,61 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 		if err != nil {
 			return err
 		}
-		return sender.spanHandler.SendData(logs)
+		return handler.SendData(logs)
 	}
 	return nil
 }
 
+func (sender *proxySender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
+	handler := sender.handlers[eventHandler]
+	if handler == nil {
+		return errors.New("proxy events port not provided, cannot send events data")
+	}
+
+	if !handler.Connected() {
+		if err := handler.Connect(); err != nil {
+			return err
+		}
+	}
+
+	line, err := EventLine(name, startMillis, endMillis, source, tags, setters...)
+	if err != nil {
+		return err
+	}
+	err = handler.SendData(line)
+	return err
+}
+
 func (sender *proxySender) Close() {
-	if sender.metricHandler != nil {
-		sender.metricHandler.Close()
-	}
-	if sender.histoHandler != nil {
-		sender.histoHandler.Close()
-	}
-	if sender.spanHandler != nil {
-		sender.spanHandler.Close()
+	for _, h := range sender.handlers {
+		if h != nil {
+			h.Close()
+		}
 	}
 }
 
 func (sender *proxySender) Flush() error {
 	errStr := ""
-	if sender.metricHandler != nil {
-		err := sender.metricHandler.Flush()
-		if err != nil {
-			errStr = errStr + err.Error() + "\n"
-		}
-	}
-	if sender.histoHandler != nil {
-		err := sender.histoHandler.Flush()
-		if err != nil {
-			errStr = errStr + err.Error() + "\n"
-		}
-	}
-	if sender.spanHandler != nil {
-		err := sender.spanHandler.Flush()
-		if err != nil {
-			errStr = errStr + err.Error()
+	for _, h := range sender.handlers {
+		if h != nil {
+			err := h.Flush()
+			if err != nil {
+				errStr = errStr + err.Error() + "\n"
+			}
 		}
 	}
 	if errStr != "" {
-		return errors.New(errStr)
+		return errors.New(strings.Trim(errStr, "\n"))
 	}
 	return nil
 }
 
 func (sender *proxySender) GetFailureCount() int64 {
 	var failures int64
-	if sender.metricHandler != nil {
-		failures += sender.metricHandler.GetFailureCount()
-	}
-	if sender.histoHandler != nil {
-		failures += sender.histoHandler.GetFailureCount()
-	}
-	if sender.histoHandler != nil {
-		failures += sender.histoHandler.GetFailureCount()
+	for _, h := range sender.handlers {
+		if h != nil {
+			failures += h.GetFailureCount()
+		}
 	}
 	return failures
 }
