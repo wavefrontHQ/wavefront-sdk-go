@@ -98,7 +98,14 @@ func (h *histogramImpl) Count() uint64 {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
-	return h.currentTimedBin.tdigest.Count()
+	res := uint64(0)
+	for _, bin := range h.priorTimedBinsList {
+		bin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
+			res += 1
+			return true
+		})
+	}
+	return res
 }
 
 // Quantile returns the desired percentile estimation.
@@ -108,7 +115,15 @@ func (h *histogramImpl) Quantile(q float64) float64 {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
-	return h.currentTimedBin.tdigest.Quantile(q)
+	tempTdigest, _ := tdigest.New()
+	for _, bin := range h.priorTimedBinsList {
+		bin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
+			tempTdigest.Add(mean)
+			return true
+		})
+	}
+
+	return tempTdigest.Quantile(q)
 }
 
 // Max returns the maximum value of samples on this histogram.
@@ -118,11 +133,16 @@ func (h *histogramImpl) Max() float64 {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
+	if len(h.priorTimedBinsList) == 0 {
+		return math.NaN()
+	}
 	max := math.SmallestNonzeroFloat64
-	h.currentTimedBin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
-		max = math.Max(max, mean)
-		return true
-	})
+	for _, bin := range h.priorTimedBinsList {
+		bin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
+			max = math.Max(max, mean)
+			return true
+		})
+	}
 	return max
 }
 
@@ -133,8 +153,11 @@ func (h *histogramImpl) Min() float64 {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
+	if len(h.priorTimedBinsList) == 0 {
+		return math.NaN()
+	}
 	min := math.MaxFloat64
-	for _, bin := range append(h.priorTimedBinsList, h.currentTimedBin) {
+	for _, bin := range h.priorTimedBinsList {
 		bin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
 			min = math.Min(min, mean)
 			return true
@@ -151,7 +174,7 @@ func (h *histogramImpl) Sum() float64 {
 	defer h.mutex.Unlock()
 
 	sum := float64(0)
-	for _, bin := range append(h.priorTimedBinsList, h.currentTimedBin) {
+	for _, bin := range h.priorTimedBinsList {
 		bin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
 			sum += mean * float64(count)
 			return true
@@ -167,9 +190,12 @@ func (h *histogramImpl) Mean() float64 {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
+	if len(h.priorTimedBinsList) == 0 {
+		return math.NaN()
+	}
 	t := float64(0)
 	c := uint32(0)
-	for _, bin := range append(h.priorTimedBinsList, h.currentTimedBin) {
+	for _, bin := range h.priorTimedBinsList {
 		bin.tdigest.ForEachCentroid(func(mean float64, count uint32) bool {
 			t += mean * float64(count)
 			c += count
