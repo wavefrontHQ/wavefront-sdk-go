@@ -11,14 +11,6 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
-const (
-	metricHandler int = iota
-	histoHandler
-	spanHandler
-	eventHandler
-	handlersCount
-)
-
 type proxySender struct {
 	handlers      []internal.ConnectionHandler
 	defaultSource string
@@ -28,7 +20,7 @@ type proxySender struct {
 func NewProxySender(cfg *ProxyConfiguration) (Sender, error) {
 	sender := &proxySender{
 		defaultSource: internal.GetHostname("wavefront_proxy_sender"),
-		handlers:      make([]internal.ConnectionHandler, handlersCount),
+		handlers:      make([]internal.ConnectionHandler, HandlersCount),
 	}
 
 	if cfg.FlushIntervalSeconds == 0 {
@@ -36,19 +28,19 @@ func NewProxySender(cfg *ProxyConfiguration) (Sender, error) {
 	}
 
 	if cfg.MetricsPort != 0 {
-		sender.handlers[metricHandler] = makeConnHandler(cfg.Host, cfg.MetricsPort, cfg.FlushIntervalSeconds)
+		sender.handlers[MetricHandler] = makeConnHandler(cfg.Host, cfg.MetricsPort, cfg.FlushIntervalSeconds)
 	}
 
 	if cfg.DistributionPort != 0 {
-		sender.handlers[histoHandler] = makeConnHandler(cfg.Host, cfg.DistributionPort, cfg.FlushIntervalSeconds)
+		sender.handlers[HistoHandler] = makeConnHandler(cfg.Host, cfg.DistributionPort, cfg.FlushIntervalSeconds)
 	}
 
 	if cfg.TracingPort != 0 {
-		sender.handlers[spanHandler] = makeConnHandler(cfg.Host, cfg.TracingPort, cfg.FlushIntervalSeconds)
+		sender.handlers[SpanHandler] = makeConnHandler(cfg.Host, cfg.TracingPort, cfg.FlushIntervalSeconds)
 	}
 
 	if cfg.EventsPort != 0 {
-		sender.handlers[eventHandler] = makeConnHandler(cfg.Host, cfg.EventsPort, cfg.FlushIntervalSeconds)
+		sender.handlers[EventHandler] = makeConnHandler(cfg.Host, cfg.EventsPort, cfg.FlushIntervalSeconds)
 	}
 
 	for _, h := range sender.handlers {
@@ -76,7 +68,7 @@ func (sender *proxySender) Start() {
 }
 
 func (sender *proxySender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
-	handler := sender.handlers[metricHandler]
+	handler := sender.handlers[MetricHandler]
 	if handler == nil {
 		return errors.New("proxy metrics port not provided, cannot send metric data")
 	}
@@ -106,7 +98,7 @@ func (sender *proxySender) SendDeltaCounter(name string, value float64, source s
 }
 
 func (sender *proxySender) SendDistribution(name string, centroids []histogram.Centroid, hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
-	handler := sender.handlers[histoHandler]
+	handler := sender.handlers[HistoHandler]
 	if handler == nil {
 		return errors.New("proxy distribution port not provided, cannot send distribution data")
 	}
@@ -126,7 +118,7 @@ func (sender *proxySender) SendDistribution(name string, centroids []histogram.C
 }
 
 func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
-	handler := sender.handlers[spanHandler]
+	handler := sender.handlers[SpanHandler]
 	if handler == nil {
 		return errors.New("proxy tracing port not provided, cannot send span data")
 	}
@@ -157,7 +149,7 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 }
 
 func (sender *proxySender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
-	handler := sender.handlers[eventHandler]
+	handler := sender.handlers[EventHandler]
 	if handler == nil {
 		return errors.New("proxy events port not provided, cannot send events data")
 	}

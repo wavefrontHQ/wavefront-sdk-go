@@ -53,3 +53,11 @@ type Sender interface {
 	internal.Flusher
 	Close()
 }
+
+const (
+	MetricHandler int = iota
+	HistoHandler
+	SpanHandler
+	EventHandler
+	HandlersCount
+)

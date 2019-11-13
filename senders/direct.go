@@ -1,9 +1,11 @@
 package senders
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/wavefronthq/wavefront-sdk-go/event"
@@ -14,11 +16,7 @@ import (
 type directSender struct {
 	reporter         internal.Reporter
 	defaultSource    string
-	pointHandler     *internal.LineHandler
-	histoHandler     *internal.LineHandler
-	spanHandler      *internal.LineHandler
-	spanLogHandler   *internal.LineHandler
-	eventHandler     *internal.LineHandler
+	handlers         []*internal.LineHandler
 	internalRegistry *internal.MetricRegistry
 }
 
@@ -41,17 +39,18 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 
 	sender := &directSender{
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
+		handlers:      make([]*internal.LineHandler, HandlersCount),
 	}
 	sender.internalRegistry = internal.NewMetricRegistry(
 		sender,
 		internal.SetPrefix("~sdk.go.core.sender.direct"),
 		internal.SetTag("pid", strconv.Itoa(os.Getpid())),
 	)
-	sender.pointHandler = makeLineHandler(reporter, cfg, internal.MetricFormat, "points", sender.internalRegistry)
-	sender.histoHandler = makeLineHandler(reporter, cfg, internal.HistogramFormat, "histograms", sender.internalRegistry)
-	sender.spanHandler = makeLineHandler(reporter, cfg, internal.TraceFormat, "spans", sender.internalRegistry)
-	sender.spanLogHandler = makeLineHandler(reporter, cfg, internal.SpanLogsFormat, "span_logs", sender.internalRegistry)
-	sender.eventHandler = makeLineHandler(reporter, cfg, internal.EventFormat, "events", sender.internalRegistry)
+	sender.handlers[MetricHandler] = makeLineHandler(reporter, cfg, internal.MetricFormat, "points", sender.internalRegistry)
+	sender.handlers[HistoHandler] = makeLineHandler(reporter, cfg, internal.HistogramFormat, "histograms", sender.internalRegistry)
+	sender.handlers[SpanHandler] = makeLineHandler(reporter, cfg, internal.TraceFormat, "spans", sender.internalRegistry)
+	sender.handlers[SpanHandler] = makeLineHandler(reporter, cfg, internal.SpanLogsFormat, "span_logs", sender.internalRegistry)
+	sender.handlers[EventHandler] = makeLineHandler(reporter, cfg, internal.EventFormat, "events", sender.internalRegistry)
 
 	sender.Start()
 	return sender, nil
@@ -72,12 +71,11 @@ func makeLineHandler(reporter internal.Reporter, cfg *DirectConfiguration, forma
 }
 
 func (sender *directSender) Start() {
-	sender.pointHandler.Start()
-	sender.histoHandler.Start()
-	sender.spanHandler.Start()
-	sender.spanLogHandler.Start()
-	sender.internalRegistry.Start()
-	sender.eventHandler.Start()
+	for _, h := range sender.handlers {
+		if h != nil {
+			h.Start()
+		}
+	}
 }
 
 func (sender *directSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
@@ -85,7 +83,7 @@ func (sender *directSender) SendMetric(name string, value float64, ts int64, sou
 	if err != nil {
 		return err
 	}
-	return sender.pointHandler.HandleLine(line)
+	return sender.handlers[MetricHandler].HandleLine(line)
 }
 
 func (sender *directSender) SendDeltaCounter(name string, value float64, source string, tags map[string]string) error {
@@ -104,7 +102,7 @@ func (sender *directSender) SendDistribution(name string, centroids []histogram.
 	if err != nil {
 		return err
 	}
-	return sender.histoHandler.HandleLine(line)
+	return sender.handlers[HistoHandler].HandleLine(line)
 }
 
 func (sender *directSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
@@ -113,7 +111,7 @@ func (sender *directSender) SendSpan(name string, startMillis, durationMillis in
 	if err != nil {
 		return err
 	}
-	err = sender.spanHandler.HandleLine(line)
+	err = sender.handlers[SpanHandler].HandleLine(line)
 	if err != nil {
 		return err
 	}
@@ -123,7 +121,7 @@ func (sender *directSender) SendSpan(name string, startMillis, durationMillis in
 		if err != nil {
 			return err
 		}
-		return sender.spanLogHandler.HandleLine(logs)
+		return sender.handlers[SpanHandler].HandleLine(logs)
 	}
 	return nil
 }
@@ -133,50 +131,40 @@ func (sender *directSender) SendEvent(name string, startMillis, endMillis int64,
 	if err != nil {
 		return err
 	}
-	return sender.eventHandler.HandleLine(line)
+	return sender.handlers[EventHandler].HandleLine(line)
 }
 
 func (sender *directSender) Close() {
-	sender.pointHandler.Stop()
-	sender.histoHandler.Stop()
-	sender.spanHandler.Stop()
-	sender.spanLogHandler.Stop()
+	for _, h := range sender.handlers {
+		if h != nil {
+			h.Stop()
+		}
+	}
 	sender.internalRegistry.Stop()
-	sender.eventHandler.Stop()
 }
 
 func (sender *directSender) Flush() error {
 	errStr := ""
-	err := sender.pointHandler.Flush()
-	if err != nil {
-		errStr = errStr + err.Error() + "\n"
-	}
-	err = sender.histoHandler.Flush()
-	if err != nil {
-		errStr = errStr + err.Error() + "\n"
-	}
-	err = sender.spanHandler.Flush()
-	if err != nil {
-		errStr = errStr + err.Error()
-	}
-	err = sender.spanLogHandler.Flush()
-	if err != nil {
-		errStr = errStr + err.Error()
-	}
-	err = sender.eventHandler.Flush()
-	if err != nil {
-		errStr = errStr + err.Error()
+	for _, h := range sender.handlers {
+		if h != nil {
+			err := h.Flush()
+			if err != nil {
+				errStr = errStr + err.Error() + "\n"
+			}
+		}
 	}
 	if errStr != "" {
-		return fmt.Errorf(errStr)
+		return errors.New(strings.Trim(errStr, "\n"))
 	}
 	return nil
 }
 
 func (sender *directSender) GetFailureCount() int64 {
-	return sender.pointHandler.GetFailureCount() +
-		sender.histoHandler.GetFailureCount() +
-		sender.spanHandler.GetFailureCount() +
-		sender.spanLogHandler.GetFailureCount() +
-		sender.eventHandler.GetFailureCount()
+	var failures int64
+	for _, h := range sender.handlers {
+		if h != nil {
+			failures += h.GetFailureCount()
+		}
+	}
+	return failures
 }
