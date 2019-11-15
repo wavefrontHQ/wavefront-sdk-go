@@ -76,6 +76,7 @@ func (sender *directSender) Start() {
 			h.Start()
 		}
 	}
+	sender.internalRegistry.Start()
 }
 
 func (sender *directSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
