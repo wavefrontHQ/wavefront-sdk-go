@@ -129,7 +129,7 @@ func (sender *directSender) SendSpan(name string, startMillis, durationMillis in
 }
 
 func (sender *directSender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
-	line, err := EventLineJSOM(name, startMillis, endMillis, source, tags, setters...)
+	line, err := EventLineJSON(name, startMillis, endMillis, source, tags, setters...)
 	if err != nil {
 		return err
 	}

@@ -216,24 +216,16 @@ func EventLine(name string, startMillis, endMillis int64, source string, tags ma
 	sb.WriteString(" ")
 	sb.WriteString(strconv.Quote(name))
 
-	if t, ok := annotations["type"]; ok {
-		sb.WriteString(" type=")
-		sb.WriteString(strconv.Quote(t))
+	for k, v := range annotations {
+		sb.WriteString(" ")
+		sb.WriteString(k)
+		sb.WriteString("=")
+		sb.WriteString(strconv.Quote(v))
 	}
 
 	if len(source) > 0 {
 		sb.WriteString(" host=")
 		sb.WriteString(strconv.Quote(source))
-	}
-
-	if s, ok := annotations["severity"]; ok {
-		sb.WriteString(" severity=")
-		sb.WriteString(strconv.Quote(s))
-	}
-
-	if d, ok := annotations["details"]; ok {
-		sb.WriteString(" description=")
-		sb.WriteString(strconv.Quote(d))
 	}
 
 	for k, v := range tags {
@@ -247,7 +239,7 @@ func EventLine(name string, startMillis, endMillis int64, source string, tags ma
 
 // EventLine encode the event to a wf API format
 // set endMillis to 0 for a 'Instantaneous' event
-func EventLineJSOM(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) (string, error) {
+func EventLineJSON(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) (string, error) {
 	annotations := map[string]string{}
 	l := map[string]interface{}{
 		"name":        name,
