@@ -51,7 +51,7 @@ func MetricLine(name string, value float64, ts int64, source string, tags map[st
 		sb.WriteString(" ")
 		sb.WriteString(strconv.Quote(sanitizeInternal(k)))
 		sb.WriteString("=")
-		sb.WriteString(strconv.Quote(sanitizeValue(v)))
+		sb.WriteString(sanitizeValue(v))
 	}
 	sb.WriteString("\n")
 	return sb.String(), nil
@@ -103,7 +103,7 @@ func HistoLine(name string, centroids []histogram.Centroid, hgs map[histogram.Gr
 		sb.WriteString(" ")
 		sb.WriteString(strconv.Quote(sanitizeInternal(k)))
 		sb.WriteString("=")
-		sb.WriteString(strconv.Quote(sanitizeValue(v)))
+		sb.WriteString(sanitizeValue(v))
 	}
 	sbBytes := sb.Bytes()
 
@@ -140,7 +140,7 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 	sb := GetBuffer()
 	defer PutBuffer(sb)
 
-	sb.WriteString(strconv.Quote(sanitizeValue(name)))
+	sb.WriteString(sanitizeValue(name))
 	sb.WriteString(" source=")
 	sb.WriteString(strconv.Quote(sanitizeInternal(source)))
 	sb.WriteString(" traceId=")
@@ -172,7 +172,7 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 		sb.WriteString(" ")
 		sb.WriteString(strconv.Quote(sanitizeInternal(tag.Key)))
 		sb.WriteString("=")
-		sb.WriteString(strconv.Quote(sanitizeValue(tag.Value)))
+		sb.WriteString(sanitizeValue(tag.Value))
 	}
 	sb.WriteString(" ")
 	sb.WriteString(strconv.FormatInt(startMillis, 10))
@@ -333,7 +333,7 @@ func sanitizeInternal(str string) string {
 		skipHead = 1
 	}
 
-	for i:= 0; i < len(str); i++ {
+	for i := 0; i < len(str); i++ {
 		if skipHead > 0 {
 			i += skipHead
 			skipHead = 0
@@ -342,9 +342,8 @@ func sanitizeInternal(str string) string {
 		strCur := string(cur)
 		isLegal := true
 
-		if !(44 <= cur && cur <= 57) && !(65 <= cur && cur <= 90) && !(
-			97 <= cur && cur <= 122) && cur != 95 {
-				isLegal = false
+		if !(44 <= cur && cur <= 57) && !(65 <= cur && cur <= 90) && !(97 <= cur && cur <= 122) && cur != 95 {
+			isLegal = false
 		}
 		if isLegal {
 			sb.WriteString(strCur)

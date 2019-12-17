@@ -1,36 +1,36 @@
 package senders
 
 import (
+	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"strconv"
 	"testing"
-	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 )
 
 var line string
 
 func TestSanitizeInternal(t *testing.T) {
-	assertEqual(t,"\"hello\"", strconv.Quote(sanitizeInternal("hello")))
-	assertEqual(t,"\"hello-world\"", strconv.Quote(sanitizeInternal("hello world")))
-	assertEqual(t,"\"hello.world\"", strconv.Quote(sanitizeInternal("hello.world")))
-	assertEqual(t,"\"hello-world-\"", strconv.Quote(sanitizeInternal("hello\"world\"")))
-	assertEqual(t,"\"hello-world\"", strconv.Quote(sanitizeInternal("hello'world")))
-	assertEqual(t,"\"~component.heartbeat\"", strconv.Quote(sanitizeInternal("~component." +
+	assertEqual(t, "\"hello\"", strconv.Quote(sanitizeInternal("hello")))
+	assertEqual(t, "\"hello-world\"", strconv.Quote(sanitizeInternal("hello world")))
+	assertEqual(t, "\"hello.world\"", strconv.Quote(sanitizeInternal("hello.world")))
+	assertEqual(t, "\"hello-world-\"", strconv.Quote(sanitizeInternal("hello\"world\"")))
+	assertEqual(t, "\"hello-world\"", strconv.Quote(sanitizeInternal("hello'world")))
+	assertEqual(t, "\"~component.heartbeat\"", strconv.Quote(sanitizeInternal("~component." +
 		"heartbeat")))
-	assertEqual(t,"\"-component.heartbeat\"", strconv.Quote(sanitizeInternal("!component." +
+	assertEqual(t, "\"-component.heartbeat\"", strconv.Quote(sanitizeInternal("!component." +
 		"heartbeat")))
-	assertEqual(t,"\"Δcomponent.heartbeat\"", strconv.Quote(sanitizeInternal("Δcomponent." +
+	assertEqual(t, "\"Δcomponent.heartbeat\"", strconv.Quote(sanitizeInternal("Δcomponent." +
 		"heartbeat")))
-	assertEqual(t,"\"∆component.heartbeat\"", strconv.Quote(sanitizeInternal("∆component." +
+	assertEqual(t, "\"∆component.heartbeat\"", strconv.Quote(sanitizeInternal("∆component." +
 		"heartbeat")))
 }
 
 func TestSanitizeValue(t *testing.T) {
-	assertEqual(t,"\"hello\"", sanitizeValue("hello"))
-	assertEqual(t,"\"hello world\"", sanitizeValue("hello world"))
-	assertEqual(t,"\"hello.world\"", sanitizeValue("hello.world"))
-	assertEqual(t,"\"hello\\\"world\\\"\"", sanitizeValue("hello\"world\""))
-	assertEqual(t,"\"hello'world\"", sanitizeValue("hello'world"))
-	assertEqual(t,"\"hello\\nworld\"", sanitizeValue("hello\nworld"))
+	assertEqual(t, "\"hello\"", sanitizeValue("hello"))
+	assertEqual(t, "\"hello world\"", sanitizeValue("hello world"))
+	assertEqual(t, "\"hello.world\"", sanitizeValue("hello.world"))
+	assertEqual(t, "\"hello\\\"world\\\"\"", sanitizeValue("hello\"world\""))
+	assertEqual(t, "\"hello'world\"", sanitizeValue("hello'world"))
+	assertEqual(t, "\"hello\\nworld\"", sanitizeValue("hello\nworld"))
 }
 
 func BenchmarkMetricLine(b *testing.B) {
@@ -155,7 +155,7 @@ func assertEquals(expected, actual string, err error, t *testing.T) {
 
 func assertEqual(t *testing.T, a interface{}, b interface{}) {
 	if a != b {
-		t.Fatalf("%s - %v != %v","", a, b)
+		t.Fatalf("%s - %v != %v", "", a, b)
 	}
 }
 
