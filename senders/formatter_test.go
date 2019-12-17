@@ -14,13 +14,13 @@ func TestSanitizeInternal(t *testing.T) {
 	assertEqual(t, "\"hello.world\"", strconv.Quote(sanitizeInternal("hello.world")))
 	assertEqual(t, "\"hello-world-\"", strconv.Quote(sanitizeInternal("hello\"world\"")))
 	assertEqual(t, "\"hello-world\"", strconv.Quote(sanitizeInternal("hello'world")))
-	assertEqual(t, "\"~component.heartbeat\"", strconv.Quote(sanitizeInternal("~component." +
+	assertEqual(t, "\"~component.heartbeat\"", strconv.Quote(sanitizeInternal("~component."+
 		"heartbeat")))
-	assertEqual(t, "\"-component.heartbeat\"", strconv.Quote(sanitizeInternal("!component." +
+	assertEqual(t, "\"-component.heartbeat\"", strconv.Quote(sanitizeInternal("!component."+
 		"heartbeat")))
-	assertEqual(t, "\"Δcomponent.heartbeat\"", strconv.Quote(sanitizeInternal("Δcomponent." +
+	assertEqual(t, "\"Δcomponent.heartbeat\"", strconv.Quote(sanitizeInternal("Δcomponent."+
 		"heartbeat")))
-	assertEqual(t, "\"∆component.heartbeat\"", strconv.Quote(sanitizeInternal("∆component." +
+	assertEqual(t, "\"∆component.heartbeat\"", strconv.Quote(sanitizeInternal("∆component."+
 		"heartbeat")))
 }
 
