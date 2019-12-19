@@ -17,6 +17,9 @@ const (
 	altDeltaPrefix = "\u0394"
 )
 
+var /* const */ quotation = regexp.MustCompile("\"")
+var /* const */ lineBreak = regexp.MustCompile("\\n")
+
 // Gets a metric line in the Wavefront metrics data format:
 // <metricName> <metricValue> [<timestamp>] source=<source> [pointTags]
 // Example: "new-york.power.usage 42422.0 1533531013 source=localhost datacenter=dc1"
@@ -315,10 +318,13 @@ func isUUIDFormat(str string) bool {
 	return true
 }
 
+//Sanitize string of metric name, source and key of tags according to the rule of Wavefront proxy.
 func sanitizeInternal(str string) string {
 	sb := GetBuffer()
 	defer PutBuffer(sb)
 
+	// first character can be \u2206 (∆ - INCREMENT) or \u0394 (Δ - GREEK CAPITAL LETTER DELTA)
+	// or ~ tilda character for internal metrics
 	skipHead := 0
 	if strings.HasPrefix(str, deltaPrefix) {
 		sb.WriteString(deltaPrefix)
@@ -354,12 +360,11 @@ func sanitizeInternal(str string) string {
 	return sb.String()
 }
 
+//Sanitize string of tags value, etc.
 func sanitizeValue(str string) string {
 	res := strings.TrimSpace(str)
 	if strings.Contains(str, "\"") || strings.Contains(str, "'") {
-		resReg, _ := regexp.Compile("\"")
-		res = resReg.ReplaceAllString(res, "\\\"")
+		res = quotation.ReplaceAllString(res, "\\\"")
 	}
-	resReg, _ := regexp.Compile("\\n")
-	return "\"" + resReg.ReplaceAllString(res, "\\n") + "\""
+	return "\"" + lineBreak.ReplaceAllString(res, "\\n") + "\""
 }
