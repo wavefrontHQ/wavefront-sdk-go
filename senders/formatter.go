@@ -5,11 +5,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
-
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
+	"regexp"
+	"strconv"
+	"strings"
 )
+
+const (
+	deltaPrefix    = "\u2206"
+	altDeltaPrefix = "\u0394"
+)
+
+var /* const */ quotation = regexp.MustCompile("\"")
+var /* const */ lineBreak = regexp.MustCompile("\\n")
 
 // Gets a metric line in the Wavefront metrics data format:
 // <metricName> <metricValue> [<timestamp>] source=<source> [pointTags]
@@ -26,7 +35,7 @@ func MetricLine(name string, value float64, ts int64, source string, tags map[st
 	sb := GetBuffer()
 	defer PutBuffer(sb)
 
-	sb.WriteString(strconv.Quote(name))
+	sb.WriteString(strconv.Quote(sanitizeInternal(name)))
 	sb.WriteString(" ")
 	sb.WriteString(strconv.FormatFloat(value, 'f', -1, 64))
 
@@ -36,16 +45,16 @@ func MetricLine(name string, value float64, ts int64, source string, tags map[st
 	}
 
 	sb.WriteString(" source=")
-	sb.WriteString(strconv.Quote(source))
+	sb.WriteString(strconv.Quote(sanitizeInternal(source)))
 
 	for k, v := range tags {
 		if v == "" {
 			return "", errors.New("metric point tag value cannot be blank")
 		}
 		sb.WriteString(" ")
-		sb.WriteString(strconv.Quote(k))
+		sb.WriteString(strconv.Quote(sanitizeInternal(k)))
 		sb.WriteString("=")
-		sb.WriteString(strconv.Quote(v))
+		sb.WriteString(sanitizeValue(v))
 	}
 	sb.WriteString("\n")
 	return sb.String(), nil
@@ -86,18 +95,18 @@ func HistoLine(name string, centroids []histogram.Centroid, hgs map[histogram.Gr
 		sb.WriteString(strconv.FormatFloat(centroid.Value, 'f', -1, 64))
 	}
 	sb.WriteString(" ")
-	sb.WriteString(strconv.Quote(name))
+	sb.WriteString(strconv.Quote(sanitizeInternal(name)))
 	sb.WriteString(" source=")
-	sb.WriteString(strconv.Quote(source))
+	sb.WriteString(strconv.Quote(sanitizeInternal(source)))
 
 	for k, v := range tags {
 		if v == "" {
 			return "", errors.New("histogram tag value cannot be blank")
 		}
 		sb.WriteString(" ")
-		sb.WriteString(strconv.Quote(k))
+		sb.WriteString(strconv.Quote(sanitizeInternal(k)))
 		sb.WriteString("=")
-		sb.WriteString(strconv.Quote(v))
+		sb.WriteString(sanitizeValue(v))
 	}
 	sbBytes := sb.Bytes()
 
@@ -134,9 +143,9 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 	sb := GetBuffer()
 	defer PutBuffer(sb)
 
-	sb.WriteString(strconv.Quote(name))
+	sb.WriteString(sanitizeValue(name))
 	sb.WriteString(" source=")
-	sb.WriteString(strconv.Quote(source))
+	sb.WriteString(strconv.Quote(sanitizeInternal(source)))
 	sb.WriteString(" traceId=")
 	sb.WriteString(traceId)
 	sb.WriteString(" spanId=")
@@ -154,9 +163,9 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 
 	if len(spanLogs) > 0 {
 		sb.WriteString(" ")
-		sb.WriteString(strconv.Quote("_spanLogs"))
+		sb.WriteString(strconv.Quote(sanitizeInternal("_spanLogs")))
 		sb.WriteString("=")
-		sb.WriteString(strconv.Quote("true"))
+		sb.WriteString(strconv.Quote(sanitizeInternal("true")))
 	}
 
 	for _, tag := range tags {
@@ -164,9 +173,9 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 			return "", errors.New("span tag key/value cannot be blank")
 		}
 		sb.WriteString(" ")
-		sb.WriteString(strconv.Quote(tag.Key))
+		sb.WriteString(strconv.Quote(sanitizeInternal(tag.Key)))
 		sb.WriteString("=")
-		sb.WriteString(strconv.Quote(tag.Value))
+		sb.WriteString(sanitizeValue(tag.Value))
 	}
 	sb.WriteString(" ")
 	sb.WriteString(strconv.FormatInt(startMillis, 10))
@@ -307,4 +316,55 @@ func isUUIDFormat(str string) bool {
 		}
 	}
 	return true
+}
+
+//Sanitize string of metric name, source and key of tags according to the rule of Wavefront proxy.
+func sanitizeInternal(str string) string {
+	sb := GetBuffer()
+	defer PutBuffer(sb)
+
+	// first character can be \u2206 (∆ - INCREMENT) or \u0394 (Δ - GREEK CAPITAL LETTER DELTA)
+	// or ~ tilda character for internal metrics
+	skipHead := 0
+	if strings.HasPrefix(str, deltaPrefix) {
+		sb.WriteString(deltaPrefix)
+		skipHead = 3
+	}
+	if strings.HasPrefix(str, altDeltaPrefix) {
+		sb.WriteString(altDeltaPrefix)
+		skipHead = 2
+	}
+	if str[0] == 126 {
+		sb.WriteString(string(str[0]))
+		skipHead = 1
+	}
+
+	for i := 0; i < len(str); i++ {
+		if skipHead > 0 {
+			i += skipHead
+			skipHead = 0
+		}
+		cur := str[i]
+		strCur := string(cur)
+		isLegal := true
+
+		if !(44 <= cur && cur <= 57) && !(65 <= cur && cur <= 90) && !(97 <= cur && cur <= 122) && cur != 95 {
+			isLegal = false
+		}
+		if isLegal {
+			sb.WriteString(strCur)
+		} else {
+			sb.WriteString("-")
+		}
+	}
+	return sb.String()
+}
+
+//Sanitize string of tags value, etc.
+func sanitizeValue(str string) string {
+	res := strings.TrimSpace(str)
+	if strings.Contains(str, "\"") || strings.Contains(str, "'") {
+		res = quotation.ReplaceAllString(res, "\\\"")
+	}
+	return "\"" + lineBreak.ReplaceAllString(res, "\\n") + "\""
 }
