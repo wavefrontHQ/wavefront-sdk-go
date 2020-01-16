@@ -103,7 +103,7 @@ func (sender *proxySender) SendDeltaCounter(name string, value float64, source s
 		name = internal.DeltaCounterName(name)
 	}
 	if value > 0 {
-	        return sender.SendMetric(name, value, 0, source, tags)
+		return sender.SendMetric(name, value, 0, source, tags)
 	}
 	return nil
 }
