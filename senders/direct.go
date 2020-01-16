@@ -95,7 +95,10 @@ func (sender *directSender) SendDeltaCounter(name string, value float64, source 
 	if !internal.HasDeltaPrefix(name) {
 		name = internal.DeltaCounterName(name)
 	}
-	return sender.SendMetric(name, value, 0, source, tags)
+	if value > 0 {
+		return sender.SendMetric(name, value, 0, source, tags)
+	}
+	return nil
 }
 
 func (sender *directSender) SendDistribution(name string, centroids []histogram.Centroid,

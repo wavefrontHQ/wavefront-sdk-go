@@ -102,7 +102,10 @@ func (sender *proxySender) SendDeltaCounter(name string, value float64, source s
 	if !internal.HasDeltaPrefix(name) {
 		name = internal.DeltaCounterName(name)
 	}
-	return sender.SendMetric(name, value, 0, source, tags)
+	if value > 0 {
+		return sender.SendMetric(name, value, 0, source, tags)
+	}
+	return nil
 }
 
 func (sender *proxySender) SendDistribution(name string, centroids []histogram.Centroid, hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
