@@ -15,6 +15,16 @@ import (
 )
 ```
 
+Make sure you have go.mod file that can be updated. If you do not have the go.mod file, run the following command to initialize it.
+
+```go mod init
+```
+
+Sometimes, it is necessary for you to provide the module name when you are initializing it (usually the directory that you are running go application).
+
+```go mod init <module_name>
+```
+
 ### Proxy Sender
 Depending on the data you wish to send to Wavefront (metrics, distributions and/or spans), enable the relevant ports on the proxy and initialize the proxy sender as follows:
 
