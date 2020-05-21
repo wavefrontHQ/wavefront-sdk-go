@@ -1,9 +1,10 @@
 package senders
 
 import (
-	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"strconv"
 	"testing"
+
+	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 )
 
 var line string
@@ -82,12 +83,12 @@ func TestHistoLine(t *testing.T) {
 	expected := "!M 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
 	assertEquals(expected, line, err, t)
 
-	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
+	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: false},
 		1533529977, "", map[string]string{"env": "test"}, "default")
 	expected = "!M 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assertEquals(expected, line, err, t)
 
-	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.HOUR: true},
+	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.HOUR: true, histogram.MINUTE: false},
 		1533529977, "", map[string]string{"env": "test"}, "default")
 	expected = "!H 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assertEquals(expected, line, err, t)
@@ -97,7 +98,7 @@ func TestHistoLine(t *testing.T) {
 	expected = "!D 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assertEquals(expected, line, err, t)
 
-	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: true},
+	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: true, histogram.DAY: false},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
 	expected = "!M 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n" +
 		"!H 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
