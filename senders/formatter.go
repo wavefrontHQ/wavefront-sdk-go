@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/wavefronthq/wavefront-sdk-go/event"
-	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/wavefronthq/wavefront-sdk-go/event"
+	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 )
 
 const (
@@ -111,10 +112,12 @@ func HistoLine(name string, centroids []histogram.Centroid, hgs map[histogram.Gr
 	sbBytes := sb.Bytes()
 
 	sbg := bytes.Buffer{}
-	for hg := range hgs {
-		sbg.WriteString(hg.String())
-		sbg.Write(sbBytes)
-		sbg.WriteString("\n")
+	for hg, on := range hgs {
+		if on {
+			sbg.WriteString(hg.String())
+			sbg.Write(sbBytes)
+			sbg.WriteString("\n")
+		}
 	}
 	return sbg.String(), nil
 }
