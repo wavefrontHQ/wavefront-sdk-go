@@ -31,7 +31,6 @@ func New(application, service string) Tags {
 
 // Map with all values
 func (app *Tags) Map() map[string]string {
-	os.Getenv("pp")
 	allTags := make(map[string]string)
 	allTags["application"] = app.Application
 	allTags["service"] = app.Service
