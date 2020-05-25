@@ -3,7 +3,7 @@
 package application
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -44,11 +44,10 @@ func (app *Tags) Map() map[string]string {
 }
 
 // AddCustomTagsFromEnv set additional custom tags from environment variables that match the given regex.
-func (app *Tags) AddCustomTagsFromEnv(regx string) {
+func (app *Tags) AddCustomTagsFromEnv(regx string) error {
 	r, err := regexp.Compile(regx)
 	if err != nil {
-		log.Printf("Error creating custom tags: %v\n", err)
-		return
+		return fmt.Errorf("error creating custom tags, %v", err)
 	}
 
 	env := os.Environ()
@@ -61,12 +60,16 @@ func (app *Tags) AddCustomTagsFromEnv(regx string) {
 			}
 		}
 	}
+	return nil
 }
 
 // AddCustomTagFromEnv Set a custom tag from the given environment variable.
-func (app *Tags) AddCustomTagFromEnv(varName, tag string) {
+func (app *Tags) AddCustomTagFromEnv(varName, tag string) error {
 	v := os.Getenv(varName)
 	if len(v) > 0 {
 		app.CustomTags[tag] = v
+	} else {
+		return fmt.Errorf("error creating custom tag, env var '%s' not found", varName)
 	}
+	return nil
 }

@@ -22,4 +22,7 @@ func TestAppTagsEnv(t *testing.T) {
 	assert.Equal(t, "value_1", tags["app_label_1"])
 	assert.Empty(t, tags["label_3"])
 	assert.Equal(t, "value_3", tags["app_3"])
+
+	assert.NotNil(t, appTags.AddCustomTagsFromEnv("ap\\p_.*"))
+	assert.NotNil(t, appTags.AddCustomTagFromEnv("label_x", "app_3"))
 }
