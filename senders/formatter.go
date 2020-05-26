@@ -46,7 +46,7 @@ func MetricLine(name string, value float64, ts int64, source string, tags map[st
 	}
 
 	sb.WriteString(" source=")
-	sb.WriteString(strconv.Quote(sanitizeInternal(source)))
+	sb.WriteString(sanitizeValue(source))
 
 	for k, v := range tags {
 		if v == "" {
@@ -98,7 +98,7 @@ func HistoLine(name string, centroids []histogram.Centroid, hgs map[histogram.Gr
 	sb.WriteString(" ")
 	sb.WriteString(strconv.Quote(sanitizeInternal(name)))
 	sb.WriteString(" source=")
-	sb.WriteString(strconv.Quote(sanitizeInternal(source)))
+	sb.WriteString(sanitizeValue(source))
 
 	for k, v := range tags {
 		if v == "" {
@@ -148,7 +148,7 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 
 	sb.WriteString(sanitizeValue(name))
 	sb.WriteString(" source=")
-	sb.WriteString(strconv.Quote(sanitizeInternal(source)))
+	sb.WriteString(sanitizeValue(source))
 	sb.WriteString(" traceId=")
 	sb.WriteString(traceId)
 	sb.WriteString(" spanId=")
