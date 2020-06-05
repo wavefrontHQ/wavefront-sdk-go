@@ -20,6 +20,9 @@ const (
 )
 
 type LineHandler struct {
+	failures  int64
+	throttled int64
+
 	Reporter      Reporter
 	BatchSize     int
 	MaxBufferSize int
@@ -31,9 +34,6 @@ type LineHandler struct {
 
 	mtx                sync.Mutex
 	lockOnErrThrottled bool
-
-	failures  int64
-	throttled int64
 
 	buffer chan string
 	done   chan struct{}
