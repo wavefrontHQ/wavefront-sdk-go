@@ -22,7 +22,7 @@ const (
 type LineHandler struct {
 	failures  int64
 	throttled int64
-	
+
 	Reporter      Reporter
 	BatchSize     int
 	MaxBufferSize int
