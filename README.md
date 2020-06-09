@@ -186,3 +186,4 @@ sender.Close()
 [godoc-img]: https://godoc.org/github.com/wavefrontHQ/wavefront-sdk-go/senders?status.svg
 [go-report-img]: https://goreportcard.com/badge/github.com/wavefronthq/wavefront-sdk-go
 [go-report]: https://goreportcard.com/report/github.com/wavefronthq/wavefront-sdk-go
+[![Github All Releases](https://img.shields.io/github/downloads/wavefrontHQ/wavefront-sdk-go/total.svg)]()
