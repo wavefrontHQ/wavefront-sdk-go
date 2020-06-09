@@ -8,9 +8,9 @@
 * [License](#License)
 * [How to Get Support and Contribute](#how-to-get-support-and-contribute)
 
-# Welcome to Wavefront's Go SDK
+# Welcome to the Wavefront Go SDK
 
-Wavefront by VMware Go SDK lets you send raw data from your Go application to Wavefront using a `Sender` interface. The data is then stored as metrics, histograms, and trace data. This SDK is also referred to as the Wavefront Sender SDK for Go. 
+Wavefront by VMware Go SDK lets you send raw data from your Go application to Wavefront using a `Sender` interface. The data is then stored as metrics, histograms, and trace data. This SDK is also called the Wavefront Sender SDK for Go. 
 
 Although this library is mostly used by the other Wavefront Go SDKs to send data to Wavefront, you can also use this SDK directly. For example, you can send data directly from a data store or CSV file to Wavefront.
 
@@ -135,7 +135,7 @@ You can send metrics, histograms, or trace data from your application to the Wav
 [Create a DirectConfiguration](#option-2-sending-data-via-direct-ingestion) to send data directly to a Wavefront service.
   
 ### Option 1: Sending Data via the Wavefront Proxy
-Depending on the data you wish to send to Wavefront (metrics, distributions and/or spans), enable the relevant ports on the proxy and initialize the proxy sender as follows:
+Depending on the data you wish to send to Wavefront (metrics, distributions (histograms) and/or spans), enable the relevant ports on the proxy and initialize the proxy sender as follows:
 
 ```go
 import (
@@ -291,7 +291,7 @@ the OpenTracing SDK with the `WavefrontTracer`.
 * To use OpenTracing with Wavefront, see the [Wavefront Go OpenTracing SDK](https://github.com/wavefrontHQ/wavefront-opentracing-sdk-go).
 
 ## Close the Sender
-It is recommended to flush the buffer and close the sender before shutting down your application.
+Before shutting down your application, flush the buffer and close the sender.
 
 ```go
 // failures observed while sending metrics/histograms/spans, can be obtained as follows:
