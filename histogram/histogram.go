@@ -47,8 +47,20 @@ func MaxBins(c int) Option {
 	}
 }
 
+// TimeSupplier for the histogram time computations
+func TimeSupplier(supplier func() time.Time) Option {
+	return func(args *histogramImpl) {
+		args.timeSupplier = supplier
+	}
+}
+
 func defaultHistogramImpl() *histogramImpl {
-	return &histogramImpl{maxBins: 10, granularity: MINUTE, compression: 5}
+	return &histogramImpl{
+		maxBins:      10,
+		granularity:  MINUTE,
+		compression:  5,
+		timeSupplier: time.Now,
+	}
 }
 
 // New creates a new Wavefront histogram
@@ -65,9 +77,10 @@ type histogramImpl struct {
 	priorTimedBinsList []*timedBin
 	currentTimedBin    *timedBin
 
-	granularity Granularity
-	compression float64
-	maxBins     int
+	granularity  Granularity
+	compression  float64
+	maxBins      int
+	timeSupplier func() time.Time
 }
 
 type timedBin struct {
@@ -210,12 +223,12 @@ func (h *histogramImpl) Granularity() Granularity {
 	return h.granularity
 }
 
-// Snapshot returns a copy of all samples on comlepted time slices
+// Snapshot returns a copy of all samples on completed time slices
 func (h *histogramImpl) Snapshot() []Distribution {
 	return h.distributions(false)
 }
 
-// Distributions returns all samples on comlepted time slices, and clear the histogram
+// Distributions returns all samples on completed time slices, and clears the histogram
 func (h *histogramImpl) Distributions() []Distribution {
 	return h.distributions(true)
 }
@@ -257,7 +270,7 @@ func (h *histogramImpl) rotateCurrentTDigestIfNeedIt() {
 }
 
 func (h *histogramImpl) now() time.Time {
-	return time.Now().Truncate(h.granularity.Duration())
+	return h.timeSupplier().Truncate(h.granularity.Duration())
 }
 
 func (h *histogramImpl) newTimedBin() *timedBin {
