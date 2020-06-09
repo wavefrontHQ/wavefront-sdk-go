@@ -2,10 +2,9 @@
 
 ## Table of Content
 * [Prerequisites](#Prerequisites)
-* [Set Up a WavefrontSender](#set-up-a-wavefrontsender)
+* [Set Up a Sender](#set-up-a-sender)
 * [Send Data to Wavefront](#send-data-to-wavefront)
-* [Close the WavefrontSender](#close-the-wavefrontsender)
-* [Monitor the SDK](#monitor-the-sdk)
+* [Close the Sender](#close-the-sender)
 * [License](#License)
 * [How to Get Support and Contribute](#how-to-get-support-and-contribute)
 
@@ -125,7 +124,7 @@ Although this library is mostly used by the other Wavefront Go SDKs to send data
     )
     ```
 
-## Set Up a WavefrontSender
+## Set Up a Sender
 
 You can send metrics, histograms, or trace data from your application to the Wavefront service using a Wavefront proxy or direct ingestions.
 
@@ -216,7 +215,7 @@ func main() {
 
 Wavefront supports different metric types, such as gauges, counters, delta counters, histograms, traces, and spans. See [Metrics](https://docs.wavefront.com/metric_types.html) for details. To send data to Wavefront using `Sender` you need to instantiate the following:
  * [Metrics and Delta Counters](#Metrics-and-Delta-Counters)
- * [Distributions (Histograms)](#Distributions-(Histograms))
+ * [Distributions (Histograms)](#distributions-histograms)
  * [Tracing Spans](#Tracing-Spans)
 
 #### Metrics and Delta Counters
@@ -293,7 +292,7 @@ the OpenTracing SDK with the `WavefrontTracer`.
 * See the [Go OpenTracing project](https://github.com/opentracing/opentracing-go) for details. 
 * To use OpenTracing with Wavefront, see the [Wavefront OpenTracing SDK](https://github.com/wavefrontHQ/wavefront-opentracing-sdk-go).
 
-#### Closing the Sender
+#### Close the Sender
 It is recommended to flush the buffer and close the sender before shutting down your application.
 
 ```go
