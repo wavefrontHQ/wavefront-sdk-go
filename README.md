@@ -211,7 +211,7 @@ func main() {
 
 ```
 
-### Send Data to Wavefront
+## Send Data to Wavefront
 
 Wavefront supports different metric types, such as gauges, counters, delta counters, histograms, traces, and spans. See [Metrics](https://docs.wavefront.com/metric_types.html) for details. To send data to Wavefront using `Sender` you need to instantiate the following:
  * [Metrics and Delta Counters](#Metrics-and-Delta-Counters)
@@ -292,7 +292,7 @@ the OpenTracing SDK with the `WavefrontTracer`.
 * See the [Go OpenTracing project](https://github.com/opentracing/opentracing-go) for details. 
 * To use OpenTracing with Wavefront, see the [Wavefront OpenTracing SDK](https://github.com/wavefrontHQ/wavefront-opentracing-sdk-go).
 
-#### Close the Sender
+## Close the Sender
 It is recommended to flush the buffer and close the sender before shutting down your application.
 
 ```go
