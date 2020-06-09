@@ -1,21 +1,143 @@
 # wavefront-sdk-go [![build status][ci-img]][ci] [![Go Report Card][go-report-img]][go-report] [![GoDoc][godoc-img]][godoc]
 
-This library provides support for sending metrics, histograms and tracing spans to Wavefront via proxy or direct ingestion using the `Sender` interface.
+## Table of Content
+* [Prerequisites](#Prerequisites)
+* [Set Up a WavefrontSender](#set-up-a-wavefrontsender)
+* [Send Data to Wavefront](#send-data-to-wavefront)
+* [Close the WavefrontSender](#close-the-wavefrontsender)
+* [Monitor the SDK](#monitor-the-sdk)
+* [License](#License)
+* [How to Get Support and Contribute](#how-to-get-support-and-contribute)
 
-## Requirements
-- Go 1.9 or higher
+# Welcome to Wavefront's Go SDK
 
-## Usage
+Wavefront by VMware Go SDK lets you send raw data from your Go application to Wavefront using a `Sender` interface. The data is then stored as metrics, histograms, and trace data. This SDK is also referred to as the Wavefront Sender SDK for Go. 
 
-Import the `senders` package and create a proxy or direct sender as given below.
+Although this library is mostly used by the other Wavefront Go SDKs to send data to Wavefront, you can also use this SDK directly. For example, you can send data directly from a data store or CSV file to Wavefront.
 
-```go
-import (
-    wavefront "github.com/wavefronthq/wavefront-sdk-go/senders"
-)
-```
+**Before you start implementing, let us make sure you are using the correct SDK!**
 
-### Proxy Sender
+![Go Sender SDK Decision Tree](docs/go_sender_sdk.png)
+
+> ***Note***:
+> </br>
+>   * **This is the Wavefront by VMware SDK for Go (Wavefront Sender SDK for Go)!**
+>   If this SDK is not what you were looking for, see the [table](#wavefront-sdks) below.
+
+#### Wavefront SDKs
+<table id="SDKlevels" style="width: 100%">
+<tr>
+  <th width="10%">SDK Type</th>
+  <th width="45%">SDK Description</th>
+  <th width="45%">Supported Languages</th>
+</tr>
+
+<tr>
+  <td><a href="https://docs.wavefront.com/wavefront_sdks.html#sdks-for-collecting-trace-data">OpenTracing SDK</a></td>
+  <td align="justify">Implements the OpenTracing specification. Lets you define, collect, and report custom trace data from any part of your application code. <br>Automatically derives Rate Errors Duration (RED) metrics from the reported spans. </td>
+  <td>
+    <ul>
+    <li>
+      <b>Java</b>: <a href ="https://github.com/wavefrontHQ/wavefront-opentracing-sdk-java">OpenTracing SDK</a> <b>|</b> <a href ="https://github.com/wavefrontHQ/wavefront-opentracing-bundle-java">Tracing Agent</a>
+    </li>
+    <li>
+      <b>Python</b>: <a href ="https://github.com/wavefrontHQ/wavefront-opentracing-sdk-python">OpenTracing SDK</a>
+    </li>
+    <li>
+      <b>Go</b>: <a href ="https://github.com/wavefrontHQ/wavefront-opentracing-sdk-go">OpenTracing SDK</a>
+    </li>
+    <li>
+      <b>.Net/C#</b>: <a href ="https://github.com/wavefrontHQ/wavefront-opentracing-sdk-csharp">OpenTracing SDK</a>
+    </li>
+    </ul>
+  </td>
+</tr>
+
+<tr>
+  <td><a href="https://docs.wavefront.com/wavefront_sdks.html#sdks-for-collecting-metrics-and-histograms">Metrics SDK</a></td>
+  <td align="justify">Implements a standard metrics library. Lets you define, collect, and report custom business metrics and histograms from any part of your application code.   </td>
+  <td>
+    <ul>
+    <li>
+    <b>Java</b>: <a href ="https://github.com/wavefrontHQ/wavefront-dropwizard-metrics-sdk-java">Dropwizard</a> <b>|</b> <a href ="https://github.com/wavefrontHQ/wavefront-runtime-sdk-jvm">JVM</a>
+    </li>
+    <li>
+    <b>Python</b>: <a href ="https://github.com/wavefrontHQ/wavefront-pyformance">Pyformance SDK</a>
+    </li>
+    <li>
+      <b>Go</b>: <a href ="https://github.com/wavefrontHQ/go-metrics-wavefront">Go Metrics SDK</a>
+      </li>
+    <li>
+    <b>.Net/C#</b>: <a href ="https://github.com/wavefrontHQ/wavefront-appmetrics-sdk-csharp">App Metrics SDK</a>
+    </li>
+    </ul>
+  </td>
+</tr>
+
+<tr>
+  <td><a href="https://docs.wavefront.com/wavefront_sdks.html#sdks-that-instrument-frameworks">Framework SDK</a></td>
+  <td align="justify">Reports predefined traces, metrics, and histograms from the APIs of a supported app framework. Lets you get started quickly with minimal code changes.</td>
+  <td>
+    <ul>
+    <li><b>Java</b>:
+    <a href="https://github.com/wavefrontHQ/wavefront-dropwizard-sdk-java">Dropwizard</a> <b>|</b> <a href="https://github.com/wavefrontHQ/wavefront-gRPC-sdk-java">gRPC</a> <b>|</b> <a href="https://github.com/wavefrontHQ/wavefront-jaxrs-sdk-java">JAX-RS</a> <b>|</b> <a href="https://github.com/wavefrontHQ/wavefront-jersey-sdk-java">Jersey</a></li>
+    <li><b>.Net/C#</b>:
+    <a href="https://github.com/wavefrontHQ/wavefront-aspnetcore-sdk-csharp">ASP.Net core</a> </li>
+    <!--- [Python](wavefront_sdks_python.html#python-sdks-that-instrument-frameworks) --->
+    </ul>
+  </td>
+</tr>
+
+<tr>
+  <td><a href="https://docs.wavefront.com/wavefront_sdks.html#sdks-for-sending-raw-data-to-wavefront">Sender SDK</a></td>
+  <td align="justify">Lets you send raw data to Wavefront for storage as metrics, histograms, or traces, e.g., to import CSV data into Wavefront.
+  </td>
+  <td>
+    <ul>
+    <li>
+    <b>Java</b>: <a href ="https://github.com/wavefrontHQ/wavefront-sdk-java">Sender SDK</a>
+    </li>
+    <li>
+    <b>Python</b>: <a href ="https://github.com/wavefrontHQ/wavefront-sdk-python">Sender SDK</a>
+    </li>
+    <li>
+    <b>Go</b>: <a href ="https://github.com/wavefrontHQ/wavefront-sdk-go">Sender SDK</a>
+    </li>
+    <li>
+    <b>.Net/C#</b>: <a href ="https://github.com/wavefrontHQ/wavefront-sdk-csharp">Sender SDK</a>
+    </li>
+    <li>
+    <b>C++</b>: <a href ="https://github.com/wavefrontHQ/wavefront-sdk-cpp">Sender SDK</a>
+    </li>
+    </ul>
+  </td>
+</tr>
+
+</tbody>
+</table>
+
+## Prerequisites
+* Go 1.9 or higher.
+* Import the `senders` package.
+    ```go
+    import (
+        wavefront "github.com/wavefronthq/wavefront-sdk-go/senders"
+    )
+    ```
+
+## Set Up a WavefrontSender
+
+You can send metrics, histograms, or trace data from your application to the Wavefront service using a Wavefront proxy or direct ingestions.
+
+* Option 1: Use a [**Wavefront proxy**](https://docs.wavefront.com/proxies.html), which then forwards the data to the Wavefront service. This is the recommended choice for a large-scale deployment that needs resilience to internet outages, control over data queuing and filtering, and more.
+
+  [Create a ProxyConfiguration](#option-1-sending-data-via-the-wavefront-proxy) to send data to a Wavefront proxy.
+  
+* Use [**direct ingestion**](https://docs.wavefront.com/direct_ingestion.html) to send the data directly to the Wavefront service. This is the simplest way to get up and running quickly.
+
+  [Create a DirectConfiguration](#option-2-sending-data-via-direct-ingestion) to send data directly to a Wavefront service.
+  
+### Option 1: Sending Data via the Wavefront Proxy
 Depending on the data you wish to send to Wavefront (metrics, distributions and/or spans), enable the relevant ports on the proxy and initialize the proxy sender as follows:
 
 ```go
@@ -47,7 +169,7 @@ func main() {
 }
 ```
 
-### Direct Sender
+### Option 2: Sending Data via Direct Ingestion
 
 ```go
 import (
@@ -90,9 +212,12 @@ func main() {
 
 ```
 
-### Sending data to Wavefront
+### Send Data to Wavefront
 
-Use the `Sender` interface for sending data to Wavefront.
+Wavefront supports different metric types, such as gauges, counters, delta counters, histograms, traces, and spans. See [Metrics](https://docs.wavefront.com/metric_types.html) for details. To send data to Wavefront using `Sender` you need to instantiate the following:
+ * [Metrics and Delta Counters](#Metrics-and-Delta-Counters)
+ * [Distributions (Histograms)](#Distributions-(Histograms))
+ * [Tracing Spans](#Tracing-Spans)
 
 #### Metrics and Delta Counters
 
@@ -108,7 +233,9 @@ sender.SendMetric("new-york.power.usage", 42422.0, 0, "go_test", map[string]stri
 sender.SendDeltaCounter("lambda.thumbnail.generate", 10.0, "thumbnail_service", map[string]string{"format" : "jpeg"})
 ```
 
-#### Distributions
+***Note***: If your `metricName` has a bad character, that character is replaced with a `-`.
+
+#### Distributions (Histograms)
 
 ```go
 import "github.com/wavefronthq/wavefront-sdk-go/histogram"
@@ -161,13 +288,13 @@ sender.SendSpan("getAllUsers", 1552949776000, 343, "localhost",
     },
     nil)
 ```
-**Note:** The tracing and span SDK APIs are designed to serve as low-level endpoints. For most use cases, we recommend using
-opentracing with the ```WavefrontTracer```.
-
-For more information on OpenTracing, please refer the OpenTracing project: https://github.com/opentracing/opentracing-go. To use OpenTracing with Wavefront, please refer to https://github.com/wavefrontHQ/wavefront-opentracing-sdk-go.
+***Note:*** The tracing and span SDK APIs are designed to serve as low-level endpoints. For most use cases, we recommend using
+the OpenTracing SDK with the `WavefrontTracer`.
+* See the [Go OpenTracing project](https://github.com/opentracing/opentracing-go) for details. 
+* To use OpenTracing with Wavefront, see the [Wavefront OpenTracing SDK](https://github.com/wavefrontHQ/wavefront-opentracing-sdk-go).
 
 #### Closing the Sender
-It is recommended to flush and close the sender before shutting down your application.
+It is recommended to flush the buffer and close the sender before shutting down your application.
 
 ```go
 // failures observed while sending metrics/histograms/spans, can be obtained as follows:
@@ -180,10 +307,17 @@ sender.Flush()
 sender.Close()
 ```
 
+## License
+[Apache 2.0 License](LICENSE).
+
+## How to Get Support and Contribute
+
+* Reach out to us on our public [Slack channel](https://www.wavefront.com/join-public-slack).
+* If you run into any issues, let us know by creating a GitHub issue.
+
 [ci-img]: https://travis-ci.com/wavefrontHQ/wavefront-sdk-go.svg?branch=master
 [ci]: https://travis-ci.com/wavefrontHQ/wavefront-sdk-go
 [godoc]: https://godoc.org/github.com/wavefrontHQ/wavefront-sdk-go/senders
 [godoc-img]: https://godoc.org/github.com/wavefrontHQ/wavefront-sdk-go/senders?status.svg
 [go-report-img]: https://goreportcard.com/badge/github.com/wavefronthq/wavefront-sdk-go
 [go-report]: https://goreportcard.com/report/github.com/wavefronthq/wavefront-sdk-go
-[![Github All Releases](https://img.shields.io/github/downloads/wavefrontHQ/wavefront-sdk-java/total)]()
