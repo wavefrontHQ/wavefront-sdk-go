@@ -6,18 +6,31 @@ import (
 	"time"
 )
 
+type clock struct {
+	currTime time.Time
+}
+
+func (c *clock) Now() time.Time {
+	return c.currTime
+}
+
+func (c *clock) Add(d time.Duration) {
+	c.currTime = c.currTime.Add(d)
+}
+
 func TestHistogram(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Histogram tests in short mode")
 	}
 
-	h := New(MaxBins(3), GranularityOption(MINUTE))
+	c := &clock{currTime: time.Now()}
+	h := New(MaxBins(3), GranularityOption(MINUTE), TimeSupplier(c.Now))
 
 	for i := 0; i < 5; i++ {
 		for i := 0; i < 1000; i++ {
 			h.Update(rand.Float64())
 		}
-		time.Sleep(time.Minute)
+		c.Add(61 * time.Second)
 	}
 
 	distributions := h.Distributions()
