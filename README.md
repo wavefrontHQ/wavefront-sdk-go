@@ -129,12 +129,10 @@ Although this library is mostly used by the other Wavefront Go SDKs to send data
 You can send metrics, histograms, or trace data from your application to the Wavefront service using a Wavefront proxy or direct ingestions.
 
 * Option 1: Use a [**Wavefront proxy**](https://docs.wavefront.com/proxies.html), which then forwards the data to the Wavefront service. This is the recommended choice for a large-scale deployment that needs resilience to internet outages, control over data queuing and filtering, and more.
-
-  [Create a ProxyConfiguration](#option-1-sending-data-via-the-wavefront-proxy) to send data to a Wavefront proxy.
+[Create a ProxyConfiguration](#option-1-sending-data-via-the-wavefront-proxy) to send data to a Wavefront proxy.
   
 * Use [**direct ingestion**](https://docs.wavefront.com/direct_ingestion.html) to send the data directly to the Wavefront service. This is the simplest way to get up and running quickly.
-
-  [Create a DirectConfiguration](#option-2-sending-data-via-direct-ingestion) to send data directly to a Wavefront service.
+[Create a DirectConfiguration](#option-2-sending-data-via-direct-ingestion) to send data directly to a Wavefront service.
   
 ### Option 1: Sending Data via the Wavefront Proxy
 Depending on the data you wish to send to Wavefront (metrics, distributions and/or spans), enable the relevant ports on the proxy and initialize the proxy sender as follows:
@@ -290,7 +288,7 @@ sender.SendSpan("getAllUsers", 1552949776000, 343, "localhost",
 ***Note:*** The tracing and span SDK APIs are designed to serve as low-level endpoints. For most use cases, we recommend using
 the OpenTracing SDK with the `WavefrontTracer`.
 * See the [Go OpenTracing project](https://github.com/opentracing/opentracing-go) for details. 
-* To use OpenTracing with Wavefront, see the [Wavefront OpenTracing SDK](https://github.com/wavefrontHQ/wavefront-opentracing-sdk-go).
+* To use OpenTracing with Wavefront, see the [Wavefront Go OpenTracing SDK](https://github.com/wavefrontHQ/wavefront-opentracing-sdk-go).
 
 ## Close the Sender
 It is recommended to flush the buffer and close the sender before shutting down your application.
