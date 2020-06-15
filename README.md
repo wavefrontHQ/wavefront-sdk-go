@@ -135,7 +135,9 @@ You can send metrics, histograms, or trace data from your application to the Wav
 [Create a DirectConfiguration](#option-2-sending-data-via-direct-ingestion) to send data directly to a Wavefront service.
   
 ### Option 1: Sending Data via the Wavefront Proxy
-Depending on the data you wish to send to Wavefront (metrics, distributions (histograms) and/or spans), enable the relevant ports on the proxy and initialize the proxy sender as follows:
+Depending on the data you wish to send to Wavefront (metrics, distributions (histograms) and/or spans), enable the relevant ports on the proxy and initialize the proxy sender.
+
+When you use a Sender SDK, you won’t see span-level RED metrics by default unless you use the Wavefront proxy and define a custom tracing port (`tracingPort`). See [Instrument Your Application with Wavefront Sender SDKs](https://www.wavefront.com/tracing_instrumenting_frameworks.html/#instrument-your-application-with-wavefront-sender-sdks) for details.
 
 ```go
 import (
@@ -147,11 +149,11 @@ func main() {
         Host : "proxyHostname or proxyIPAddress",
 
         // At least one port should be set below.
-        MetricsPort : 2878,      // set this (typically 2878) to send metrics
-        DistributionPort: 2878,  // set this (typically 2878) to send distributions
-        TracingPort : 30000,     // set this to send tracing spans
-
-        FlushIntervalSeconds: 10, // flush the buffer periodically, defaults to 5 seconds.
+        tracingPort         : 30001,    // the same port as the customTracingListenerPorts configured in the wavefront proxy
+        MetricsPort         : 2878,    // set this (typically 2878) to send metrics
+        DistributionPort    : 2878,   // set this (typically 2878) to send distributions
+        TracingPort         : 30000, // set this to send tracing spans
+        FlushIntervalSeconds: 10,   // flush the buffer periodically, defaults to 5 seconds.
     }
 
     sender, err := wavefront.NewProxySender(proxyCfg)
