@@ -265,7 +265,7 @@ sender.SendDistribution("request.latency", centroids, hgs, 0, "appServer1", map[
 
 #### Tracing Spans
 
-When you use a Sender SDK, you won’t see span-level RED metrics by default unless you use the Wavefront proxy and define a custom tracing port (`TracingPort`). See [Instrument Your Application with Wavefront Sender SDKs](https://www.wavefront.com/tracing_instrumenting_frameworks.html/#instrument-your-application-with-wavefront-sender-sdks) for details.
+When you use a Sender SDK, you won’t see span-level RED metrics by default unless you use the Wavefront proxy and define a custom tracing port (`TracingPort`). See [Instrument Your Application with Wavefront Sender SDKs](https://docs.wavefront.com/tracing_instrumenting_frameworks.html#instrument-your-application-with-wavefront-sender-sdks) for details.
 
 ```go
 // Wavefront Tracing Span Data format
