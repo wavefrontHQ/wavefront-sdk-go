@@ -137,8 +137,6 @@ You can send metrics, histograms, or trace data from your application to the Wav
 ### Option 1: Sending Data via the Wavefront Proxy
 Depending on the data you wish to send to Wavefront (metrics, distributions (histograms) and/or spans), enable the relevant ports on the proxy and initialize the proxy sender.
 
-When you use a Sender SDK, you won’t see span-level RED metrics by default unless you use the Wavefront proxy and define a custom tracing port (`tracingPort`). See [Instrument Your Application with Wavefront Sender SDKs](https://www.wavefront.com/tracing_instrumenting_frameworks.html/#instrument-your-application-with-wavefront-sender-sdks) for details.
-
 ```go
 import (
     wavefront "github.com/wavefronthq/wavefront-sdk-go/senders"
@@ -149,10 +147,9 @@ func main() {
         Host : "proxyHostname or proxyIPAddress",
 
         // At least one port should be set below.
-        tracingPort         : 30001,    // the same port as the customTracingListenerPorts configured in the wavefront proxy
         MetricsPort         : 2878,    // set this (typically 2878) to send metrics
         DistributionPort    : 2878,   // set this (typically 2878) to send distributions
-        TracingPort         : 30000, // set this to send tracing spans
+        TracingPort         : 30000, // set this to send tracing spans. the same port as the customTracingListenerPorts configured in the wavefront proxy
         FlushIntervalSeconds: 10,   // flush the buffer periodically, defaults to 5 seconds.
     }
 
@@ -267,6 +264,8 @@ sender.SendDistribution("request.latency", centroids, hgs, 0, "appServer1", map[
 ```
 
 #### Tracing Spans
+
+When you use a Sender SDK, you won’t see span-level RED metrics by default unless you use the Wavefront proxy and define a custom tracing port (`TracingPort`). See [Instrument Your Application with Wavefront Sender SDKs](https://www.wavefront.com/tracing_instrumenting_frameworks.html/#instrument-your-application-with-wavefront-sender-sdks) for details.
 
 ```go
 // Wavefront Tracing Span Data format
