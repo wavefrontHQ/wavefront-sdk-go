@@ -59,6 +59,11 @@ func TestMetricLine(t *testing.T) {
 		map[string]string{"env": "test"}, "default")
 	expected = "\"foo.metric\" 1.2 1533529977 source=\"default\" \"env\"=\"test\"\n"
 	assertEquals(expected, line, err, t)
+
+	line, err = MetricLine("foo.metric", 1.2, 1533529977, "1.2.3.4:8080",
+		map[string]string{"env": "test"}, "default")
+	expected = "\"foo.metric\" 1.2 1533529977 source=\"1.2.3.4:8080\" \"env\"=\"test\"\n"
+	assertEquals(expected, line, err, t)
 }
 
 func BenchmarkHistoLine(b *testing.B) {

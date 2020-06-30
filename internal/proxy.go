@@ -11,8 +11,11 @@ import (
 )
 
 type ProxyConnectionHandler struct {
-	address     string
+	// keep this as first element of struct to guarantee 64-bit alignmen ton 32-bit machines.
+	// atomic.* functions crash if the operand is not 64-bit aligned.
+	// See https://github.com/golang/go/issues/599
 	failures    int64
+	address     string
 	flushTicker *time.Ticker
 	done        chan struct{}
 	mtx         sync.RWMutex
