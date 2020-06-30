@@ -1,12 +1,25 @@
-// Package senders provides functionality for sending data to Wavefront through
-// the Wavefront proxy or via direct ingestion.
-package senders
+package types
 
 import (
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
-	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
+
+type SpanTag struct {
+	Key   string
+	Value string
+}
+
+type SpanLog struct {
+	Timestamp int64             `json:"timestamp"`
+	Fields    map[string]string `json:"fields"`
+}
+
+type SpanLogs struct {
+	TraceID string    `json:"traceID"`
+	SpanID  string    `json:"spanID"`
+	Logs    []SpanLog `json:"logs"`
+}
 
 // MetricSender Interface for sending metrics to Wavefront
 type MetricSender interface {
@@ -31,25 +44,15 @@ type DistributionSender interface {
 // SpanSender Interface for sending tracing spans to Wavefront
 type SpanSender interface {
 	// Sends a tracing span to Wavefront.
-	// traceId, spanId, parentIds and preceding spanIds are expected to be UUID strings.
+	// traceID, spanID, parentIds and preceding spanIDs are expected to be UUID strings.
 	// parents and preceding spans can be empty for a root span.
 	// span tag keys can be repeated (example: "user"="foo" and "user"="bar")
 	// span logs are currently omitted
-	SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error
+	SendSpan(name string, startMillis, durationMillis int64, source, traceID, spanID string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error
 }
 
 // EventSender Interface for sending events to Wavefront. NOT yet supported.
 type EventSender interface {
 	// Sends an event to Wavefront with optional tags
 	SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error
-}
-
-// Sender Interface for sending metrics, distributions and spans to Wavefront
-type Sender interface {
-	MetricSender
-	DistributionSender
-	SpanSender
-	EventSender
-	internal.Flusher
-	Close()
 }

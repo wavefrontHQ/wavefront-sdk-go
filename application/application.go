@@ -2,7 +2,7 @@
 // The application details can be reported to Wavefront in the form of tags.
 package application
 
-// Encapsulates application details
+// Tags Encapsulates application details
 type Tags struct {
 	Application string
 	Service     string

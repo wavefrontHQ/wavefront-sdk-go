@@ -1,4 +1,4 @@
-package senders
+package internal
 
 import (
 	"bytes"
@@ -11,11 +11,7 @@ import (
 
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
-)
-
-const (
-	deltaPrefix    = "\u2206"
-	altDeltaPrefix = "\u0394"
+	"github.com/wavefronthq/wavefront-sdk-go/types"
 )
 
 var /* const */ quotation = regexp.MustCompile("\"")
@@ -125,9 +121,9 @@ func HistoLine(name string, centroids []histogram.Centroid, hgs map[histogram.Gr
 // Gets a span line in the Wavefront span data format:
 // <tracingSpanName> source=<source> [pointTags] <start_millis> <duration_milli_seconds>
 // Example:
-// "getAllUsers source=localhost traceId=7b3bf470-9456-11e8-9eb6-529269fb1459 spanId=0313bafe-9457-11e8-9eb6-529269fb1459
+// "getAllUsers source=localhost traceID=7b3bf470-9456-11e8-9eb6-529269fb1459 spanID=0313bafe-9457-11e8-9eb6-529269fb1459
 //    parent=2f64e538-9457-11e8-9eb6-529269fb1459 application=Wavefront http.method=GET 1533531013 343500"
-func SpanLine(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog, defaultSource string) (string, error) {
+func SpanLine(name string, startMillis, durationMillis int64, source, traceID, spanID string, parents, followsFrom []string, tags []types.SpanTag, spanLogs []types.SpanLog, defaultSource string) (string, error) {
 	if name == "" {
 		return "", errors.New("empty span name")
 	}
@@ -136,11 +132,11 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 		source = defaultSource
 	}
 
-	if !isUUIDFormat(traceId) {
-		return "", errors.New("traceId is not in UUID format")
+	if !isUUIDFormat(traceID) {
+		return "", errors.New("traceID is not in UUID format")
 	}
-	if !isUUIDFormat(spanId) {
-		return "", errors.New("spanId is not in UUID format")
+	if !isUUIDFormat(spanID) {
+		return "", errors.New("spanID is not in UUID format")
 	}
 
 	sb := GetBuffer()
@@ -149,10 +145,10 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 	sb.WriteString(sanitizeValue(name))
 	sb.WriteString(" source=")
 	sb.WriteString(strconv.Quote(sanitizeInternal(source)))
-	sb.WriteString(" traceId=")
-	sb.WriteString(traceId)
-	sb.WriteString(" spanId=")
-	sb.WriteString(spanId)
+	sb.WriteString(" traceID=")
+	sb.WriteString(traceID)
+	sb.WriteString(" spanID=")
+	sb.WriteString(spanID)
 
 	for _, parent := range parents {
 		sb.WriteString(" parent=")
@@ -189,10 +185,10 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 	return sb.String(), nil
 }
 
-func SpanLogJSON(traceId, spanId string, spanLogs []SpanLog) (string, error) {
-	l := SpanLogs{
-		TraceId: traceId,
-		SpanId:  spanId,
+func SpanLogJSON(traceID, spanID string, spanLogs []types.SpanLog) (string, error) {
+	l := types.SpanLogs{
+		TraceID: traceID,
+		SpanID:  spanID,
 		Logs:    spanLogs,
 	}
 	out, err := json.Marshal(l)
