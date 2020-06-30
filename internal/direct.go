@@ -91,7 +91,7 @@ func (reporter directReporter) ReportEvent(event string) (*http.Response, error)
 	}
 
 	req.Header.Set(contentType, applicationJSON)
-	req.Header.Set(contentEncoding, gzipFormat)
+	// req.Header.Set(contentEncoding, gzipFormat)
 	if len(reporter.token) > 0 {
 		req.Header.Set(authzHeader, bearer+reporter.token)
 	}
