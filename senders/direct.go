@@ -82,7 +82,7 @@ func (sender *directSender) Start() {
 }
 
 func (sender *directSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
-	line, err := MetricLine(name, value, ts, source, tags, sender.defaultSource)
+	line, err := internal.MetricLine(name, value, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (sender *directSender) SendDeltaCounter(name string, value float64, source 
 
 func (sender *directSender) SendDistribution(name string, centroids []histogram.Centroid,
 	hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
-	line, err := HistoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
+	line, err := internal.HistoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func (sender *directSender) SendDistribution(name string, centroids []histogram.
 
 func (sender *directSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
 	parents, followsFrom []string, tags []types.SpanTag, spanLogs []types.SpanLog) error {
-	line, err := SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
+	line, err := internal.SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (sender *directSender) SendSpan(name string, startMillis, durationMillis in
 	}
 
 	if len(spanLogs) > 0 {
-		logs, err := SpanLogJSON(traceId, spanId, spanLogs)
+		logs, err := internal.SpanLogJSON(traceId, spanId, spanLogs)
 		if err != nil {
 			return err
 		}
@@ -133,7 +133,7 @@ func (sender *directSender) SendSpan(name string, startMillis, durationMillis in
 }
 
 func (sender *directSender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
-	line, err := EventLineJSON(name, startMillis, endMillis, source, tags, setters...)
+	line, err := internal.EventLineJSON(name, startMillis, endMillis, source, tags, setters...)
 	if err != nil {
 		return err
 	}

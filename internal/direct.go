@@ -52,9 +52,7 @@ func (reporter directReporter) Report(format string, pointLines string) (*http.R
 
 	req.Header.Set(contentType, octetStream)
 	req.Header.Set(contentEncoding, gzipFormat)
-	if len(reporter.token) > 0 {
-		req.Header.Set(authzHeader, bearer+reporter.token)
-	}
+	req.Header.Set(authzHeader, bearer+reporter.token)
 
 	q := req.URL.Query()
 	q.Add(formatKey, format)
@@ -75,10 +73,8 @@ func (reporter directReporter) ReportEvent(event string) (*http.Response, error)
 	}
 
 	req.Header.Set(contentType, applicationJSON)
-	// req.Header.Set(contentEncoding, gzipFormat)
-	if len(reporter.token) > 0 {
-		req.Header.Set(authzHeader, bearer+reporter.token)
-	}
+	req.Header.Set(contentEncoding, gzipFormat)
+	req.Header.Set(authzHeader, bearer+reporter.token)
 
 	return execute(req)
 }
