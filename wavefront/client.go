@@ -20,6 +20,7 @@ type Client interface {
 	types.EventSender
 	internal.Flusher
 	Close()
+	SetSource(string)
 }
 
 type client struct {
@@ -31,13 +32,12 @@ type client struct {
 	spanLogHandler   *internal.LineHandler
 	eventHandler     *internal.LineHandler
 	internalRegistry *internal.MetricRegistry
+
+	proxy bool
 }
 
 // newWavefrontClient creates and returns a Wavefront Client instance
 func newWavefrontClient(cfg *configuration) (Client, error) {
-	// if cfg.Server == "" || cfg.Token == "" {
-	// 	return nil, fmt.Errorf("server and token cannot be empty")
-	// }
 	if cfg.BatchSize == 0 {
 		cfg.BatchSize = defaultBatchSize
 	}
@@ -48,10 +48,11 @@ func newWavefrontClient(cfg *configuration) (Client, error) {
 		cfg.FlushIntervalSeconds = defaultFlushInterval
 	}
 
-	reporter := internal.NewDirectReporter(cfg.Server, cfg.Token)
+	reporter := internal.NewReporter(cfg.Server, cfg.Token)
 
 	client := &client{
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
+		proxy:         len(cfg.Token) == 0,
 	}
 	client.internalRegistry = internal.NewMetricRegistry(
 		client,
@@ -143,10 +144,17 @@ func (client *client) SendSpan(name string, startMillis, durationMillis int64, s
 }
 
 func (client *client) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
-	line, err := internal.EventLineJSON(name, startMillis, endMillis, source, tags, setters...)
+	var line string
+	var err error
+	if client.proxy {
+		line, err = internal.EventLine(name, startMillis, endMillis, source, tags, setters...)
+	} else {
+		line, err = internal.EventLineJSON(name, startMillis, endMillis, source, tags, setters...)
+	}
 	if err != nil {
 		return err
 	}
+	println("[client]", line)
 	return client.eventHandler.HandleLine(line)
 }
 
@@ -193,4 +201,9 @@ func (client *client) GetFailureCount() int64 {
 		client.spanHandler.GetFailureCount() +
 		client.spanLogHandler.GetFailureCount() +
 		client.eventHandler.GetFailureCount()
+}
+
+//TODO: remove, just for tesing
+func (client *client) SetSource(source string) {
+	client.defaultSource = source
 }

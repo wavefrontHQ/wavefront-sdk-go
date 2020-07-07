@@ -4,21 +4,65 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/wavefronthq/wavefront-sdk-go/application"
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/wavefront"
+
+	"github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
 func main() {
-	wf, err := wavefront.NewClient(os.Getenv("WF_URL"))
+	wf := wavefront.NewMultiClient()
+
+	urls := strings.Split(os.Getenv("WF_URL"), "|")
+	for idx, url := range urls {
+		client, err := wavefront.NewClient(url)
+		if err != nil {
+			panic(err)
+		}
+		client.SetSource(fmt.Sprintf("client_%d", idx))
+		wf.Add(client)
+	}
+
+	// OLD PROXY way
+	proxyCfg := &senders.ProxyConfiguration{
+		Host:                 "localhost",
+		MetricsPort:          2878,
+		DistributionPort:     2878,
+		TracingPort:          2878,
+		EventsPort:           2878,
+		FlushIntervalSeconds: 10,
+	}
+
+	sender, err := senders.NewProxySender(proxyCfg)
 	if err != nil {
 		panic(err)
 	}
-	log.Print("sender ready")
+	sender.SetSource("client_proxy")
+	wf.Add(sender)
 
-	source := "go_sdk_example"
+	// OLD DIRECT way
+	directCfg := &senders.DirectConfiguration{
+		Server:               "https://-----.wavefront.com",
+		Token:                "--------------",
+		BatchSize:            10000,
+		MaxBufferSize:        50000,
+		FlushIntervalSeconds: 1,
+	}
+
+	sender, err = senders.NewDirectSender(directCfg)
+	if err != nil {
+		panic(err)
+	}
+	sender.SetSource("client_direct")
+	wf.Add(sender)
+
+	log.Print("senders ready")
+
+	source := "" //"go_sdk_example"
 
 	app := application.New("sample app", "main.go")
 	application.StartHeartbeatService(wf, app, source)

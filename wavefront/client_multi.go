@@ -15,11 +15,8 @@ type multiClient struct {
 	clients []Client
 }
 
-func NewMultiClient(wfs ...Client) MultiClient {
+func NewMultiClient() MultiClient {
 	mc := &multiClient{}
-	for _, wf := range wfs {
-		mc.Add(wf)
-	}
 	return mc
 }
 
@@ -112,3 +109,6 @@ func (mc *multiClient) Close() {
 		wf.Close()
 	}
 }
+
+//TODO: remove, just for tesing
+func (mc *multiClient) SetSource(string) {}

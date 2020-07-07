@@ -3,7 +3,6 @@ package internal
 import (
 	"bytes"
 	"compress/gzip"
-	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -11,23 +10,23 @@ import (
 	"time"
 )
 
-var (
-	client    = &http.Client{Timeout: time.Second * 10}
-	errReport = errors.New("error: invalid Format or points")
-)
-
 // The implementation of a Reporter that reports points directly to a Wavefront server.
-type directReporter struct {
+type reporter struct {
 	serverURL string
 	token     string
+	client    *http.Client
 }
 
-// NewDirectReporter create a metrics Reporter
-func NewDirectReporter(server string, token string) Reporter {
-	return &directReporter{serverURL: server, token: token}
+// Newreporter create a metrics Reporter
+func NewReporter(server string, token string) Reporter {
+	return &reporter{
+		serverURL: server,
+		token:     token,
+		client:    &http.Client{Timeout: time.Second * 10},
+	}
 }
 
-func (reporter directReporter) Report(format string, pointLines string) (*http.Response, error) {
+func (reporter reporter) Report(format string, pointLines string) (*http.Response, error) {
 	if format == "" || pointLines == "" {
 		return nil, formatError
 	}
@@ -60,12 +59,12 @@ func (reporter directReporter) Report(format string, pointLines string) (*http.R
 	q.Add(formatKey, format)
 	req.URL.RawQuery = q.Encode()
 
-	return execute(req)
+	return reporter.execute(req)
 }
 
-func (reporter directReporter) ReportEvent(event string) (*http.Response, error) {
+func (reporter reporter) ReportEvent(event string) (*http.Response, error) {
 	if event == "" {
-		return nil, errReport
+		return nil, formatError
 	}
 
 	apiURL := reporter.serverURL + eventEndpoint
@@ -80,11 +79,11 @@ func (reporter directReporter) ReportEvent(event string) (*http.Response, error)
 		req.Header.Set(authzHeader, bearer+reporter.token)
 	}
 
-	return execute(req)
+	return reporter.execute(req)
 }
 
-func execute(req *http.Request) (*http.Response, error) {
-	resp, err := client.Do(req)
+func (reporter reporter) execute(req *http.Request) (*http.Response, error) {
+	resp, err := reporter.client.Do(req)
 	if err != nil {
 		return resp, err
 	}
