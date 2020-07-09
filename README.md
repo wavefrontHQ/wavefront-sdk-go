@@ -271,7 +271,7 @@ When you use a Sender SDK, you won’t see span-level RED metrics by default unl
 // Wavefront Tracing Span Data format
 // <tracingSpanName> source=<source> [pointTags] <start_millis> <duration_milliseconds>
 // Example:
-// "getAllUsers source=localhost traceID=7b3bf470-9456-11e8-9eb6-529269fb1459
+// "getAllUsers source=localhost traceId=7b3bf470-9456-11e8-9eb6-529269fb1459
 // spanID=0313bafe-9457-11e8-9eb6-529269fb1459 parent=2f64e538-9457-11e8-9eb6-529269fb1459
 // application=Wavefront http.method=GET 1552949776000 343"
 

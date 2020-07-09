@@ -9,7 +9,6 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
-	"github.com/wavefronthq/wavefront-sdk-go/types"
 )
 
 const (
@@ -26,6 +25,7 @@ type proxySender struct {
 }
 
 // Creates and returns a Wavefront Proxy Sender instance
+// Deprecated: Use 'senders.NewSender(url)'
 func NewProxySender(cfg *ProxyConfiguration) (Sender, error) {
 	sender := &proxySender{
 		defaultSource: internal.GetHostname("wavefront_proxy_sender"),
@@ -88,7 +88,7 @@ func (sender *proxySender) SendMetric(name string, value float64, ts int64, sour
 		}
 	}
 
-	line, err := internal.MetricLine(name, value, ts, source, tags, sender.defaultSource)
+	line, err := MetricLine(name, value, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		return err
 	}
@@ -100,8 +100,8 @@ func (sender *proxySender) SendDeltaCounter(name string, value float64, source s
 	if name == "" {
 		return errors.New("empty metric name")
 	}
-	if !internal.HasDeltaPrefix(name) {
-		name = internal.DeltaCounterName(name)
+	if !HasDeltaPrefix(name) {
+		name = DeltaCounterName(name)
 	}
 	if value > 0 {
 		return sender.SendMetric(name, value, 0, source, tags)
@@ -121,7 +121,7 @@ func (sender *proxySender) SendDistribution(name string, centroids []histogram.C
 		}
 	}
 
-	line, err := internal.HistoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
+	line, err := HistoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func (sender *proxySender) SendDistribution(name string, centroids []histogram.C
 	return err
 }
 
-func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []types.SpanTag, spanLogs []types.SpanLog) error {
+func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
 	handler := sender.handlers[spanHandler]
 	if handler == nil {
 		return errors.New("proxy tracing port not provided, cannot send span data")
@@ -141,7 +141,7 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 		}
 	}
 
-	line, err := internal.SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
+	line, err := SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 	}
 
 	if len(spanLogs) > 0 {
-		logs, err := internal.SpanLogJSON(traceId, spanId, spanLogs)
+		logs, err := SpanLogJSON(traceId, spanId, spanLogs)
 		if err != nil {
 			return err
 		}
@@ -172,7 +172,7 @@ func (sender *proxySender) SendEvent(name string, startMillis, endMillis int64, 
 		}
 	}
 
-	line, err := internal.EventLine(name, startMillis, endMillis, source, tags, setters...)
+	line, err := EventLine(name, startMillis, endMillis, source, tags, setters...)
 	if err != nil {
 		return err
 	}

@@ -9,22 +9,21 @@ import (
 
 	"github.com/wavefronthq/wavefront-sdk-go/application"
 	"github.com/wavefronthq/wavefront-sdk-go/event"
-	"github.com/wavefronthq/wavefront-sdk-go/wavefront"
 
 	"github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
 func main() {
-	wf := wavefront.NewMultiClient()
+	wf := senders.NewMultiSender()
 
 	urls := strings.Split(os.Getenv("WF_URL"), "|")
 	for idx, url := range urls {
-		client, err := wavefront.NewClient(url)
+		sender, err := senders.NewSender(url)
 		if err != nil {
 			panic(err)
 		}
-		client.SetSource(fmt.Sprintf("client_%d", idx))
-		wf.Add(client)
+		sender.SetSource(fmt.Sprintf("sender_%d", idx))
+		wf.Add(sender)
 	}
 
 	// OLD PROXY way
@@ -86,7 +85,7 @@ func main() {
 	wf.Close()
 }
 
-func sendEvent(sender wavefront.Client, name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) {
+func sendEvent(sender senders.Sender, name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) {
 	err := sender.SendEvent(name, startMillis, endMillis, source, tags, setters...)
 	if err != nil {
 		log.Fatal(err)

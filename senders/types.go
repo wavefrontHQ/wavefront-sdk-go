@@ -1,4 +1,4 @@
-package types
+package senders
 
 import (
 	"github.com/wavefronthq/wavefront-sdk-go/event"

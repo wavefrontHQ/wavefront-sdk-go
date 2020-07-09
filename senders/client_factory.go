@@ -1,16 +1,9 @@
-package wavefront
+package senders
 
 import (
 	"fmt"
 	"net/url"
 	"strings"
-)
-
-const (
-	defaultBatchSize          = 10000
-	defaultBufferSize         = 50000
-	defaultFlushInterval      = 1
-	defaultProxyFlushInterval = 5
 )
 
 // Option Wavefront client configuration options
@@ -39,8 +32,8 @@ type configuration struct {
 	FlushIntervalSeconds int
 }
 
-// NewClient creates Wavefront sender
-func NewClient(wfURL string, setters ...Option) (Client, error) {
+// NewSender creates Wavefront client
+func NewSender(wfURL string, setters ...Option) (Sender, error) {
 	cfg := &configuration{}
 
 	u, err := url.Parse(wfURL)

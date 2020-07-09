@@ -1,4 +1,4 @@
-package internal
+package senders
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
-	"github.com/wavefronthq/wavefront-sdk-go/types"
+	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
 var /* const */ quotation = regexp.MustCompile("\"")
@@ -29,8 +29,8 @@ func MetricLine(name string, value float64, ts int64, source string, tags map[st
 		source = defaultSource
 	}
 
-	sb := GetBuffer()
-	defer PutBuffer(sb)
+	sb := internal.GetBuffer()
+	defer internal.PutBuffer(sb)
 
 	sb.WriteString(strconv.Quote(sanitizeInternal(name)))
 	sb.WriteString(" ")
@@ -77,8 +77,8 @@ func HistoLine(name string, centroids []histogram.Centroid, hgs map[histogram.Gr
 		source = defaultSource
 	}
 
-	sb := GetBuffer()
-	defer PutBuffer(sb)
+	sb := internal.GetBuffer()
+	defer internal.PutBuffer(sb)
 
 	if ts != 0 {
 		sb.WriteString(" ")
@@ -121,9 +121,9 @@ func HistoLine(name string, centroids []histogram.Centroid, hgs map[histogram.Gr
 // Gets a span line in the Wavefront span data format:
 // <tracingSpanName> source=<source> [pointTags] <start_millis> <duration_milli_seconds>
 // Example:
-// "getAllUsers source=localhost traceID=7b3bf470-9456-11e8-9eb6-529269fb1459 spanID=0313bafe-9457-11e8-9eb6-529269fb1459
+// "getAllUsers source=localhost traceId=7b3bf470-9456-11e8-9eb6-529269fb1459 spanID=0313bafe-9457-11e8-9eb6-529269fb1459
 //    parent=2f64e538-9457-11e8-9eb6-529269fb1459 application=Wavefront http.method=GET 1533531013 343500"
-func SpanLine(name string, startMillis, durationMillis int64, source, traceID, spanID string, parents, followsFrom []string, tags []types.SpanTag, spanLogs []types.SpanLog, defaultSource string) (string, error) {
+func SpanLine(name string, startMillis, durationMillis int64, source, traceID, spanID string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog, defaultSource string) (string, error) {
 	if name == "" {
 		return "", errors.New("empty span name")
 	}
@@ -139,13 +139,13 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceID, s
 		return "", errors.New("spanID is not in UUID format")
 	}
 
-	sb := GetBuffer()
-	defer PutBuffer(sb)
+	sb := internal.GetBuffer()
+	defer internal.PutBuffer(sb)
 
 	sb.WriteString(sanitizeValue(name))
 	sb.WriteString(" source=")
 	sb.WriteString(strconv.Quote(sanitizeInternal(source)))
-	sb.WriteString(" traceID=")
+	sb.WriteString(" traceId=")
 	sb.WriteString(traceID)
 	sb.WriteString(" spanID=")
 	sb.WriteString(spanID)
@@ -185,8 +185,8 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceID, s
 	return sb.String(), nil
 }
 
-func SpanLogJSON(traceID, spanID string, spanLogs []types.SpanLog) (string, error) {
-	l := types.SpanLogs{
+func SpanLogJSON(traceID, spanID string, spanLogs []SpanLog) (string, error) {
+	l := SpanLogs{
 		TraceID: traceID,
 		SpanID:  spanID,
 		Logs:    spanLogs,
@@ -201,8 +201,8 @@ func SpanLogJSON(traceID, spanID string, spanLogs []types.SpanLog) (string, erro
 // EventLine encode the event to a wf proxy format
 // set endMillis to 0 for a 'Instantaneous' event
 func EventLine(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) (string, error) {
-	sb := GetBuffer()
-	defer PutBuffer(sb)
+	sb := internal.GetBuffer()
+	defer internal.PutBuffer(sb)
 
 	annotations := map[string]string{}
 	l := map[string]interface{}{
@@ -319,8 +319,8 @@ func isUUIDFormat(str string) bool {
 
 //Sanitize string of metric name, source and key of tags according to the rule of Wavefront proxy.
 func sanitizeInternal(str string) string {
-	sb := GetBuffer()
-	defer PutBuffer(sb)
+	sb := internal.GetBuffer()
+	defer internal.PutBuffer(sb)
 
 	// first character can be \u2206 (∆ - INCREMENT) or \u0394 (Δ - GREEK CAPITAL LETTER DELTA)
 	// or ~ tilda character for internal metrics

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/wavefronthq/wavefront-sdk-go/wavefront"
+	"github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
 // HeartbeatService sends a heartbeat metric every 5 minutes
@@ -16,7 +16,7 @@ type HeartbeatService interface {
 }
 
 type heartbeater struct {
-	client      wavefront.Client
+	client      senders.Sender
 	application Tags
 	source      string
 	components  []string
@@ -28,7 +28,7 @@ type heartbeater struct {
 }
 
 // StartHeartbeatService will create and start a new HeartbeatService
-func StartHeartbeatService(client wavefront.Client, application Tags, source string, components ...string) HeartbeatService {
+func StartHeartbeatService(client senders.Sender, application Tags, source string, components ...string) HeartbeatService {
 	hb := &heartbeater{
 		client:      client,
 		application: application,

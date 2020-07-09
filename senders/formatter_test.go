@@ -1,11 +1,10 @@
-package internal
+package senders
 
 import (
 	"strconv"
 	"testing"
 
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
-	"github.com/wavefronthq/wavefront-sdk-go/types"
 )
 
 var line string
@@ -131,22 +130,22 @@ func TestSpanLine(t *testing.T) {
 	line, err := SpanLine("order.shirts", 1533531013, 343500, "test_source",
 		"7b3bf470-9456-11e8-9eb6-529269fb1459", "7b3bf470-9456-11e8-9eb6-529269fb1459",
 		[]string{"7b3bf470-9456-11e8-9eb6-529269fb1458"}, nil, nil, nil, "")
-	expected := "\"order.shirts\" source=\"test_source\" traceID=7b3bf470-9456-11e8-9eb6-529269fb1459" +
+	expected := "\"order.shirts\" source=\"test_source\" traceId=7b3bf470-9456-11e8-9eb6-529269fb1459" +
 		" spanID=7b3bf470-9456-11e8-9eb6-529269fb1459 parent=7b3bf470-9456-11e8-9eb6-529269fb1458 1533531013 343500\n"
 	assertEquals(expected, line, err, t)
 
 	line, err = SpanLine("order.shirts", 1533531013, 343500, "test_source",
 		"7b3bf470-9456-11e8-9eb6-529269fb1459", "7b3bf470-9456-11e8-9eb6-529269fb1459", nil,
-		[]string{"7b3bf470-9456-11e8-9eb6-529269fb1458"}, []types.SpanTag{{Key: "env", Value: "test"}}, nil, "")
-	expected = "\"order.shirts\" source=\"test_source\" traceID=7b3bf470-9456-11e8-9eb6-529269fb1459" +
+		[]string{"7b3bf470-9456-11e8-9eb6-529269fb1458"}, []SpanTag{{Key: "env", Value: "test"}}, nil, "")
+	expected = "\"order.shirts\" source=\"test_source\" traceId=7b3bf470-9456-11e8-9eb6-529269fb1459" +
 		" spanID=7b3bf470-9456-11e8-9eb6-529269fb1459 followsFrom=7b3bf470-9456-11e8-9eb6-529269fb1458 \"env\"=\"test\" 1533531013 343500\n"
 	assertEquals(expected, line, err, t)
 
 	line, err = SpanLine("order.shirts", 1533531013, 343500, "test_source",
 		"7b3bf470-9456-11e8-9eb6-529269fb1459", "7b3bf470-9456-11e8-9eb6-529269fb1459", nil,
 		[]string{"7b3bf470-9456-11e8-9eb6-529269fb1458"},
-		[]types.SpanTag{{Key: "env", Value: "test"}, {Key: "env", Value: "dev"}}, nil, "")
-	expected = "\"order.shirts\" source=\"test_source\" traceID=7b3bf470-9456-11e8-9eb6-529269fb1459" +
+		[]SpanTag{{Key: "env", Value: "test"}, {Key: "env", Value: "dev"}}, nil, "")
+	expected = "\"order.shirts\" source=\"test_source\" traceId=7b3bf470-9456-11e8-9eb6-529269fb1459" +
 		" spanID=7b3bf470-9456-11e8-9eb6-529269fb1459 followsFrom=7b3bf470-9456-11e8-9eb6-529269fb1458 \"env\"=\"test\" \"env\"=\"dev\" 1533531013 343500\n"
 	assertEquals(expected, line, err, t)
 }
