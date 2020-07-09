@@ -16,7 +16,7 @@ type HeartbeatService interface {
 }
 
 type heartbeater struct {
-	client      senders.Sender
+	sender      senders.Sender
 	application Tags
 	source      string
 	components  []string
@@ -28,9 +28,9 @@ type heartbeater struct {
 }
 
 // StartHeartbeatService will create and start a new HeartbeatService
-func StartHeartbeatService(client senders.Sender, application Tags, source string, components ...string) HeartbeatService {
+func StartHeartbeatService(sender senders.Sender, application Tags, source string, components ...string) HeartbeatService {
 	hb := &heartbeater{
-		client:      client,
+		sender:      sender,
 		application: application,
 		source:      source,
 		components:  components,
@@ -78,7 +78,7 @@ func (hb *heartbeater) beat() {
 }
 
 func (hb *heartbeater) send(tags map[string]string) {
-	err := hb.client.SendMetric("~component.heartbeat", 1, 0, hb.source, tags)
+	err := hb.sender.SendMetric("~component.heartbeat", 1, 0, hb.source, tags)
 	if err != nil {
 		log.Printf("heartbeater SendMetric error: %v\n", err)
 	}

@@ -102,8 +102,8 @@ func (sender *wavefrontSender) SendDeltaCounter(name string, value float64, sour
 	if name == "" {
 		return fmt.Errorf("empty metric name")
 	}
-	if !HasDeltaPrefix(name) {
-		name = DeltaCounterName(name)
+	if !internal.HasDeltaPrefix(name) {
+		name = internal.DeltaCounterName(name)
 	}
 	if value > 0 {
 		return sender.SendMetric(name, value, 0, source, tags)

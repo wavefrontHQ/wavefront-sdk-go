@@ -100,8 +100,8 @@ func (sender *proxySender) SendDeltaCounter(name string, value float64, source s
 	if name == "" {
 		return errors.New("empty metric name")
 	}
-	if !HasDeltaPrefix(name) {
-		name = DeltaCounterName(name)
+	if !internal.HasDeltaPrefix(name) {
+		name = internal.DeltaCounterName(name)
 	}
 	if value > 0 {
 		return sender.SendMetric(name, value, 0, source, tags)

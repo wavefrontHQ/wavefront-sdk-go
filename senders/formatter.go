@@ -133,10 +133,10 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceID, s
 	}
 
 	if !isUUIDFormat(traceID) {
-		return "", errors.New("traceID is not in UUID format")
+		return "", errors.New("traceId is not in UUID format")
 	}
 	if !isUUIDFormat(spanID) {
-		return "", errors.New("spanID is not in UUID format")
+		return "", errors.New("spanId is not in UUID format")
 	}
 
 	sb := internal.GetBuffer()
@@ -147,7 +147,7 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceID, s
 	sb.WriteString(strconv.Quote(sanitizeInternal(source)))
 	sb.WriteString(" traceId=")
 	sb.WriteString(traceID)
-	sb.WriteString(" spanID=")
+	sb.WriteString(" spanId=")
 	sb.WriteString(spanID)
 
 	for _, parent := range parents {
@@ -325,12 +325,12 @@ func sanitizeInternal(str string) string {
 	// first character can be \u2206 (∆ - INCREMENT) or \u0394 (Δ - GREEK CAPITAL LETTER DELTA)
 	// or ~ tilda character for internal metrics
 	skipHead := 0
-	if strings.HasPrefix(str, deltaPrefix) {
-		sb.WriteString(deltaPrefix)
+	if strings.HasPrefix(str, internal.DeltaPrefix) {
+		sb.WriteString(internal.DeltaPrefix)
 		skipHead = 3
 	}
-	if strings.HasPrefix(str, altDeltaPrefix) {
-		sb.WriteString(altDeltaPrefix)
+	if strings.HasPrefix(str, internal.AltDeltaPrefix) {
+		sb.WriteString(internal.AltDeltaPrefix)
 		skipHead = 2
 	}
 	if str[0] == 126 {

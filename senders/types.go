@@ -16,8 +16,8 @@ type SpanLog struct {
 }
 
 type SpanLogs struct {
-	TraceID string    `json:"traceID"`
-	SpanID  string    `json:"spanID"`
+	TraceID string    `json:"traceId"`
+	SpanID  string    `json:"spanId"`
 	Logs    []SpanLog `json:"logs"`
 }
 

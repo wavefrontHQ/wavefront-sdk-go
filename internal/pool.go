@@ -15,12 +15,12 @@ func init() {
 	}
 }
 
-// internal.GetBuffer fetches a buffers from the pool
+// GetBuffer fetches a buffers from the pool
 func GetBuffer() *bytes.Buffer {
 	return buffers.Get().(*bytes.Buffer)
 }
 
-// internal.PutBuffer returns a buffers to the pool
+// PutBuffer returns a buffers to the pool
 func PutBuffer(buf *bytes.Buffer) {
 	buf.Reset()
 	buffers.Put(buf)
