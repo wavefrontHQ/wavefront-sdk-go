@@ -9,6 +9,7 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
+	"github.com/wavefronthq/wavefront-sdk-go/version"
 )
 
 type directSender struct {
@@ -47,6 +48,13 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 		internal.SetPrefix("~sdk.go.core.sender.direct"),
 		internal.SetTag("pid", strconv.Itoa(os.Getpid())),
 	)
+
+	if sdkVersion, e := internal.GetSemVer(version.Version); e == nil {
+		sender.internalRegistry.NewGaugeFloat64("version", func() float64 {
+			return sdkVersion
+		})
+	}
+
 	sender.pointHandler = makeLineHandler(reporter, cfg, internal.MetricFormat, "points", sender.internalRegistry)
 	sender.histoHandler = makeLineHandler(reporter, cfg, internal.HistogramFormat, "histograms", sender.internalRegistry)
 	sender.spanHandler = makeLineHandler(reporter, cfg, internal.TraceFormat, "spans", sender.internalRegistry)
