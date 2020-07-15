@@ -201,6 +201,7 @@ func (sender *proxySender) Close() {
 			h.Close()
 		}
 	}
+	sender.internalRegistry.Stop()
 }
 
 func (sender *proxySender) Flush() error {
