@@ -144,7 +144,7 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 
 	sb.WriteString(sanitizeValue(name))
 	sb.WriteString(" source=")
-	sb.WriteString(sanitizeInternal(source))
+	sb.WriteString(sanitizeValue(source))
 	sb.WriteString(" traceId=")
 	sb.WriteString(traceId)
 	sb.WriteString(" spanId=")
