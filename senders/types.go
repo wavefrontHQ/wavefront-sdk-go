@@ -16,8 +16,8 @@ type SpanLog struct {
 }
 
 type SpanLogs struct {
-	TraceID string    `json:"traceId"`
-	SpanID  string    `json:"spanId"`
+	TraceId string    `json:"traceId"`
+	SpanId  string    `json:"spanId"`
 	Logs    []SpanLog `json:"logs"`
 }
 
@@ -44,11 +44,11 @@ type DistributionSender interface {
 // SpanSender Interface for sending tracing spans to Wavefront
 type SpanSender interface {
 	// Sends a tracing span to Wavefront.
-	// traceID, spanID, parentIds and preceding spanIDs are expected to be UUID strings.
+	// traceId, spanId, parentIds and preceding spanIds are expected to be UUID strings.
 	// parents and preceding spans can be empty for a root span.
 	// span tag keys can be repeated (example: "user"="foo" and "user"="bar")
 	// span logs are currently omitted
-	SendSpan(name string, startMillis, durationMillis int64, source, traceID, spanID string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error
+	SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error
 }
 
 // EventSender Interface for sending events to Wavefront. NOT yet supported.

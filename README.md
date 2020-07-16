@@ -187,8 +187,8 @@ func main() {
         // size of internal buffer beyond which received data is dropped.
         // helps with handling brief increases in data and buffering on errors.
         // separate buffers are maintained per data type (metrics, spans and distributions)
-        // defaults to 50,000. higher values could use more memory.
-        MaxBufferSize : 50000,
+        // defaults to 500,000. higher values could use more memory.
+        MaxBufferSize : 500000,
 
         // interval (in seconds) at which to flush data to Wavefront. defaults to 1 Second.
         // together with batch size controls the max theoretical throughput of the sender.
@@ -272,7 +272,7 @@ When you use a Sender SDK, you won’t see span-level RED metrics by default unl
 // <tracingSpanName> source=<source> [pointTags] <start_millis> <duration_milliseconds>
 // Example:
 // "getAllUsers source=localhost traceId=7b3bf470-9456-11e8-9eb6-529269fb1459
-// spanID=0313bafe-9457-11e8-9eb6-529269fb1459 parent=2f64e538-9457-11e8-9eb6-529269fb1459
+// spanId=0313bafe-9457-11e8-9eb6-529269fb1459 parent=2f64e538-9457-11e8-9eb6-529269fb1459
 // application=Wavefront http.method=GET 1552949776000 343"
 
 sender.SendSpan("getAllUsers", 1552949776000, 343, "localhost",

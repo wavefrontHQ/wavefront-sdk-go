@@ -176,7 +176,6 @@ func (sender *proxySender) SendEvent(name string, startMillis, endMillis int64, 
 	if err != nil {
 		return err
 	}
-	println("[proxy]", line)
 	err = handler.SendData(line)
 	return err
 }
@@ -213,9 +212,4 @@ func (sender *proxySender) GetFailureCount() int64 {
 		}
 	}
 	return failures
-}
-
-//TODO: remove, just for tesing
-func (sender *proxySender) SetSource(source string) {
-	sender.defaultSource = source
 }

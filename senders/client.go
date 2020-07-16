@@ -19,7 +19,6 @@ type Sender interface {
 	EventSender
 	internal.Flusher
 	Close()
-	SetSource(string)
 }
 
 type wavefrontSender struct {
@@ -120,9 +119,9 @@ func (sender *wavefrontSender) SendDistribution(name string, centroids []histogr
 	return sender.histoHandler.HandleLine(line)
 }
 
-func (sender *wavefrontSender) SendSpan(name string, startMillis, durationMillis int64, source, traceID, spanID string,
+func (sender *wavefrontSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
 	parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
-	line, err := SpanLine(name, startMillis, durationMillis, source, traceID, spanID, parents, followsFrom, tags, spanLogs, sender.defaultSource)
+	line, err := SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
 	if err != nil {
 		return err
 	}
@@ -132,7 +131,7 @@ func (sender *wavefrontSender) SendSpan(name string, startMillis, durationMillis
 	}
 
 	if len(spanLogs) > 0 {
-		logs, err := SpanLogJSON(traceID, spanID, spanLogs)
+		logs, err := SpanLogJSON(traceId, spanId, spanLogs)
 		if err != nil {
 			return err
 		}
@@ -152,7 +151,6 @@ func (sender *wavefrontSender) SendEvent(name string, startMillis, endMillis int
 	if err != nil {
 		return err
 	}
-	println("[client]", line)
 	return sender.eventHandler.HandleLine(line)
 }
 
@@ -199,9 +197,4 @@ func (sender *wavefrontSender) GetFailureCount() int64 {
 		sender.spanHandler.GetFailureCount() +
 		sender.spanLogHandler.GetFailureCount() +
 		sender.eventHandler.GetFailureCount()
-}
-
-//TODO: remove, just for tesing
-func (sender *wavefrontSender) SetSource(source string) {
-	sender.defaultSource = source
 }

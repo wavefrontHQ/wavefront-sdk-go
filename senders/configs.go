@@ -23,7 +23,7 @@ type DirectConfiguration struct {
 	// helps with handling brief increases in data and buffering on errors.
 	// separate buffers are maintained per data type (metrics, spans and distributions)
 	// buffers are not pre-allocated to max size and vary based on actual usage.
-	// defaults to 50,000. higher values could use more memory.
+	// defaults to 500,000. higher values could use more memory.
 	MaxBufferSize int
 
 	// interval (in seconds) at which to flush data to Wavefront. defaults to 1 Second.

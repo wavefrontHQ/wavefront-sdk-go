@@ -184,8 +184,3 @@ func (sender *directSender) GetFailureCount() int64 {
 		sender.spanLogHandler.GetFailureCount() +
 		sender.eventHandler.GetFailureCount()
 }
-
-//TODO: remove, just for tesing
-func (sender *directSender) SetSource(source string) {
-	sender.defaultSource = source
-}

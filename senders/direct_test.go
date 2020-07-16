@@ -14,7 +14,7 @@ func TestDirectSends(t *testing.T) {
 		Server:               "http://localhost:" + wfPort,
 		Token:                "DUMMY_TOKEN",
 		BatchSize:            10000,
-		MaxBufferSize:        50000,
+		MaxBufferSize:        500000,
 		FlushIntervalSeconds: 1,
 	}
 

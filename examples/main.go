@@ -14,16 +14,15 @@ import (
 )
 
 func main() {
-	wf := senders.NewMultiSender()
+	var wfSenders []senders.Sender
 
 	urls := strings.Split(os.Getenv("WF_URL"), "|")
-	for idx, url := range urls {
+	for _, url := range urls {
 		sender, err := senders.NewSender(url)
 		if err != nil {
 			panic(err)
 		}
-		sender.SetSource(fmt.Sprintf("sender_%d", idx))
-		wf.Add(sender)
+		wfSenders = append(wfSenders, sender)
 	}
 
 	// OLD PROXY way
@@ -40,15 +39,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	sender.SetSource("client_proxy")
-	wf.Add(sender)
+	wfSenders = append(wfSenders, sender)
 
 	// OLD DIRECT way
 	directCfg := &senders.DirectConfiguration{
 		Server:               "https://-----.wavefront.com",
 		Token:                "--------------",
 		BatchSize:            10000,
-		MaxBufferSize:        50000,
+		MaxBufferSize:        500000,
 		FlushIntervalSeconds: 1,
 	}
 
@@ -56,12 +54,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	sender.SetSource("client_direct")
-	wf.Add(sender)
+	wfSenders = append(wfSenders, sender)
 
+	wf := senders.NewMultiSender(wfSenders...)
 	log.Print("senders ready")
 
-	source := "" //"go_sdk_example"
+	source := "go_sdk_example"
 
 	app := application.New("sample app", "main.go")
 	application.StartHeartbeatService(wf, app, source)
@@ -73,7 +71,10 @@ func main() {
 	options := []event.Option{event.Details("Details"), event.Type("type"), event.Severity("severity")}
 
 	for i := 0; i < 10; i++ {
-		wf.SendMetric("sample.metric", float64(i), time.Now().UnixNano(), source, map[string]string{"env": "test"})
+		err := wf.SendMetric("sample.metric", float64(i), time.Now().UnixNano(), source, map[string]string{"env": "test"})
+		if err != nil {
+			println("error:", err.Error())
+		}
 
 		txt := fmt.Sprintf("test event %d", i)
 		sendEvent(wf, txt, time.Now().Unix(), 0, source, tags, options...)
@@ -88,7 +89,6 @@ func main() {
 func sendEvent(sender senders.Sender, name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) {
 	err := sender.SendEvent(name, startMillis, endMillis, source, tags, setters...)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(-1)
+		println("error:", err)
 	}
 }
