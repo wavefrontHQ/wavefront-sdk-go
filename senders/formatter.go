@@ -11,11 +11,7 @@ import (
 
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
-)
-
-const (
-	deltaPrefix    = "\u2206"
-	altDeltaPrefix = "\u0394"
+	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
 var /* const */ quotation = regexp.MustCompile("\"")
@@ -33,8 +29,8 @@ func MetricLine(name string, value float64, ts int64, source string, tags map[st
 		source = defaultSource
 	}
 
-	sb := GetBuffer()
-	defer PutBuffer(sb)
+	sb := internal.GetBuffer()
+	defer internal.PutBuffer(sb)
 
 	sb.WriteString(strconv.Quote(sanitizeInternal(name)))
 	sb.WriteString(" ")
@@ -81,8 +77,8 @@ func HistoLine(name string, centroids []histogram.Centroid, hgs map[histogram.Gr
 		source = defaultSource
 	}
 
-	sb := GetBuffer()
-	defer PutBuffer(sb)
+	sb := internal.GetBuffer()
+	defer internal.PutBuffer(sb)
 
 	if ts != 0 {
 		sb.WriteString(" ")
@@ -143,8 +139,8 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 		return "", errors.New("spanId is not in UUID format")
 	}
 
-	sb := GetBuffer()
-	defer PutBuffer(sb)
+	sb := internal.GetBuffer()
+	defer internal.PutBuffer(sb)
 
 	sb.WriteString(sanitizeValue(name))
 	sb.WriteString(" source=")
@@ -205,8 +201,8 @@ func SpanLogJSON(traceId, spanId string, spanLogs []SpanLog) (string, error) {
 // EventLine encode the event to a wf proxy format
 // set endMillis to 0 for a 'Instantaneous' event
 func EventLine(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) (string, error) {
-	sb := GetBuffer()
-	defer PutBuffer(sb)
+	sb := internal.GetBuffer()
+	defer internal.PutBuffer(sb)
 
 	annotations := map[string]string{}
 	l := map[string]interface{}{
@@ -323,18 +319,18 @@ func isUUIDFormat(str string) bool {
 
 //Sanitize string of metric name, source and key of tags according to the rule of Wavefront proxy.
 func sanitizeInternal(str string) string {
-	sb := GetBuffer()
-	defer PutBuffer(sb)
+	sb := internal.GetBuffer()
+	defer internal.PutBuffer(sb)
 
 	// first character can be \u2206 (∆ - INCREMENT) or \u0394 (Δ - GREEK CAPITAL LETTER DELTA)
 	// or ~ tilda character for internal metrics
 	skipHead := 0
-	if strings.HasPrefix(str, deltaPrefix) {
-		sb.WriteString(deltaPrefix)
+	if strings.HasPrefix(str, internal.DeltaPrefix) {
+		sb.WriteString(internal.DeltaPrefix)
 		skipHead = 3
 	}
-	if strings.HasPrefix(str, altDeltaPrefix) {
-		sb.WriteString(altDeltaPrefix)
+	if strings.HasPrefix(str, internal.AltDeltaPrefix) {
+		sb.WriteString(internal.AltDeltaPrefix)
 		skipHead = 2
 	}
 	if str[0] == 126 {

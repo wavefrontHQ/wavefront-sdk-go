@@ -25,6 +25,7 @@ type proxySender struct {
 }
 
 // Creates and returns a Wavefront Proxy Sender instance
+// Deprecated: Use 'senders.NewSender(url)'
 func NewProxySender(cfg *ProxyConfiguration) (Sender, error) {
 	sender := &proxySender{
 		defaultSource: internal.GetHostname("wavefront_proxy_sender"),

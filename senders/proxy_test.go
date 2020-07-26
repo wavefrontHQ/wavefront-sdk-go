@@ -1,4 +1,4 @@
-package senders
+package senders_test
 
 import (
 	"io"
@@ -7,9 +7,10 @@ import (
 	"testing"
 
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
+	"github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
-var proxy Sender
+var proxy senders.Sender
 
 func netcat(addr string, keepopen bool) {
 	laddr, _ := net.ResolveTCPAddr("tcp", addr)
@@ -28,7 +29,7 @@ func init() {
 }
 
 func TestProxySends(t *testing.T) {
-	proxyCfg := &ProxyConfiguration{
+	proxyCfg := &senders.ProxyConfiguration{
 		Host:                 "localhost",
 		MetricsPort:          30000,
 		DistributionPort:     40000,
@@ -37,7 +38,7 @@ func TestProxySends(t *testing.T) {
 	}
 
 	var err error
-	if proxy, err = NewProxySender(proxyCfg); err != nil {
+	if proxy, err = senders.NewProxySender(proxyCfg); err != nil {
 		t.Error("Failed Creating Sender", err)
 	}
 
@@ -66,7 +67,7 @@ func TestProxySends(t *testing.T) {
 	if err = proxy.SendSpan("getAllUsers", 0, 343500, "localhost",
 		"7b3bf470-9456-11e8-9eb6-529269fb1459", "0313bafe-9457-11e8-9eb6-529269fb1459",
 		[]string{"2f64e538-9457-11e8-9eb6-529269fb1459"}, nil,
-		[]SpanTag{
+		[]senders.SpanTag{
 			{Key: "application", Value: "Wavefront"},
 			{Key: "http.method", Value: "GET"},
 		},

@@ -11,7 +11,17 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
-type directSender struct {
+// Sender Interface for sending metrics, distributions and spans to Wavefront
+type Sender interface {
+	MetricSender
+	DistributionSender
+	SpanSender
+	EventSender
+	internal.Flusher
+	Close()
+}
+
+type wavefrontSender struct {
 	reporter         internal.Reporter
 	defaultSource    string
 	pointHandler     *internal.LineHandler
@@ -20,14 +30,12 @@ type directSender struct {
 	spanLogHandler   *internal.LineHandler
 	eventHandler     *internal.LineHandler
 	internalRegistry *internal.MetricRegistry
+
+	proxy bool
 }
 
-// NewDirectSender creates and returns a Wavefront Direct Ingestion Sender instance
-// Deprecated: Use 'senders.NewSender(url)'
-func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
-	if cfg.Server == "" || cfg.Token == "" {
-		return nil, fmt.Errorf("server and token cannot be empty")
-	}
+// newWavefrontClient creates and returns a Wavefront Client instance
+func newWavefrontClient(cfg *configuration) (Sender, error) {
 	if cfg.BatchSize == 0 {
 		cfg.BatchSize = defaultBatchSize
 	}
@@ -38,28 +46,28 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 		cfg.FlushIntervalSeconds = defaultFlushInterval
 	}
 
-	reporter := internal.NewDirectReporter(cfg.Server, cfg.Token)
+	reporter := internal.NewReporter(cfg.Server, cfg.Token)
 
-	sender := &directSender{
+	sender := &wavefrontSender{
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
+		proxy:         len(cfg.Token) == 0,
 	}
 	sender.internalRegistry = internal.NewMetricRegistry(
 		sender,
 		internal.SetPrefix("~sdk.go.core.sender.direct"),
 		internal.SetTag("pid", strconv.Itoa(os.Getpid())),
 	)
-	sender.pointHandler = makeLineHandler(reporter, cfg, internal.MetricFormat, "points", sender.internalRegistry)
-	sender.histoHandler = makeLineHandler(reporter, cfg, internal.HistogramFormat, "histograms", sender.internalRegistry)
-	sender.spanHandler = makeLineHandler(reporter, cfg, internal.TraceFormat, "spans", sender.internalRegistry)
-	sender.spanLogHandler = makeLineHandler(reporter, cfg, internal.SpanLogsFormat, "span_logs", sender.internalRegistry)
-	sender.eventHandler = makeLineHandler(reporter, cfg, internal.EventFormat, "events", sender.internalRegistry)
+	sender.pointHandler = newLineHandler(reporter, cfg, internal.MetricFormat, "points", sender.internalRegistry)
+	sender.histoHandler = newLineHandler(reporter, cfg, internal.HistogramFormat, "histograms", sender.internalRegistry)
+	sender.spanHandler = newLineHandler(reporter, cfg, internal.TraceFormat, "spans", sender.internalRegistry)
+	sender.spanLogHandler = newLineHandler(reporter, cfg, internal.SpanLogsFormat, "span_logs", sender.internalRegistry)
+	sender.eventHandler = newLineHandler(reporter, cfg, internal.EventFormat, "events", sender.internalRegistry)
 
 	sender.Start()
 	return sender, nil
 }
 
-func makeLineHandler(reporter internal.Reporter, cfg *DirectConfiguration, format, prefix string,
-	registry *internal.MetricRegistry) *internal.LineHandler {
+func newLineHandler(reporter internal.Reporter, cfg *configuration, format, prefix string, registry *internal.MetricRegistry) *internal.LineHandler {
 	flushInterval := time.Second * time.Duration(cfg.FlushIntervalSeconds)
 
 	opts := []internal.LineHandlerOption{internal.SetHandlerPrefix(prefix), internal.SetRegistry(registry)}
@@ -72,7 +80,7 @@ func makeLineHandler(reporter internal.Reporter, cfg *DirectConfiguration, forma
 	return internal.NewLineHandler(reporter, format, flushInterval, batchSize, cfg.MaxBufferSize, opts...)
 }
 
-func (sender *directSender) Start() {
+func (sender *wavefrontSender) Start() {
 	sender.pointHandler.Start()
 	sender.histoHandler.Start()
 	sender.spanHandler.Start()
@@ -81,7 +89,7 @@ func (sender *directSender) Start() {
 	sender.eventHandler.Start()
 }
 
-func (sender *directSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
+func (sender *wavefrontSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
 	line, err := MetricLine(name, value, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		return err
@@ -89,7 +97,7 @@ func (sender *directSender) SendMetric(name string, value float64, ts int64, sou
 	return sender.pointHandler.HandleLine(line)
 }
 
-func (sender *directSender) SendDeltaCounter(name string, value float64, source string, tags map[string]string) error {
+func (sender *wavefrontSender) SendDeltaCounter(name string, value float64, source string, tags map[string]string) error {
 	if name == "" {
 		return fmt.Errorf("empty metric name")
 	}
@@ -102,7 +110,7 @@ func (sender *directSender) SendDeltaCounter(name string, value float64, source 
 	return nil
 }
 
-func (sender *directSender) SendDistribution(name string, centroids []histogram.Centroid,
+func (sender *wavefrontSender) SendDistribution(name string, centroids []histogram.Centroid,
 	hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
 	line, err := HistoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
 	if err != nil {
@@ -111,7 +119,7 @@ func (sender *directSender) SendDistribution(name string, centroids []histogram.
 	return sender.histoHandler.HandleLine(line)
 }
 
-func (sender *directSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
+func (sender *wavefrontSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
 	parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
 	line, err := SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
 	if err != nil {
@@ -132,15 +140,21 @@ func (sender *directSender) SendSpan(name string, startMillis, durationMillis in
 	return nil
 }
 
-func (sender *directSender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
-	line, err := EventLineJSON(name, startMillis, endMillis, source, tags, setters...)
+func (sender *wavefrontSender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
+	var line string
+	var err error
+	if sender.proxy {
+		line, err = EventLine(name, startMillis, endMillis, source, tags, setters...)
+	} else {
+		line, err = EventLineJSON(name, startMillis, endMillis, source, tags, setters...)
+	}
 	if err != nil {
 		return err
 	}
 	return sender.eventHandler.HandleLine(line)
 }
 
-func (sender *directSender) Close() {
+func (sender *wavefrontSender) Close() {
 	sender.pointHandler.Stop()
 	sender.histoHandler.Stop()
 	sender.spanHandler.Stop()
@@ -149,7 +163,7 @@ func (sender *directSender) Close() {
 	sender.eventHandler.Stop()
 }
 
-func (sender *directSender) Flush() error {
+func (sender *wavefrontSender) Flush() error {
 	errStr := ""
 	err := sender.pointHandler.Flush()
 	if err != nil {
@@ -177,7 +191,7 @@ func (sender *directSender) Flush() error {
 	return nil
 }
 
-func (sender *directSender) GetFailureCount() int64 {
+func (sender *wavefrontSender) GetFailureCount() int64 {
 	return sender.pointHandler.GetFailureCount() +
 		sender.histoHandler.GetFailureCount() +
 		sender.spanHandler.GetFailureCount() +
