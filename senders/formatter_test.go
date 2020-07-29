@@ -4,34 +4,35 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 )
 
 var line string
 
 func TestSanitizeInternal(t *testing.T) {
-	assertEqual(t, "\"hello\"", strconv.Quote(sanitizeInternal("hello")))
-	assertEqual(t, "\"hello-world\"", strconv.Quote(sanitizeInternal("hello world")))
-	assertEqual(t, "\"hello.world\"", strconv.Quote(sanitizeInternal("hello.world")))
-	assertEqual(t, "\"hello-world-\"", strconv.Quote(sanitizeInternal("hello\"world\"")))
-	assertEqual(t, "\"hello-world\"", strconv.Quote(sanitizeInternal("hello'world")))
-	assertEqual(t, "\"~component.heartbeat\"", strconv.Quote(sanitizeInternal("~component."+
+	assert.Equal(t, "\"hello\"", strconv.Quote(sanitizeInternal("hello")))
+	assert.Equal(t, "\"hello-world\"", strconv.Quote(sanitizeInternal("hello world")))
+	assert.Equal(t, "\"hello.world\"", strconv.Quote(sanitizeInternal("hello.world")))
+	assert.Equal(t, "\"hello-world-\"", strconv.Quote(sanitizeInternal("hello\"world\"")))
+	assert.Equal(t, "\"hello-world\"", strconv.Quote(sanitizeInternal("hello'world")))
+	assert.Equal(t, "\"~component.heartbeat\"", strconv.Quote(sanitizeInternal("~component."+
 		"heartbeat")))
-	assertEqual(t, "\"-component.heartbeat\"", strconv.Quote(sanitizeInternal("!component."+
+	assert.Equal(t, "\"-component.heartbeat\"", strconv.Quote(sanitizeInternal("!component."+
 		"heartbeat")))
-	assertEqual(t, "\"Δcomponent.heartbeat\"", strconv.Quote(sanitizeInternal("Δcomponent."+
+	assert.Equal(t, "\"Δcomponent.heartbeat\"", strconv.Quote(sanitizeInternal("Δcomponent."+
 		"heartbeat")))
-	assertEqual(t, "\"∆component.heartbeat\"", strconv.Quote(sanitizeInternal("∆component."+
+	assert.Equal(t, "\"∆component.heartbeat\"", strconv.Quote(sanitizeInternal("∆component."+
 		"heartbeat")))
 }
 
 func TestSanitizeValue(t *testing.T) {
-	assertEqual(t, "\"hello\"", sanitizeValue("hello"))
-	assertEqual(t, "\"hello world\"", sanitizeValue("hello world"))
-	assertEqual(t, "\"hello.world\"", sanitizeValue("hello.world"))
-	assertEqual(t, "\"hello\\\"world\\\"\"", sanitizeValue("hello\"world\""))
-	assertEqual(t, "\"hello'world\"", sanitizeValue("hello'world"))
-	assertEqual(t, "\"hello\\nworld\"", sanitizeValue("hello\nworld"))
+	assert.Equal(t, "\"hello\"", sanitizeValue("hello"))
+	assert.Equal(t, "\"hello world\"", sanitizeValue("hello world"))
+	assert.Equal(t, "\"hello.world\"", sanitizeValue("hello.world"))
+	assert.Equal(t, "\"hello\\\"world\\\"\"", sanitizeValue("hello\"world\""))
+	assert.Equal(t, "\"hello'world\"", sanitizeValue("hello'world"))
+	assert.Equal(t, "\"hello\\nworld\"", sanitizeValue("hello\nworld"))
 }
 
 func BenchmarkMetricLine(b *testing.B) {
@@ -52,17 +53,20 @@ func TestMetricLine(t *testing.T) {
 	line, err := MetricLine("foo.metric", 1.2, 1533529977, "test_source",
 		map[string]string{"env": "test"}, "")
 	expected := "\"foo.metric\" 1.2 1533529977 source=\"test_source\" \"env\"=\"test\"\n"
-	assertEquals(expected, line, err, t)
+	assert.Nil(t, err)
+	assert.Equal(t, expected, line)
 
 	line, err = MetricLine("foo.metric", 1.2, 1533529977, "",
 		map[string]string{"env": "test"}, "default")
 	expected = "\"foo.metric\" 1.2 1533529977 source=\"default\" \"env\"=\"test\"\n"
-	assertEquals(expected, line, err, t)
+	assert.Nil(t, err)
+	assert.Equal(t, expected, line)
 
 	line, err = MetricLine("foo.metric", 1.2, 1533529977, "1.2.3.4:8080",
 		map[string]string{"env": "test"}, "default")
 	expected = "\"foo.metric\" 1.2 1533529977 source=\"1.2.3.4:8080\" \"env\"=\"test\"\n"
-	assertEquals(expected, line, err, t)
+	assert.Nil(t, err)
+	assert.Equal(t, expected, line)
 }
 
 func BenchmarkHistoLine(b *testing.B) {
@@ -85,28 +89,32 @@ func TestHistoLine(t *testing.T) {
 
 	line, err := HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
-	expected := "!M 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
-	assertEquals(expected, line, err, t)
+	expected := "!M 1533529977 #10 5.1 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
+	assert.Nil(t, err)
+	assert.Equal(t, expected, line)
 
 	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: false},
 		1533529977, "", map[string]string{"env": "test"}, "default")
-	expected = "!M 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
-	assertEquals(expected, line, err, t)
+	expected = "!M 1533529977 #10 5.1 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
+	assert.Nil(t, err)
+	assert.Equal(t, expected, line)
 
 	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.HOUR: true, histogram.MINUTE: false},
 		1533529977, "", map[string]string{"env": "test"}, "default")
-	expected = "!H 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
-	assertEquals(expected, line, err, t)
+	expected = "!H 1533529977 #10 5.1 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
+	assert.Nil(t, err)
+	assert.Equal(t, expected, line)
 
 	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.DAY: true},
 		1533529977, "", map[string]string{"env": "test"}, "default")
-	expected = "!D 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
-	assertEquals(expected, line, err, t)
+	expected = "!D 1533529977 #10 5.1 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
+	assert.Nil(t, err)
+	assert.Equal(t, expected, line)
 
 	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: true, histogram.DAY: false},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
-	expected = "!M 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n" +
-		"!H 1533529977 #20 30 #10 5.1 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
+	expected = "!M 1533529977 #10 5.1 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n" +
+		"!H 1533529977 #10 5.1 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
 	if len(line) != len(expected) {
 		t.Errorf("lines don't match. expected: %s, actual: %s", expected, line)
 	}
@@ -132,14 +140,16 @@ func TestSpanLine(t *testing.T) {
 		[]string{"7b3bf470-9456-11e8-9eb6-529269fb1458"}, nil, nil, nil, "")
 	expected := "\"order.shirts\" source=\"test_source\" traceId=7b3bf470-9456-11e8-9eb6-529269fb1459" +
 		" spanId=7b3bf470-9456-11e8-9eb6-529269fb1459 parent=7b3bf470-9456-11e8-9eb6-529269fb1458 1533531013 343500\n"
-	assertEquals(expected, line, err, t)
+	assert.Nil(t, err)
+	assert.Equal(t, expected, line)
 
 	line, err = SpanLine("order.shirts", 1533531013, 343500, "test_source",
 		"7b3bf470-9456-11e8-9eb6-529269fb1459", "7b3bf470-9456-11e8-9eb6-529269fb1459", nil,
 		[]string{"7b3bf470-9456-11e8-9eb6-529269fb1458"}, []SpanTag{{Key: "env", Value: "test"}}, nil, "")
 	expected = "\"order.shirts\" source=\"test_source\" traceId=7b3bf470-9456-11e8-9eb6-529269fb1459" +
 		" spanId=7b3bf470-9456-11e8-9eb6-529269fb1459 followsFrom=7b3bf470-9456-11e8-9eb6-529269fb1458 \"env\"=\"test\" 1533531013 343500\n"
-	assertEquals(expected, line, err, t)
+	assert.Nil(t, err)
+	assert.Equal(t, expected, line)
 
 	line, err = SpanLine("order.shirts", 1533531013, 343500, "test_source",
 		"7b3bf470-9456-11e8-9eb6-529269fb1459", "7b3bf470-9456-11e8-9eb6-529269fb1459", nil,
@@ -147,22 +157,8 @@ func TestSpanLine(t *testing.T) {
 		[]SpanTag{{Key: "env", Value: "test"}, {Key: "env", Value: "dev"}}, nil, "")
 	expected = "\"order.shirts\" source=\"test_source\" traceId=7b3bf470-9456-11e8-9eb6-529269fb1459" +
 		" spanId=7b3bf470-9456-11e8-9eb6-529269fb1459 followsFrom=7b3bf470-9456-11e8-9eb6-529269fb1458 \"env\"=\"test\" \"env\"=\"dev\" 1533531013 343500\n"
-	assertEquals(expected, line, err, t)
-}
-
-func assertEquals(expected, actual string, err error, t *testing.T) {
-	if err != nil {
-		t.Error(err)
-	}
-	if actual != expected {
-		t.Errorf("lines don't match.\n expected: %s\n actual: %s", expected, actual)
-	}
-}
-
-func assertEqual(t *testing.T, a interface{}, b interface{}) {
-	if a != b {
-		t.Fatalf("%s - %v != %v", "", a, b)
-	}
+	assert.Nil(t, err)
+	assert.Equal(t, expected, line)
 }
 
 func makeCentroids() []histogram.Centroid {

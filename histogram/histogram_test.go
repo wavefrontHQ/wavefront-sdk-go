@@ -1,9 +1,13 @@
-package histogram
+package histogram_test
 
 import (
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/wavefronthq/wavefront-sdk-go/histogram"
+	"github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
 type clock struct {
@@ -19,12 +23,8 @@ func (c *clock) Add(d time.Duration) {
 }
 
 func TestHistogram(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping Histogram tests in short mode")
-	}
-
 	c := &clock{currTime: time.Now()}
-	h := New(MaxBins(3), GranularityOption(MINUTE), TimeSupplier(c.Now))
+	h := histogram.New(histogram.MaxBins(3), histogram.GranularityOption(histogram.MINUTE), histogram.TimeSupplier(c.Now))
 
 	for i := 0; i < 5; i++ {
 		for i := 0; i < 1000; i++ {
@@ -34,22 +34,31 @@ func TestHistogram(t *testing.T) {
 	}
 
 	distributions := h.Distributions()
-	assertEqual(t, len(distributions), 3, "Error on distributions number")
+	assert.Equal(t, len(distributions), 3, "Error on distributions number")
 
 	for _, distribution := range distributions {
 		count := 0
 		for _, centroid := range distribution.Centroids {
 			count += centroid.Count
 		}
-		assertEqual(t, count, 1000, "Error on centroids count")
+		assert.Equal(t, count, 1000, "Error on centroids count")
 	}
 
 	distributions = h.Distributions()
-	assertEqual(t, len(distributions), 0, "Error on distributions number")
+	assert.Equal(t, len(distributions), 0, "Error on distributions number")
 }
 
-func assertEqual(t *testing.T, a interface{}, b interface{}, e string) {
-	if a != b {
-		t.Fatalf("%s - %v != %v", e, a, b)
+func TestCompactHistoLine(t *testing.T) {
+	centroids := histogram.Centroids{
+		{Value: 30.0, Count: 20},
+		{Value: 30.0, Count: 20},
+		{Value: 30.0, Count: 20},
+		{Value: 5.1, Count: 10},
 	}
+
+	line, err := senders.HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
+		1533529977, "test_source", map[string]string{"env": "test"}, "")
+	expected := "!M 1533529977 #10 5.1 #60 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
+	assert.Nil(t, err)
+	assert.Equal(t, expected, line, "Error on histogram.Centroids.Compact()")
 }
