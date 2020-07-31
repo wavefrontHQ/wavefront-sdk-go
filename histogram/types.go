@@ -1,7 +1,6 @@
 package histogram
 
 import (
-	"sort"
 	"time"
 )
 
@@ -12,10 +11,6 @@ type Centroid struct {
 }
 
 type Centroids []Centroid
-
-func (a Centroids) Len() int           { return len(a) }
-func (a Centroids) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a Centroids) Less(i, j int) bool { return a[i].Value < a[j].Value }
 
 func (centroids Centroids) Compact() Centroids {
 	res := make(Centroids, 0)
@@ -30,7 +25,6 @@ func (centroids Centroids) Compact() Centroids {
 	for v, c := range tmp {
 		res = append(res, Centroid{Value: v, Count: c})
 	}
-	sort.Sort(res)
 	return res
 }
 

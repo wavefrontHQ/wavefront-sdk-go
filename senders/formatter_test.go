@@ -84,37 +84,66 @@ func BenchmarkHistoLine(b *testing.B) {
 	line = r
 }
 
+func TestHistoLineCentroidsFormat(t *testing.T) {
+	centroids := histogram.Centroids{
+		{Value: 30.0, Count: 20},
+		{Value: 5.1, Count: 10},
+		{Value: 30.0, Count: 20},
+		{Value: 5.1, Count: 10},
+		{Value: 30.0, Count: 20},
+	}
+
+	line, err := HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
+		1533529977, "test_source", map[string]string{"env": "test"}, "")
+
+	assert.Nil(t, err)
+	expected := []string{
+		"!M 1533529977 #60 30 #20 5.1 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n",
+		"!M 1533529977 #20 5.1 #60 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n",
+	}
+	ok := false
+	for _, exp := range expected {
+		if assert.ObjectsAreEqual(exp, line) {
+			ok = true
+		}
+	}
+	if !ok {
+		assert.Equal(t, expected[0], line)
+		assert.Equal(t, expected[1], line)
+	}
+}
+
 func TestHistoLine(t *testing.T) {
 	centroids := makeCentroids()
 
 	line, err := HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
-	expected := "!M 1533529977 #10 5.1 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
+	expected := "!M 1533529977 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
 	assert.Nil(t, err)
 	assert.Equal(t, expected, line)
 
 	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: false},
 		1533529977, "", map[string]string{"env": "test"}, "default")
-	expected = "!M 1533529977 #10 5.1 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
+	expected = "!M 1533529977 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assert.Nil(t, err)
 	assert.Equal(t, expected, line)
 
 	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.HOUR: true, histogram.MINUTE: false},
 		1533529977, "", map[string]string{"env": "test"}, "default")
-	expected = "!H 1533529977 #10 5.1 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
+	expected = "!H 1533529977 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assert.Nil(t, err)
 	assert.Equal(t, expected, line)
 
 	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.DAY: true},
 		1533529977, "", map[string]string{"env": "test"}, "default")
-	expected = "!D 1533529977 #10 5.1 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
+	expected = "!D 1533529977 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assert.Nil(t, err)
 	assert.Equal(t, expected, line)
 
 	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: true, histogram.DAY: false},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
-	expected = "!M 1533529977 #10 5.1 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n" +
-		"!H 1533529977 #10 5.1 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
+	expected = "!M 1533529977 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n" +
+		"!H 1533529977 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
 	if len(line) != len(expected) {
 		t.Errorf("lines don't match. expected: %s, actual: %s", expected, line)
 	}
@@ -166,10 +195,6 @@ func makeCentroids() []histogram.Centroid {
 		{
 			Value: 30.0,
 			Count: 20,
-		},
-		{
-			Value: 5.1,
-			Count: 10,
 		},
 	}
 	return centroids

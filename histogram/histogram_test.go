@@ -1,13 +1,12 @@
-package histogram_test
+package histogram
 
 import (
 	"math/rand"
+	"sort"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/wavefronthq/wavefront-sdk-go/histogram"
-	"github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
 type clock struct {
@@ -24,7 +23,7 @@ func (c *clock) Add(d time.Duration) {
 
 func TestHistogram(t *testing.T) {
 	c := &clock{currTime: time.Now()}
-	h := histogram.New(histogram.MaxBins(3), histogram.GranularityOption(histogram.MINUTE), histogram.TimeSupplier(c.Now))
+	h := New(MaxBins(3), GranularityOption(MINUTE), TimeSupplier(c.Now))
 
 	for i := 0; i < 5; i++ {
 		for i := 0; i < 1000; i++ {
@@ -49,16 +48,25 @@ func TestHistogram(t *testing.T) {
 }
 
 func TestCompactHistoLine(t *testing.T) {
-	centroids := histogram.Centroids{
-		{Value: 30.0, Count: 20},
-		{Value: 30.0, Count: 20},
+	centroids := Centroids{
 		{Value: 30.0, Count: 20},
 		{Value: 5.1, Count: 10},
+		{Value: 30.0, Count: 20},
+		{Value: 5.1, Count: 10},
+		{Value: 30.0, Count: 20},
 	}
 
-	line, err := senders.HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
-		1533529977, "test_source", map[string]string{"env": "test"}, "")
-	expected := "!M 1533529977 #10 5.1 #60 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
-	assert.Nil(t, err)
-	assert.Equal(t, expected, line, "Error on histogram.Centroids.Compact()")
+	centroidsExp := Centroids{
+		{Value: 5.1, Count: 20},
+		{Value: 30.0, Count: 60},
+	}
+
+	vals := centroids.Compact()
+	sort.Sort(vals)
+
+	assert.Equal(t, centroidsExp, vals, "Error on Centroids.Compact()")
 }
+
+func (a Centroids) Len() int           { return len(a) }
+func (a Centroids) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a Centroids) Less(i, j int) bool { return a[i].Value < a[j].Value }
