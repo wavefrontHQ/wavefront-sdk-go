@@ -13,7 +13,6 @@ type Centroid struct {
 type Centroids []Centroid
 
 func (centroids Centroids) Compact() Centroids {
-	res := make(Centroids, 0)
 	tmp := make(map[float64]int)
 	for _, c := range centroids {
 		if _, ok := tmp[c.Value]; ok {
@@ -22,8 +21,11 @@ func (centroids Centroids) Compact() Centroids {
 			tmp[c.Value] = c.Count
 		}
 	}
+	res := make(Centroids, len(tmp))
+	idx := 0
 	for v, c := range tmp {
-		res = append(res, Centroid{Value: v, Count: c})
+		res[idx] = Centroid{Value: v, Count: c}
+		idx++
 	}
 	return res
 }
