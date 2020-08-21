@@ -60,7 +60,7 @@ func MetricLine(name string, value float64, ts int64, source string, tags map[st
 // Gets a histogram line in the Wavefront histogram data format:
 // {!M | !H | !D} [<timestamp>] #<count> <mean> [centroids] <histogramName> source=<source> [pointTags]
 // Example: "!M 1533531013 #20 30.0 #10 5.1 request.latency source=appServer1 region=us-west"
-func HistoLine(name string, centroids []histogram.Centroid, hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string, defaultSource string) (string, error) {
+func HistoLine(name string, centroids histogram.Centroids, hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string, defaultSource string) (string, error) {
 	if name == "" {
 		return "", errors.New("empty distribution name")
 	}
@@ -85,7 +85,7 @@ func HistoLine(name string, centroids []histogram.Centroid, hgs map[histogram.Gr
 		sb.WriteString(strconv.FormatInt(ts, 10))
 	}
 	// Preprocess line. We know len(hgs) > 0 here.
-	for _, centroid := range centroids {
+	for _, centroid := range centroids.Compact() {
 		sb.WriteString(" #")
 		sb.WriteString(strconv.Itoa(centroid.Count))
 		sb.WriteString(" ")

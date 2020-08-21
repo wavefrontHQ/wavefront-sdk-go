@@ -58,7 +58,7 @@ func defaultHistogramImpl() *histogramImpl {
 	return &histogramImpl{
 		maxBins:      10,
 		granularity:  MINUTE,
-		compression:  5,
+		compression:  3.2,
 		timeSupplier: time.Now,
 	}
 }
