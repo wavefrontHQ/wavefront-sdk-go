@@ -2,42 +2,44 @@ package internal
 
 import (
 	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetSemVer(t *testing.T) {
-	if sdkVersion, e := GetSemVer(""); sdkVersion != 0 || e != nil {
-		t.Error("Expected sdk version to be 0 but got : ", sdkVersion)
-	}
 
-	if sdkVersion, e := GetSemVer("1.1.0"); sdkVersion != 1.01 || e != nil {
-		t.Error("Expected sdk version to be 1.0100 but got : ", sdkVersion)
-	}
+	sdkVersion, e := GetSemVer("")
+	assert.NoError(t, e)
+	assert.Equal(t, sdkVersion, float64(0))
 
-	if sdkVersion, e := GetSemVer("1.1.0-SNAPSHOT"); sdkVersion != 1.01 || e != nil {
-		t.Error("Expected sdk version to be 0.0 but got : ", sdkVersion)
-	}
+	sdkVersion, e = GetSemVer("1.1.0")
+	assert.NoError(t, e)
+	assert.Equal(t, sdkVersion, 1.0100)
 
-	if sdkVersion, e := GetSemVer("1.1.1"); sdkVersion != 1.0101 || e != nil {
-		t.Error("Expected sdk version to be 0.0 but got : ", sdkVersion)
-	}
+	sdkVersion, e = GetSemVer("1.1.0-SNAPSHOT")
+	assert.NoError(t, e)
+	assert.Equal(t, sdkVersion, 1.0100)
 
-	if sdkVersion, e := GetSemVer("1.10.1"); sdkVersion != 1.1001 || e != nil {
-		t.Error("Expected sdk version to be 0.0 but got : ", sdkVersion)
-	}
+	sdkVersion, e = GetSemVer("1.1.1")
+	assert.NoError(t, e)
+	assert.Equal(t, sdkVersion, 1.0101)
 
-	if sdkVersion, e := GetSemVer("1.1.10"); sdkVersion != 1.011 || e != nil {
-		t.Error("Expected sdk version to be 0.0 but got : ", sdkVersion)
-	}
+	sdkVersion, e = GetSemVer("1.10.1")
+	assert.NoError(t, e)
+	assert.Equal(t, sdkVersion, 1.1001)
 
-	if sdkVersion, e := GetSemVer("1.0.1"); sdkVersion != 1.0001 || e != nil {
-		t.Error("Expected sdk version to be 0.0 but got : ", sdkVersion)
-	}
+	sdkVersion, e = GetSemVer("1.1.10")
+	assert.NoError(t, e)
+	assert.Equal(t, sdkVersion, 1.0110)
 
-	if sdkVersion, e := GetSemVer("1.0.10"); sdkVersion != 1.001 || e != nil {
-		t.Error("Expected sdk version to be 0.0 but got : ", sdkVersion)
-	}
+	sdkVersion, e = GetSemVer("1.0.1")
+	assert.NoError(t, e)
+	assert.Equal(t, sdkVersion, 1.0001)
 
-	if sdkVersion, e := GetSemVer("1.10.10"); sdkVersion != 1.101 || e != nil {
-		t.Error("Expected sdk version to be 0.0 but got : ", sdkVersion)
-	}
+	sdkVersion, e = GetSemVer("1.0.10")
+	assert.NoError(t, e)
+	assert.Equal(t, sdkVersion, 1.0010)
+
+	sdkVersion, e = GetSemVer("1.10.10")
+	assert.NoError(t, e)
+	assert.Equal(t, sdkVersion, 1.1010)
 }
