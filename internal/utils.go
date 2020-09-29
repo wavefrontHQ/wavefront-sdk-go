@@ -1,10 +1,10 @@
 package internal
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
-	"fmt"
 )
 
 var semVerRegex = regexp.MustCompile("([0-9]\\d*)\\.(\\d+)\\.(\\d+)(?:-([a-zA-Z0-9]+))?")
