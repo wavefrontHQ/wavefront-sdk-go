@@ -80,6 +80,10 @@ func (registry *MetricRegistry) NewGauge(name string, f func() int64) *Functiona
 	return registry.getOrAdd(name, &FunctionalGauge{value: f}).(*FunctionalGauge)
 }
 
+func (registry *MetricRegistry) NewGaugeFloat64(name string, f func() float64) *FunctionalGaugeFloat64 {
+	return registry.getOrAdd(name, &FunctionalGaugeFloat64{value: f}).(*FunctionalGaugeFloat64)
+}
+
 func (registry *MetricRegistry) Start() {
 	go registry.start()
 }
@@ -110,6 +114,8 @@ func (registry *MetricRegistry) report() {
 			registry.sender.SendMetric(registry.prefix+"."+k, float64(metric.(*MetricCounter).count()), 0, "", registry.tags)
 		case *FunctionalGauge:
 			registry.sender.SendMetric(registry.prefix+"."+k, float64(metric.(*FunctionalGauge).instantValue()), 0, "", registry.tags)
+		case *FunctionalGaugeFloat64:
+			registry.sender.SendMetric(registry.prefix+"."+k, metric.(*FunctionalGaugeFloat64).instantValue(), 0, "", registry.tags)
 		}
 	}
 }

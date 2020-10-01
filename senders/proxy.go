@@ -2,6 +2,7 @@ package senders
 
 import (
 	"errors"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
+	"github.com/wavefronthq/wavefront-sdk-go/version"
 )
 
 const (
@@ -20,8 +22,9 @@ const (
 )
 
 type proxySender struct {
-	handlers      []internal.ConnectionHandler
-	defaultSource string
+	handlers         []internal.ConnectionHandler
+	defaultSource    string
+	internalRegistry *internal.MetricRegistry
 }
 
 // Creates and returns a Wavefront Proxy Sender instance
@@ -52,6 +55,18 @@ func NewProxySender(cfg *ProxyConfiguration) (Sender, error) {
 		sender.handlers[eventHandler] = makeConnHandler(cfg.Host, cfg.EventsPort, cfg.FlushIntervalSeconds)
 	}
 
+	sender.internalRegistry = internal.NewMetricRegistry(
+		sender,
+		internal.SetPrefix("~sdk.go.core.sender.proxy"),
+		internal.SetTag("pid", strconv.Itoa(os.Getpid())),
+	)
+
+	if sdkVersion, e := internal.GetSemVer(version.Version); e == nil {
+		sender.internalRegistry.NewGaugeFloat64("version", func() float64 {
+			return sdkVersion
+		})
+	}
+
 	for _, h := range sender.handlers {
 		if h != nil {
 			sender.Start()
@@ -74,6 +89,7 @@ func (sender *proxySender) Start() {
 			h.Start()
 		}
 	}
+	sender.internalRegistry.Start()
 }
 
 func (sender *proxySender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
@@ -186,6 +202,7 @@ func (sender *proxySender) Close() {
 			h.Close()
 		}
 	}
+	sender.internalRegistry.Stop()
 }
 
 func (sender *proxySender) Flush() error {

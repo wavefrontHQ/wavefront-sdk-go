@@ -23,3 +23,12 @@ type FunctionalGauge struct {
 func (g *FunctionalGauge) instantValue() int64 {
 	return g.value()
 }
+
+// functional gauge for internal metrics
+type FunctionalGaugeFloat64 struct {
+	value func() float64
+}
+
+func (g *FunctionalGaugeFloat64) instantValue() float64 {
+	return g.value()
+}
