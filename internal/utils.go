@@ -27,8 +27,10 @@ func min(x, y int) int {
 func GetSemVer(version string) (float64, error) {
 	if len(version) > 0 {
 		res := semVerRegex.FindStringSubmatch(version)
-		sdkVersion := fmt.Sprintf("%s.%02s%02s", res[1], res[2], res[3])
-		return strconv.ParseFloat(sdkVersion, 64)
+		if len(res) >= 4 {
+			sdkVersion := fmt.Sprintf("%s.%02s%02s", res[1], res[2], res[3])
+			return strconv.ParseFloat(sdkVersion, 64)
+		}
 	}
 	return float64(0), nil
 }
