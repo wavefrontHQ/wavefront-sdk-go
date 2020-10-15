@@ -333,6 +333,11 @@ func sanitizeInternal(str string) string {
 		sb.WriteString(internal.AltDeltaPrefix)
 		skipHead = 2
 	}
+	if (strings.HasPrefix(str, internal.DeltaPrefix) || strings.HasPrefix(str, internal.AltDeltaPrefix)) &&
+		str[skipHead] == 126 {
+		sb.WriteString(string(str[skipHead]))
+		skipHead += 1
+	}
 	if str[0] == 126 {
 		sb.WriteString(string(str[0]))
 		skipHead = 1

@@ -26,7 +26,7 @@ func TestDirectSends(t *testing.T) {
 	if err = direct.SendMetric("new-york.power.usage", 42422.0, 0, "go_test", map[string]string{"env": "test"}); err != nil {
 		t.Error("Failed SendMetric", err)
 	}
-	if err = direct.SendDeltaCounter("lambda.thumbnail.generate", 10.0, "thumbnail_service", map[string]string{"format": "jpeg"}); err != nil {
+	if err = direct.SendDeltaCounter("lambda.thumbnail.generate", 10.0, 0, "thumbnail_service", map[string]string{"format": "jpeg"}); err != nil {
 		t.Error("Failed SendDeltaCounter", err)
 	}
 

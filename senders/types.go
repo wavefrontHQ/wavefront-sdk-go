@@ -28,7 +28,7 @@ type MetricSender interface {
 
 	// Sends a delta counter (counter aggregated at the Wavefront service) to Wavefront.
 	// the timestamp for a delta counter is assigned at the server side.
-	SendDeltaCounter(name string, value float64, source string, tags map[string]string) error
+	SendDeltaCounter(name string, value float64, ts int64, source string, tags map[string]string) error
 }
 
 // DistributionSender Interface for sending distributions to Wavefront
