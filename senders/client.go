@@ -31,7 +31,7 @@ type wavefrontSender struct {
 	eventHandler     *internal.LineHandler
 	internalRegistry *internal.MetricRegistry
 
-	pointsValid			*internal.DeltaCounter
+	pointsValid		*internal.DeltaCounter
 	pointsInvalid		*internal.DeltaCounter
 	pointsDropped		*internal.DeltaCounter
 
@@ -39,7 +39,7 @@ type wavefrontSender struct {
 	histogramsInvalid	*internal.DeltaCounter
 	histogramsDropped	*internal.DeltaCounter
 
-	spansValid			*internal.DeltaCounter
+	spansValid		*internal.DeltaCounter
 	spansInvalid		*internal.DeltaCounter
 	spansDropped		*internal.DeltaCounter
 
@@ -47,7 +47,7 @@ type wavefrontSender struct {
 	spanLogsInvalid		*internal.DeltaCounter
 	spanLogsDropped		*internal.DeltaCounter
 
-	eventsValid			*internal.DeltaCounter
+	eventsValid		*internal.DeltaCounter
 	eventsInvalid		*internal.DeltaCounter
 	eventsDropped		*internal.DeltaCounter
 
