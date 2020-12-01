@@ -31,25 +31,25 @@ type wavefrontSender struct {
 	eventHandler     *internal.LineHandler
 	internalRegistry *internal.MetricRegistry
 
-	pointsValid		*internal.DeltaCounter
-	pointsInvalid		*internal.DeltaCounter
-	pointsDropped		*internal.DeltaCounter
+	pointsValid   *internal.DeltaCounter
+	pointsInvalid *internal.DeltaCounter
+	pointsDropped *internal.DeltaCounter
 
-	histogramsValid		*internal.DeltaCounter
-	histogramsInvalid	*internal.DeltaCounter
-	histogramsDropped	*internal.DeltaCounter
+	histogramsValid   *internal.DeltaCounter
+	histogramsInvalid *internal.DeltaCounter
+	histogramsDropped *internal.DeltaCounter
 
-	spansValid		*internal.DeltaCounter
-	spansInvalid		*internal.DeltaCounter
-	spansDropped		*internal.DeltaCounter
+	spansValid   *internal.DeltaCounter
+	spansInvalid *internal.DeltaCounter
+	spansDropped *internal.DeltaCounter
 
-	spanLogsValid		*internal.DeltaCounter
-	spanLogsInvalid		*internal.DeltaCounter
-	spanLogsDropped		*internal.DeltaCounter
+	spanLogsValid   *internal.DeltaCounter
+	spanLogsInvalid *internal.DeltaCounter
+	spanLogsDropped *internal.DeltaCounter
 
-	eventsValid		*internal.DeltaCounter
-	eventsInvalid		*internal.DeltaCounter
-	eventsDropped		*internal.DeltaCounter
+	eventsValid   *internal.DeltaCounter
+	eventsInvalid *internal.DeltaCounter
+	eventsDropped *internal.DeltaCounter
 
 	proxy bool
 }
@@ -197,7 +197,7 @@ func (sender *wavefrontSender) SendSpan(name string, startMillis, durationMillis
 		} else {
 			sender.spanLogsValid.Inc()
 		}
-		err =  sender.spanLogHandler.HandleLine(logs)
+		err = sender.spanLogHandler.HandleLine(logs)
 		if err != nil {
 			sender.spanLogsDropped.Inc()
 		}

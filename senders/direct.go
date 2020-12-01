@@ -22,21 +22,21 @@ type directSender struct {
 	eventHandler     *internal.LineHandler
 	internalRegistry *internal.MetricRegistry
 
-	pointsValid		*internal.DeltaCounter
-	pointsInvalid		*internal.DeltaCounter
-	pointsDropped		*internal.DeltaCounter
+	pointsValid   *internal.DeltaCounter
+	pointsInvalid *internal.DeltaCounter
+	pointsDropped *internal.DeltaCounter
 
-	histogramsValid		*internal.DeltaCounter
-	histogramsInvalid	*internal.DeltaCounter
-	histogramsDropped	*internal.DeltaCounter
+	histogramsValid   *internal.DeltaCounter
+	histogramsInvalid *internal.DeltaCounter
+	histogramsDropped *internal.DeltaCounter
 
-	spansValid		*internal.DeltaCounter
-	spansInvalid		*internal.DeltaCounter
-	spansDropped		*internal.DeltaCounter
+	spansValid   *internal.DeltaCounter
+	spansInvalid *internal.DeltaCounter
+	spansDropped *internal.DeltaCounter
 
-	spanLogsValid		*internal.DeltaCounter
-	spanLogsInvalid		*internal.DeltaCounter
-	spanLogsDropped		*internal.DeltaCounter
+	spanLogsValid   *internal.DeltaCounter
+	spanLogsInvalid *internal.DeltaCounter
+	spanLogsDropped *internal.DeltaCounter
 }
 
 // NewDirectSender creates and returns a Wavefront Direct Ingestion Sender instance

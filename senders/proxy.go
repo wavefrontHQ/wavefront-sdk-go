@@ -26,30 +26,30 @@ type proxySender struct {
 	defaultSource    string
 	internalRegistry *internal.MetricRegistry
 
-	pointsValid		*internal.DeltaCounter
-	pointsInvalid		*internal.DeltaCounter
-	pointsDropped		*internal.DeltaCounter
-	pointsDiscarded		*internal.DeltaCounter
+	pointsValid     *internal.DeltaCounter
+	pointsInvalid   *internal.DeltaCounter
+	pointsDropped   *internal.DeltaCounter
+	pointsDiscarded *internal.DeltaCounter
 
-	histogramsValid		*internal.DeltaCounter
-	histogramsInvalid	*internal.DeltaCounter
-	histogramsDropped	*internal.DeltaCounter
-	histogramsDiscarded	*internal.DeltaCounter
+	histogramsValid     *internal.DeltaCounter
+	histogramsInvalid   *internal.DeltaCounter
+	histogramsDropped   *internal.DeltaCounter
+	histogramsDiscarded *internal.DeltaCounter
 
-	spansValid		*internal.DeltaCounter
-	spansInvalid		*internal.DeltaCounter
-	spansDropped		*internal.DeltaCounter
-	spansDiscarded		*internal.DeltaCounter
+	spansValid     *internal.DeltaCounter
+	spansInvalid   *internal.DeltaCounter
+	spansDropped   *internal.DeltaCounter
+	spansDiscarded *internal.DeltaCounter
 
-	spanLogsValid		*internal.DeltaCounter
-	spanLogsInvalid		*internal.DeltaCounter
-	spanLogsDropped		*internal.DeltaCounter
-	spanLogsDiscarded	*internal.DeltaCounter
+	spanLogsValid     *internal.DeltaCounter
+	spanLogsInvalid   *internal.DeltaCounter
+	spanLogsDropped   *internal.DeltaCounter
+	spanLogsDiscarded *internal.DeltaCounter
 
-	eventsValid		*internal.DeltaCounter
-	eventsInvalid		*internal.DeltaCounter
-	eventsDropped		*internal.DeltaCounter
-	eventsDiscarded		*internal.DeltaCounter
+	eventsValid     *internal.DeltaCounter
+	eventsInvalid   *internal.DeltaCounter
+	eventsDropped   *internal.DeltaCounter
+	eventsDiscarded *internal.DeltaCounter
 }
 
 // Creates and returns a Wavefront Proxy Sender instance
@@ -214,7 +214,7 @@ func (sender *proxySender) SendDistribution(name string, centroids []histogram.C
 
 func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
 	handler := sender.handlers[spanHandler]
-	if handler == nil  {
+	if handler == nil {
 		sender.spansDiscarded.Inc()
 		if spanLogs != nil {
 			sender.spanLogsDiscarded.Inc()
@@ -254,7 +254,7 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 		} else {
 			sender.spanLogsValid.Inc()
 		}
-		err =  handler.SendData(logs)
+		err = handler.SendData(logs)
 		if err != nil {
 			sender.spanLogsDropped.Inc()
 		}

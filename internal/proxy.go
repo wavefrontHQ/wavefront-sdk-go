@@ -14,23 +14,23 @@ type ProxyConnectionHandler struct {
 	// keep this as first element of struct to guarantee 64-bit alignment ton 32-bit machines.
 	// atomic.* functions crash if the operand is not 64-bit aligned.
 	// See https://github.com/golang/go/issues/599
-	failures    int64
-	address     string
-	flushTicker *time.Ticker
-	done        chan struct{}
-	mtx         sync.RWMutex
-	conn        net.Conn
-	writer      *bufio.Writer
+	failures         int64
+	address          string
+	flushTicker      *time.Ticker
+	done             chan struct{}
+	mtx              sync.RWMutex
+	conn             net.Conn
+	writer           *bufio.Writer
 	internalRegistry *MetricRegistry
 
-	writeSuccesses	*DeltaCounter
-	writeErrors	*DeltaCounter
+	writeSuccesses *DeltaCounter
+	writeErrors    *DeltaCounter
 }
 
 func NewProxyConnectionHandler(address string, flushInterval time.Duration, prefix string, internalRegistry *MetricRegistry) ConnectionHandler {
 	proxyConnectionHandler := &ProxyConnectionHandler{
-		address:     address,
-		flushTicker: time.NewTicker(flushInterval),
+		address:          address,
+		flushTicker:      time.NewTicker(flushInterval),
 		internalRegistry: internalRegistry,
 	}
 	proxyConnectionHandler.writeSuccesses = internalRegistry.NewDeltaCounter(prefix + ".write.success")
