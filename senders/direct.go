@@ -37,6 +37,11 @@ type directSender struct {
 	spanLogsValid   *internal.DeltaCounter
 	spanLogsInvalid *internal.DeltaCounter
 	spanLogsDropped *internal.DeltaCounter
+
+	eventsValid     *internal.DeltaCounter
+	eventsInvalid   *internal.DeltaCounter
+	eventsDropped   *internal.DeltaCounter
+	eventsDiscarded *internal.DeltaCounter
 }
 
 // NewDirectSender creates and returns a Wavefront Direct Ingestion Sender instance
@@ -94,6 +99,10 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 	sender.spanLogsInvalid = sender.internalRegistry.NewDeltaCounter("span_logs.invalid")
 	sender.spanLogsDropped = sender.internalRegistry.NewDeltaCounter("span_logs.dropped")
 
+	sender.eventsValid = sender.internalRegistry.NewDeltaCounter("events.valid")
+	sender.eventsInvalid = sender.internalRegistry.NewDeltaCounter("events.invalid")
+	sender.eventsDropped = sender.internalRegistry.NewDeltaCounter("events.dropped")
+
 	sender.Start()
 	return sender, nil
 }
@@ -136,7 +145,7 @@ func (sender *directSender) SendMetric(name string, value float64, ts int64, sou
 	return err
 }
 
-func (sender *directSender) SendDeltaCounter(name string, value float64, ts int64, source string, tags map[string]string) error {
+func (sender *directSender) SendDeltaCounter(name string, value float64, source string, tags map[string]string) error {
 	if name == "" {
 		sender.pointsInvalid.Inc()
 		return fmt.Errorf("empty metric name")
@@ -201,9 +210,16 @@ func (sender *directSender) SendSpan(name string, startMillis, durationMillis in
 func (sender *directSender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
 	line, err := EventLineJSON(name, startMillis, endMillis, source, tags, setters...)
 	if err != nil {
+		sender.eventsInvalid.Inc()
 		return err
+	} else {
+		sender.eventsValid.Inc()
 	}
-	return sender.eventHandler.HandleLine(line)
+	err = sender.eventHandler.HandleLine(line)
+	if err != nil {
+		sender.eventsDropped.Inc()
+	}
+	return err
 }
 
 func (sender *directSender) Close() {

@@ -13,7 +13,7 @@ type fakeSender struct {
 	tags   []string
 }
 
-func (f *fakeSender) SendDeltaCounter(name string, value float64, ts int64, source string, tags map[string]string) error {
+func (f *fakeSender) SendDeltaCounter(name string, value float64, source string, tags map[string]string) error {
 	return nil
 }
 

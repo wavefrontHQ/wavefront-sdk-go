@@ -65,10 +65,10 @@ func (ms *multiSender) SendMetric(name string, value float64, ts int64, source s
 	return errors.get()
 }
 
-func (ms *multiSender) SendDeltaCounter(name string, value float64, ts int64, source string, tags map[string]string) error {
+func (ms *multiSender) SendDeltaCounter(name string, value float64, source string, tags map[string]string) error {
 	var errors multiError
 	for _, sender := range ms.senders {
-		err := sender.SendDeltaCounter(name, value, ts, source, tags)
+		err := sender.SendDeltaCounter(name, value, source, tags)
 		if err != nil {
 			errors.add(err)
 		}

@@ -12,7 +12,7 @@ type internalSender interface {
 
 	// Sends a delta counter (counter aggregated at the Wavefront service) to Wavefront.
 	// the timestamp for a delta counter is assigned at the server side.
-	SendDeltaCounter(name string, value float64, ts int64, source string, tags map[string]string) error
+	SendDeltaCounter(name string, value float64, source string, tags map[string]string) error
 }
 
 // metric registry for internal metrics
@@ -120,7 +120,7 @@ func (registry *MetricRegistry) report() {
 		switch metric.(type) {
 		case *DeltaCounter:
 			deltaCount := metric.(*DeltaCounter).count()
-			registry.sender.SendDeltaCounter(registry.prefix+"."+k, float64(deltaCount), 0, "", registry.tags)
+			registry.sender.SendDeltaCounter(registry.prefix+"."+k, float64(deltaCount), "", registry.tags)
 			metric.(*DeltaCounter).dec(deltaCount)
 		case *MetricCounter:
 			registry.sender.SendMetric(registry.prefix+"."+k, float64(metric.(*MetricCounter).count()), 0, "", registry.tags)

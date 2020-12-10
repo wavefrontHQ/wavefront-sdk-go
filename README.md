@@ -224,9 +224,9 @@ Wavefront supports different metric types, such as gauges, counters, delta count
 sender.SendMetric("new-york.power.usage", 42422.0, 0, "go_test", map[string]string{"env" : "test"})
 
 // Wavefront delta counter format
-// <metricName> <metricValue>  [<timestamp>] source=<source> [pointTags]
+// <metricName> <metricValue> source=<source> [pointTags]
 // Example: "lambda.thumbnail.generate 10 source=thumbnail_service image-format=jpeg"
-sender.SendDeltaCounter("lambda.thumbnail.generate", 10.0, 0, "thumbnail_service", map[string]string{"format" : "jpeg"})
+sender.SendDeltaCounter("lambda.thumbnail.generate", 10.0, "thumbnail_service", map[string]string{"format" : "jpeg"})
 ```
 
 ***Note***: If your `metricName` has a bad character, that character is replaced with a `-`.

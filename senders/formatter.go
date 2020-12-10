@@ -333,6 +333,8 @@ func sanitizeInternal(str string) string {
 		sb.WriteString(internal.AltDeltaPrefix)
 		skipHead = 2
 	}
+	// Second character can be ~ tilda character if first character
+	// is \u2206 (∆ - INCREMENT) or \u0394 (Δ - GREEK CAPITAL LETTER)
 	if (strings.HasPrefix(str, internal.DeltaPrefix) || strings.HasPrefix(str, internal.AltDeltaPrefix)) &&
 		str[skipHead] == 126 {
 		sb.WriteString(string(str[skipHead]))
