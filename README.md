@@ -282,6 +282,7 @@ sender.SendSpan("getAllUsers", 1552949776000, 343, "localhost",
     nil,
     []SpanTag {
         {Key : "application", Value : "Wavefront"},
+        {Key : "service", Value : "istio"}
         {Key : "http.method", Value : "GET"},
     },
     nil)

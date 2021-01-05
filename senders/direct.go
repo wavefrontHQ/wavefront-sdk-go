@@ -21,6 +21,27 @@ type directSender struct {
 	spanLogHandler   *internal.LineHandler
 	eventHandler     *internal.LineHandler
 	internalRegistry *internal.MetricRegistry
+
+	pointsValid   *internal.DeltaCounter
+	pointsInvalid *internal.DeltaCounter
+	pointsDropped *internal.DeltaCounter
+
+	histogramsValid   *internal.DeltaCounter
+	histogramsInvalid *internal.DeltaCounter
+	histogramsDropped *internal.DeltaCounter
+
+	spansValid   *internal.DeltaCounter
+	spansInvalid *internal.DeltaCounter
+	spansDropped *internal.DeltaCounter
+
+	spanLogsValid   *internal.DeltaCounter
+	spanLogsInvalid *internal.DeltaCounter
+	spanLogsDropped *internal.DeltaCounter
+
+	eventsValid     *internal.DeltaCounter
+	eventsInvalid   *internal.DeltaCounter
+	eventsDropped   *internal.DeltaCounter
+	eventsDiscarded *internal.DeltaCounter
 }
 
 // NewDirectSender creates and returns a Wavefront Direct Ingestion Sender instance
@@ -62,6 +83,26 @@ func NewDirectSender(cfg *DirectConfiguration) (Sender, error) {
 	sender.spanLogHandler = makeLineHandler(reporter, cfg, internal.SpanLogsFormat, "span_logs", sender.internalRegistry)
 	sender.eventHandler = makeLineHandler(reporter, cfg, internal.EventFormat, "events", sender.internalRegistry)
 
+	sender.pointsValid = sender.internalRegistry.NewDeltaCounter("points.valid")
+	sender.pointsInvalid = sender.internalRegistry.NewDeltaCounter("points.invalid")
+	sender.pointsDropped = sender.internalRegistry.NewDeltaCounter("points.dropped")
+
+	sender.histogramsValid = sender.internalRegistry.NewDeltaCounter("histograms.valid")
+	sender.histogramsInvalid = sender.internalRegistry.NewDeltaCounter("histograms.invalid")
+	sender.histogramsDropped = sender.internalRegistry.NewDeltaCounter("histograms.dropped")
+
+	sender.spansValid = sender.internalRegistry.NewDeltaCounter("spans.valid")
+	sender.spansInvalid = sender.internalRegistry.NewDeltaCounter("spans.invalid")
+	sender.spansDropped = sender.internalRegistry.NewDeltaCounter("spans.dropped")
+
+	sender.spanLogsValid = sender.internalRegistry.NewDeltaCounter("span_logs.valid")
+	sender.spanLogsInvalid = sender.internalRegistry.NewDeltaCounter("span_logs.invalid")
+	sender.spanLogsDropped = sender.internalRegistry.NewDeltaCounter("span_logs.dropped")
+
+	sender.eventsValid = sender.internalRegistry.NewDeltaCounter("events.valid")
+	sender.eventsInvalid = sender.internalRegistry.NewDeltaCounter("events.invalid")
+	sender.eventsDropped = sender.internalRegistry.NewDeltaCounter("events.dropped")
+
 	sender.Start()
 	return sender, nil
 }
@@ -92,13 +133,21 @@ func (sender *directSender) Start() {
 func (sender *directSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
 	line, err := MetricLine(name, value, ts, source, tags, sender.defaultSource)
 	if err != nil {
+		sender.pointsInvalid.Inc()
 		return err
+	} else {
+		sender.pointsValid.Inc()
 	}
-	return sender.pointHandler.HandleLine(line)
+	err = sender.pointHandler.HandleLine(line)
+	if err != nil {
+		sender.pointsDropped.Inc()
+	}
+	return err
 }
 
 func (sender *directSender) SendDeltaCounter(name string, value float64, source string, tags map[string]string) error {
 	if name == "" {
+		sender.pointsInvalid.Inc()
 		return fmt.Errorf("empty metric name")
 	}
 	if !internal.HasDeltaPrefix(name) {
@@ -114,28 +163,46 @@ func (sender *directSender) SendDistribution(name string, centroids []histogram.
 	hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
 	line, err := HistoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
 	if err != nil {
+		sender.histogramsInvalid.Inc()
 		return err
+	} else {
+		sender.histogramsValid.Inc()
 	}
-	return sender.histoHandler.HandleLine(line)
+	err = sender.histoHandler.HandleLine(line)
+	if err != nil {
+		sender.histogramsDropped.Inc()
+	}
+	return err
 }
 
 func (sender *directSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
 	parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
 	line, err := SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
 	if err != nil {
+		sender.spansInvalid.Inc()
 		return err
+	} else {
+		sender.spansValid.Inc()
 	}
 	err = sender.spanHandler.HandleLine(line)
 	if err != nil {
+		sender.spansDropped.Inc()
 		return err
 	}
 
 	if len(spanLogs) > 0 {
 		logs, err := SpanLogJSON(traceId, spanId, spanLogs)
 		if err != nil {
+			sender.spanLogsInvalid.Inc()
+			return err
+		} else {
+			sender.spanLogsValid.Inc()
+		}
+		err = sender.spanLogHandler.HandleLine(logs)
+		if err != nil {
+			sender.spanLogsDropped.Inc()
 			return err
 		}
-		return sender.spanLogHandler.HandleLine(logs)
 	}
 	return nil
 }
@@ -143,9 +210,16 @@ func (sender *directSender) SendSpan(name string, startMillis, durationMillis in
 func (sender *directSender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
 	line, err := EventLineJSON(name, startMillis, endMillis, source, tags, setters...)
 	if err != nil {
+		sender.eventsInvalid.Inc()
 		return err
+	} else {
+		sender.eventsValid.Inc()
 	}
-	return sender.eventHandler.HandleLine(line)
+	err = sender.eventHandler.HandleLine(line)
+	if err != nil {
+		sender.eventsDropped.Inc()
+	}
+	return err
 }
 
 func (sender *directSender) Close() {

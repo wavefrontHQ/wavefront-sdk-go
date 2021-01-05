@@ -24,6 +24,8 @@ func TestSanitizeInternal(t *testing.T) {
 		"heartbeat")))
 	assert.Equal(t, "\"∆component.heartbeat\"", strconv.Quote(sanitizeInternal("∆component."+
 		"heartbeat")))
+	assert.Equal(t, "\"∆~component.heartbeat\"", strconv.Quote(sanitizeInternal("∆~component."+
+		"heartbeat")))
 }
 
 func TestSanitizeValue(t *testing.T) {
