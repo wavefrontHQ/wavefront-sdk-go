@@ -1,6 +1,6 @@
 open_source_licenses.txt
 
-Wavefront by VMware SDK for Go 0.9.6 GA
+Wavefront by VMware SDK for Go 0.9.8 GA
 
 ======================================================================
 
@@ -79,4 +79,4 @@ Source Files is valid for three years from the date you acquired or last used th
 Software product. Alternatively, the Source Files may accompany the
 VMware service.
 
-[WAVEFRONTSDKGO096GANT012320]
+[WAVEFRONTSDKGO098GANT012320]
