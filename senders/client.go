@@ -74,6 +74,7 @@ func newWavefrontClient(cfg *configuration) (Sender, error) {
 	}
 	sender.internalRegistry = internal.NewMetricRegistry(
 		sender,
+		internal.SetIncludeSDKMetrics(cfg.IncludeSDKMetrics),
 		internal.SetPrefix("~sdk.go.core.sender.direct"),
 		internal.SetTag("pid", strconv.Itoa(os.Getpid())),
 	)

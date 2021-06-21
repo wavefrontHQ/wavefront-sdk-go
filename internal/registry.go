@@ -17,12 +17,13 @@ type internalSender interface {
 
 // metric registry for internal metrics
 type MetricRegistry struct {
-	source       string
-	prefix       string
-	tags         map[string]string
-	reportTicker *time.Ticker
-	sender       internalSender
-	done         chan struct{}
+	source            string
+	prefix            string
+	tags              map[string]string
+	includeSDKMetrics bool
+	reportTicker      *time.Ticker
+	sender            internalSender
+	done              chan struct{}
 
 	mtx     sync.Mutex
 	metrics map[string]interface{}
@@ -63,6 +64,12 @@ func SetPrefix(prefix string) RegistryOption {
 	}
 }
 
+func SetIncludeSDKMetrics(includeSDKMetrics bool) RegistryOption {
+	return func(registry *MetricRegistry) {
+		registry.includeSDKMetrics = includeSDKMetrics
+	}
+}
+
 func NewMetricRegistry(sender internalSender, setters ...RegistryOption) *MetricRegistry {
 	registry := &MetricRegistry{
 		sender:       sender,
@@ -93,7 +100,9 @@ func (registry *MetricRegistry) NewGaugeFloat64(name string, f func() float64) *
 }
 
 func (registry *MetricRegistry) Start() {
-	go registry.start()
+	if registry.includeSDKMetrics {
+		go registry.start()
+	}
 }
 
 func (registry *MetricRegistry) start() {
@@ -108,8 +117,10 @@ func (registry *MetricRegistry) start() {
 }
 
 func (registry *MetricRegistry) Stop() {
-	registry.reportTicker.Stop()
-	registry.done <- struct{}{}
+	if registry.includeSDKMetrics {
+		registry.reportTicker.Stop()
+		registry.done <- struct{}{}
+	}
 }
 
 func (registry *MetricRegistry) report() {
