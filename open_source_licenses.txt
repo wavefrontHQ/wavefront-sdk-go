@@ -1,6 +1,6 @@
 open_source_licenses.txt
 
-Wavefront by VMware SDK for Go 0.9.8 GA
+Wavefront by VMware SDK for Go 0.9.9 GA
 
 ======================================================================
 
