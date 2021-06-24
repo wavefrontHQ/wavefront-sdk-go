@@ -30,11 +30,16 @@ type configuration struct {
 	// interval (in seconds) at which to flush data to Wavefront. defaults to 1 Second.
 	// together with batch size controls the max theoretical throughput of the sender.
 	FlushIntervalSeconds int
+
+	// default is true, if false the internal metrics emitted from this sender will be disabled
+	IncludeSDKMetrics bool
 }
 
 // NewSender creates Wavefront client
 func NewSender(wfURL string, setters ...Option) (Sender, error) {
-	cfg := &configuration{}
+	cfg := &configuration{
+		IncludeSDKMetrics: true,
+	}
 
 	u, err := url.Parse(wfURL)
 	if err != nil {
@@ -76,5 +81,12 @@ func MaxBufferSize(n int) Option {
 func FlushIntervalSeconds(n int) Option {
 	return func(cfg *configuration) {
 		cfg.FlushIntervalSeconds = n
+	}
+}
+
+// IncludeSDKMetrics set the internal metrics emitted (true or false) from this sender. defaults to true.
+func IncludeSDKMetrics(val bool) Option {
+	return func(cfg *configuration) {
+		cfg.IncludeSDKMetrics = val
 	}
 }
