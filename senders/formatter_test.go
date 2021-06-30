@@ -1,6 +1,7 @@
 package senders
 
 import (
+	"bytes"
 	"strconv"
 	"testing"
 
@@ -9,6 +10,12 @@ import (
 )
 
 var line string
+
+func sanitizeInternal(s string) string {
+	sb := &bytes.Buffer{}
+	sanitizeInternalSb(sb, s)
+	return sb.String()
+}
 
 func TestSanitizeInternal(t *testing.T) {
 	assert.Equal(t, "\"hello\"", strconv.Quote(sanitizeInternal("hello")))
@@ -26,6 +33,12 @@ func TestSanitizeInternal(t *testing.T) {
 		"heartbeat")))
 	assert.Equal(t, "\"∆~component.heartbeat\"", strconv.Quote(sanitizeInternal("∆~component."+
 		"heartbeat")))
+}
+
+func sanitizeValue(s string) string {
+	sb := &bytes.Buffer{}
+	sanitizeValueSb(sb, s)
+	return sb.String()
 }
 
 func TestSanitizeValue(t *testing.T) {

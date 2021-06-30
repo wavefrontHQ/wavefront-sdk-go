@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -13,9 +12,6 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
-
-var /* const */ quotation = regexp.MustCompile("\"")
-var /* const */ lineBreak = regexp.MustCompile("\\n")
 
 // Gets a metric line in the Wavefront metrics data format:
 // <metricName> <metricValue> [<timestamp>] source=<source> [pointTags]
@@ -32,28 +28,34 @@ func MetricLine(name string, value float64, ts int64, source string, tags map[st
 	sb := internal.GetBuffer()
 	defer internal.PutBuffer(sb)
 
-	sb.WriteString(strconv.Quote(sanitizeInternal(name)))
-	sb.WriteString(" ")
+	sb.WriteByte('"')
+	sanitizeInternalSb(sb, name)
+	sb.WriteByte('"')
+
+	sb.WriteByte(' ')
 	sb.WriteString(strconv.FormatFloat(value, 'f', -1, 64))
 
 	if ts != 0 {
-		sb.WriteString(" ")
+		sb.WriteByte(' ')
 		sb.WriteString(strconv.FormatInt(ts, 10))
 	}
 
 	sb.WriteString(" source=")
-	sb.WriteString(sanitizeValue(source))
+	sanitizeValueSb(sb, source)
 
 	for k, v := range tags {
 		if v == "" {
 			return "", errors.New("metric point tag value cannot be blank")
 		}
-		sb.WriteString(" ")
-		sb.WriteString(strconv.Quote(sanitizeInternal(k)))
-		sb.WriteString("=")
-		sb.WriteString(sanitizeValue(v))
+		sb.WriteByte(' ')
+
+		sb.WriteByte('"')
+		sanitizeInternalSb(sb, k)
+		sb.WriteByte('"')
+		sb.WriteByte('=')
+		sanitizeValueSb(sb, v)
 	}
-	sb.WriteString("\n")
+	sb.WriteByte('\n')
 	return sb.String(), nil
 }
 
@@ -81,29 +83,34 @@ func HistoLine(name string, centroids histogram.Centroids, hgs map[histogram.Gra
 	defer internal.PutBuffer(sb)
 
 	if ts != 0 {
-		sb.WriteString(" ")
+		sb.WriteByte(' ')
 		sb.WriteString(strconv.FormatInt(ts, 10))
 	}
 	// Preprocess line. We know len(hgs) > 0 here.
 	for _, centroid := range centroids.Compact() {
 		sb.WriteString(" #")
 		sb.WriteString(strconv.Itoa(centroid.Count))
-		sb.WriteString(" ")
+		sb.WriteByte(' ')
 		sb.WriteString(strconv.FormatFloat(centroid.Value, 'f', -1, 64))
 	}
-	sb.WriteString(" ")
-	sb.WriteString(strconv.Quote(sanitizeInternal(name)))
+	sb.WriteByte(' ')
+	sb.WriteByte('"')
+	sanitizeInternalSb(sb, name)
+	sb.WriteByte('"')
+
 	sb.WriteString(" source=")
-	sb.WriteString(sanitizeValue(source))
+	sanitizeValueSb(sb, source)
 
 	for k, v := range tags {
 		if v == "" {
 			return "", errors.New("histogram tag value cannot be blank")
 		}
-		sb.WriteString(" ")
-		sb.WriteString(strconv.Quote(sanitizeInternal(k)))
-		sb.WriteString("=")
-		sb.WriteString(sanitizeValue(v))
+		sb.WriteByte(' ')
+		sb.WriteByte('"')
+		sanitizeInternalSb(sb, k)
+		sb.WriteByte('"')
+		sb.WriteByte('=')
+		sanitizeValueSb(sb, v)
 	}
 	sbBytes := sb.Bytes()
 
@@ -112,7 +119,7 @@ func HistoLine(name string, centroids histogram.Centroids, hgs map[histogram.Gra
 		if on {
 			sbg.WriteString(hg.String())
 			sbg.Write(sbBytes)
-			sbg.WriteString("\n")
+			sbg.WriteByte('\n')
 		}
 	}
 	return sbg.String(), nil
@@ -142,9 +149,9 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 	sb := internal.GetBuffer()
 	defer internal.PutBuffer(sb)
 
-	sb.WriteString(sanitizeValue(name))
+	sanitizeValueSb(sb, name)
 	sb.WriteString(" source=")
-	sb.WriteString(sanitizeValue(source))
+	sanitizeValueSb(sb, source)
 	sb.WriteString(" traceId=")
 	sb.WriteString(traceId)
 	sb.WriteString(" spanId=")
@@ -161,26 +168,32 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 	}
 
 	if len(spanLogs) > 0 {
-		sb.WriteString(" ")
-		sb.WriteString(strconv.Quote(sanitizeInternal("_spanLogs")))
-		sb.WriteString("=")
-		sb.WriteString(strconv.Quote(sanitizeInternal("true")))
+		sb.WriteByte(' ')
+		sb.WriteByte('"')
+		sb.WriteString("_spanLogs")
+		sb.WriteByte('"')
+		sb.WriteByte('=')
+		sb.WriteByte('"')
+		sb.WriteString("true")
+		sb.WriteByte('"')
 	}
 
 	for _, tag := range tags {
 		if tag.Key == "" || tag.Value == "" {
 			return "", errors.New("span tag key/value cannot be blank")
 		}
-		sb.WriteString(" ")
-		sb.WriteString(strconv.Quote(sanitizeInternal(tag.Key)))
-		sb.WriteString("=")
-		sb.WriteString(sanitizeValue(tag.Value))
+		sb.WriteByte(' ')
+		sb.WriteByte('"')
+		sanitizeInternalSb(sb, tag.Key)
+		sb.WriteByte('"')
+		sb.WriteByte('=')
+		sanitizeValueSb(sb, tag.Value)
 	}
-	sb.WriteString(" ")
+	sb.WriteByte(' ')
 	sb.WriteString(strconv.FormatInt(startMillis, 10))
-	sb.WriteString(" ")
+	sb.WriteByte(' ')
 	sb.WriteString(strconv.FormatInt(durationMillis, 10))
-	sb.WriteString("\n")
+	sb.WriteByte('\n')
 
 	return sb.String(), nil
 }
@@ -216,18 +229,18 @@ func EventLine(name string, startMillis, endMillis int64, source string, tags ma
 
 	startMillis, endMillis = adjustStartEndTime(startMillis, endMillis)
 
-	sb.WriteString(" ")
+	sb.WriteByte(' ')
 	sb.WriteString(strconv.FormatInt(startMillis, 10))
-	sb.WriteString(" ")
+	sb.WriteByte(' ')
 	sb.WriteString(strconv.FormatInt(endMillis, 10))
 
-	sb.WriteString(" ")
+	sb.WriteByte(' ')
 	sb.WriteString(strconv.Quote(name))
 
 	for k, v := range annotations {
-		sb.WriteString(" ")
+		sb.WriteByte(' ')
 		sb.WriteString(k)
-		sb.WriteString("=")
+		sb.WriteByte('=')
 		sb.WriteString(strconv.Quote(v))
 	}
 
@@ -241,7 +254,7 @@ func EventLine(name string, startMillis, endMillis int64, source string, tags ma
 		sb.WriteString(strconv.Quote(fmt.Sprintf("%v: %v", k, v)))
 	}
 
-	sb.WriteString("\n")
+	sb.WriteByte('\n')
 	return sb.String(), nil
 }
 
@@ -318,10 +331,7 @@ func isUUIDFormat(str string) bool {
 }
 
 //Sanitize string of metric name, source and key of tags according to the rule of Wavefront proxy.
-func sanitizeInternal(str string) string {
-	sb := internal.GetBuffer()
-	defer internal.PutBuffer(sb)
-
+func sanitizeInternalSb(sb *bytes.Buffer, str string) {
 	// first character can be \u2206 (∆ - INCREMENT) or \u0394 (Δ - GREEK CAPITAL LETTER DELTA)
 	// or ~ tilda character for internal metrics
 	skipHead := 0
@@ -333,44 +343,35 @@ func sanitizeInternal(str string) string {
 		sb.WriteString(internal.AltDeltaPrefix)
 		skipHead = 2
 	}
-	// Second character can be ~ tilda character if first character
-	// is \u2206 (∆ - INCREMENT) or \u0394 (Δ - GREEK CAPITAL LETTER)
-	if (strings.HasPrefix(str, internal.DeltaPrefix) || strings.HasPrefix(str, internal.AltDeltaPrefix)) &&
-		str[skipHead] == 126 {
-		sb.WriteString(string(str[skipHead]))
+	// The first char after \u2206 (∆ - INCREMENT) or \u0394 (Δ - GREEK CAPITAL LETTER) (if there is any)
+	// can be ~ tilda character
+	if str[skipHead] == '~' {
+		sb.WriteByte('~')
 		skipHead += 1
 	}
-	if str[0] == 126 {
-		sb.WriteString(string(str[0]))
-		skipHead = 1
-	}
 
-	for i := 0; i < len(str); i++ {
-		if skipHead > 0 {
-			i += skipHead
-			skipHead = 0
-		}
+	for i := skipHead; i < len(str); i++ {
 		cur := str[i]
-		strCur := string(cur)
 		isLegal := true
 
-		if !(44 <= cur && cur <= 57) && !(65 <= cur && cur <= 90) && !(97 <= cur && cur <= 122) && cur != 95 {
+		if !(',' <= cur && cur <= '9') && !('A' <= cur && cur <= 'Z') && !('a' <= cur && cur <= 'z') && cur != '_' {
 			isLegal = false
 		}
 		if isLegal {
-			sb.WriteString(strCur)
+			sb.WriteByte(cur)
 		} else {
-			sb.WriteString("-")
+			sb.WriteByte('-')
 		}
 	}
-	return sb.String()
 }
 
 //Sanitize string of tags value, etc.
-func sanitizeValue(str string) string {
+func sanitizeValueSb(sb *bytes.Buffer, str string) {
 	res := strings.TrimSpace(str)
-	if strings.Contains(str, "\"") || strings.Contains(str, "'") {
-		res = quotation.ReplaceAllString(res, "\\\"")
+	if strings.Contains(str, "\"") {
+		res = strings.ReplaceAll(res, `"`, `\"`)
 	}
-	return "\"" + lineBreak.ReplaceAllString(res, "\\n") + "\""
+	sb.WriteByte('"')
+	sb.WriteString(strings.ReplaceAll(res, "\n", "\\n"))
+	sb.WriteByte('"')
 }
