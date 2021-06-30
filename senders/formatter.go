@@ -33,11 +33,11 @@ func MetricLine(name string, value float64, ts int64, source string, tags map[st
 	sb.WriteByte('"')
 
 	sb.WriteByte(' ')
-	sb.WriteString(strconv.FormatFloat(value, 'f', -1, 64))
+	sb.AppendFloat(value, 'f', -1, 64)
 
 	if ts != 0 {
 		sb.WriteByte(' ')
-		sb.WriteString(strconv.FormatInt(ts, 10))
+		sb.AppendInt(ts, 10)
 	}
 
 	sb.WriteString(" source=")
@@ -84,14 +84,14 @@ func HistoLine(name string, centroids histogram.Centroids, hgs map[histogram.Gra
 
 	if ts != 0 {
 		sb.WriteByte(' ')
-		sb.WriteString(strconv.FormatInt(ts, 10))
+		sb.AppendInt(ts, 10)
 	}
 	// Preprocess line. We know len(hgs) > 0 here.
 	for _, centroid := range centroids.Compact() {
 		sb.WriteString(" #")
-		sb.WriteString(strconv.Itoa(centroid.Count))
+		sb.AppendInt(int64(centroid.Count), 10)
 		sb.WriteByte(' ')
-		sb.WriteString(strconv.FormatFloat(centroid.Value, 'f', -1, 64))
+		sb.AppendFloat(centroid.Value, 'f', -1, 64)
 	}
 	sb.WriteByte(' ')
 	sb.WriteByte('"')
@@ -190,9 +190,9 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 		sanitizeValueSb(sb, tag.Value)
 	}
 	sb.WriteByte(' ')
-	sb.WriteString(strconv.FormatInt(startMillis, 10))
+	sb.AppendInt(startMillis, 10)
 	sb.WriteByte(' ')
-	sb.WriteString(strconv.FormatInt(durationMillis, 10))
+	sb.AppendInt(durationMillis, 10)
 	sb.WriteByte('\n')
 
 	return sb.String(), nil
@@ -230,10 +230,9 @@ func EventLine(name string, startMillis, endMillis int64, source string, tags ma
 	startMillis, endMillis = adjustStartEndTime(startMillis, endMillis)
 
 	sb.WriteByte(' ')
-	sb.WriteString(strconv.FormatInt(startMillis, 10))
+	sb.AppendInt(startMillis, 10)
 	sb.WriteByte(' ')
-	sb.WriteString(strconv.FormatInt(endMillis, 10))
-
+	sb.AppendInt(endMillis, 10)
 	sb.WriteByte(' ')
 	sb.WriteString(strconv.Quote(name))
 
@@ -331,7 +330,7 @@ func isUUIDFormat(str string) bool {
 }
 
 //Sanitize string of metric name, source and key of tags according to the rule of Wavefront proxy.
-func sanitizeInternalSb(sb *bytes.Buffer, str string) {
+func sanitizeInternalSb(sb *internal.StringBuilder, str string) {
 	// first character can be \u2206 (∆ - INCREMENT) or \u0394 (Δ - GREEK CAPITAL LETTER DELTA)
 	// or ~ tilda character for internal metrics
 	skipHead := 0
@@ -366,12 +365,12 @@ func sanitizeInternalSb(sb *bytes.Buffer, str string) {
 }
 
 //Sanitize string of tags value, etc.
-func sanitizeValueSb(sb *bytes.Buffer, str string) {
+func sanitizeValueSb(sb *internal.StringBuilder, str string) {
 	res := strings.TrimSpace(str)
 	if strings.Contains(str, "\"") {
-		res = strings.ReplaceAll(res, `"`, `\"`)
+		res = strings.Replace(res, `"`, `\"`, -1)
 	}
 	sb.WriteByte('"')
-	sb.WriteString(strings.ReplaceAll(res, "\n", "\\n"))
+	sb.WriteString(strings.Replace(res, "\n", "\\n", -1))
 	sb.WriteByte('"')
 }

@@ -1,18 +1,18 @@
 package senders
 
 import (
-	"bytes"
 	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
+	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
 var line string
 
 func sanitizeInternal(s string) string {
-	sb := &bytes.Buffer{}
+	sb := &internal.StringBuilder{}
 	sanitizeInternalSb(sb, s)
 	return sb.String()
 }
@@ -36,7 +36,7 @@ func TestSanitizeInternal(t *testing.T) {
 }
 
 func sanitizeValue(s string) string {
-	sb := &bytes.Buffer{}
+	sb := &internal.StringBuilder{}
 	sanitizeValueSb(sb, s)
 	return sb.String()
 }
