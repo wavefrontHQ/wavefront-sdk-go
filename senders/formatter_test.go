@@ -6,9 +6,16 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
+	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
 var line string
+
+func sanitizeInternal(s string) string {
+	sb := &internal.StringBuilder{}
+	sanitizeInternalSb(sb, s)
+	return sb.String()
+}
 
 func TestSanitizeInternal(t *testing.T) {
 	assert.Equal(t, "\"hello\"", strconv.Quote(sanitizeInternal("hello")))
@@ -26,6 +33,12 @@ func TestSanitizeInternal(t *testing.T) {
 		"heartbeat")))
 	assert.Equal(t, "\"∆~component.heartbeat\"", strconv.Quote(sanitizeInternal("∆~component."+
 		"heartbeat")))
+}
+
+func sanitizeValue(s string) string {
+	sb := &internal.StringBuilder{}
+	sanitizeValueSb(sb, s)
+	return sb.String()
 }
 
 func TestSanitizeValue(t *testing.T) {
