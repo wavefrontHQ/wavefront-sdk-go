@@ -52,11 +52,6 @@ func TestMain(m *testing.M) {
 	os.Exit(exitVal)
 }
 
-func TestInvalidURL(t *testing.T) {
-	_, err := senders.NewSender("tut:ut:u")
-	assert.NotNil(t, err)
-}
-
 func TestSendDirect(t *testing.T) {
 	wf, err := senders.NewSender("http://" + token + "@localhost:" + wfPort)
 	require.NoError(t, err)
