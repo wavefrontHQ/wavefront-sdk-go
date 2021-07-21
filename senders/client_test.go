@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/senders"
 )
@@ -57,18 +59,14 @@ func TestInvalidURL(t *testing.T) {
 
 func TestSendDirect(t *testing.T) {
 	wf, err := senders.NewSender("http://" + token + "@localhost:" + wfPort)
-	assert.Nil(t, err)
-	if wf != nil {
-		doTest(t, wf)
-	}
+	require.NoError(t, err)
+	doTest(t, wf)
 }
 
 func TestSendProxy(t *testing.T) {
 	wf, err := senders.NewSender("http://localhost:" + proxyPort)
-	assert.Nil(t, err)
-	if wf != nil {
-		doTest(t, wf)
-	}
+	require.NoError(t, err)
+	doTest(t, wf)
 }
 
 func doTest(t *testing.T, wf senders.Sender) {

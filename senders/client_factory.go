@@ -42,7 +42,7 @@ func NewSender(wfURL string, setters ...Option) (Sender, error) {
 	}
 
 	if !strings.HasPrefix(strings.ToLower(u.Scheme), "http") {
-		return nil, fmt.Errorf("invalid schema '%s', only 'http' is supported", u.Scheme)
+		return nil, fmt.Errorf("invalid scheme '%s' in '%s', only 'http' is supported", u.Scheme, u)
 	}
 
 	if len(u.User.String()) > 0 {
@@ -58,21 +58,21 @@ func NewSender(wfURL string, setters ...Option) (Sender, error) {
 	return newWavefrontClient(cfg)
 }
 
-// BatchSize set max batch of data sent per flush interval. defaults to 10,000. recommended not to exceed 40,000.
+// BatchSize set max batch of data sent per flush interval. Defaults to 10,000. recommended not to exceed 40,000.
 func BatchSize(n int) Option {
 	return func(cfg *configuration) {
 		cfg.BatchSize = n
 	}
 }
 
-// MaxBufferSize set the size of internal buffers beyond which received data is dropped.
+// MaxBufferSize set the size of internal buffers beyond which received data is dropped. Defaults to 50,000.
 func MaxBufferSize(n int) Option {
 	return func(cfg *configuration) {
 		cfg.MaxBufferSize = n
 	}
 }
 
-// FlushIntervalSeconds set the interval (in seconds) at which to flush data to Wavefront. defaults to 1 Second.
+// FlushIntervalSeconds set the interval (in seconds) at which to flush data to Wavefront. Defaults to 1 Second.
 func FlushIntervalSeconds(n int) Option {
 	return func(cfg *configuration) {
 		cfg.FlushIntervalSeconds = n
