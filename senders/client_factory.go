@@ -42,6 +42,7 @@ type configuration struct {
 	// interval (in seconds) at which to flush data to Wavefront. defaults to 1 Second.
 	// together with batch size controls the max theoretical throughput of the sender.
 	FlushIntervalSeconds int
+	SDKMetricsTags       map[string]string
 }
 
 // NewSender creates Wavefront client
@@ -102,7 +103,7 @@ func newWavefrontClient(cfg *configuration) (Sender, error) {
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
 		proxy:         len(cfg.Token) == 0,
 	}
-	sender.initializeInternalMetrics()
+	sender.initializeInternalMetrics(cfg)
 	sender.pointHandler = newLineHandler(metricsReporter, cfg, internal.MetricFormat, "points", sender.internalRegistry)
 	sender.histoHandler = newLineHandler(metricsReporter, cfg, internal.HistogramFormat, "histograms", sender.internalRegistry)
 	sender.spanHandler = newLineHandler(tracesReporter, cfg, internal.TraceFormat, "spans", sender.internalRegistry)
@@ -113,11 +114,19 @@ func newWavefrontClient(cfg *configuration) (Sender, error) {
 	return sender, nil
 }
 
-func (sender *wavefrontSender) initializeInternalMetrics() {
+func (sender *wavefrontSender) initializeInternalMetrics(cfg *configuration) {
+
+	var setters []internal.RegistryOption
+	setters = append(setters, internal.SetPrefix("~sdk.go.core.sender.direct"))
+	setters = append(setters, internal.SetTag("pid", strconv.Itoa(os.Getpid())))
+
+	for key, value := range cfg.SDKMetricsTags {
+		setters = append(setters, internal.SetTag(key, value))
+	}
+
 	sender.internalRegistry = internal.NewMetricRegistry(
 		sender,
-		internal.SetPrefix("~sdk.go.core.sender.direct"),
-		internal.SetTag("pid", strconv.Itoa(os.Getpid())),
+		setters...,
 	)
 	sender.pointsValid = sender.internalRegistry.NewDeltaCounter("points.valid")
 	sender.pointsInvalid = sender.internalRegistry.NewDeltaCounter("points.invalid")
@@ -172,5 +181,12 @@ func MetricsPort(port int) Option {
 func TracesPort(port int) Option {
 	return func(cfg *configuration) {
 		cfg.TracesPort = port
+	}
+}
+
+// SDKMetricsTags sets internal SDK metrics.
+func SDKMetricsTags(tags map[string]string) Option {
+	return func(cfg *configuration) {
+		cfg.SDKMetricsTags = tags
 	}
 }

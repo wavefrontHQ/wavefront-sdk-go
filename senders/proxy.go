@@ -54,14 +54,19 @@ type proxySender struct {
 
 // Creates and returns a Wavefront Proxy Sender instance
 // Deprecated: Use 'senders.NewSender(url)'
-func NewProxySender(cfg *ProxyConfiguration, setters ...internal.RegistryOption) (Sender, error) {
+func NewProxySender(cfg *ProxyConfiguration) (Sender, error) {
 	sender := &proxySender{
 		defaultSource: internal.GetHostname("wavefront_proxy_sender"),
 		handlers:      make([]internal.ConnectionHandler, handlersCount),
 	}
 
-	setters = append(setters, internal.SetTag("pid", strconv.Itoa(os.Getpid())))
+	var setters []internal.RegistryOption
 	setters = append(setters, internal.SetPrefix("~sdk.go.core.sender.proxy"))
+	setters = append(setters, internal.SetTag("pid", strconv.Itoa(os.Getpid())))
+
+	for key, value := range cfg.SDKMetricsTags {
+		setters = append(setters, internal.SetTag(key, value))
+	}
 
 	sender.internalRegistry = internal.NewMetricRegistry(
 		sender,
@@ -133,15 +138,6 @@ func makeConnHandler(host string, port, flushIntervalSeconds int, prefix string,
 	addr := host + ":" + strconv.FormatInt(int64(port), 10)
 	flushInterval := time.Second * time.Duration(flushIntervalSeconds)
 	return internal.NewProxyConnectionHandler(addr, flushInterval, prefix, internalRegistry)
-}
-
-func SetTag(key, value string) internal.RegistryOption {
-	return func(registry *internal.MetricRegistry) {
-		if registry.Tags == nil {
-			registry.Tags = make(map[string]string)
-		}
-		registry.Tags[key] = value
-	}
 }
 
 func (sender *proxySender) Start() {

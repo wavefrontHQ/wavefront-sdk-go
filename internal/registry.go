@@ -19,7 +19,7 @@ type internalSender interface {
 type MetricRegistry struct {
 	source       string
 	prefix       string
-	Tags         map[string]string
+	tags         map[string]string
 	reportTicker *time.Ticker
 	sender       internalSender
 	done         chan struct{}
@@ -44,16 +44,16 @@ func SetInterval(interval int) RegistryOption {
 
 func SetTags(tags map[string]string) RegistryOption {
 	return func(registry *MetricRegistry) {
-		registry.Tags = tags
+		registry.tags = tags
 	}
 }
 
 func SetTag(key, value string) RegistryOption {
 	return func(registry *MetricRegistry) {
-		if registry.Tags == nil {
-			registry.Tags = make(map[string]string)
+		if registry.tags == nil {
+			registry.tags = make(map[string]string)
 		}
-		registry.Tags[key] = value
+		registry.tags[key] = value
 	}
 }
 
@@ -120,14 +120,14 @@ func (registry *MetricRegistry) report() {
 		switch metric.(type) {
 		case *DeltaCounter:
 			deltaCount := metric.(*DeltaCounter).count()
-			registry.sender.SendDeltaCounter(registry.prefix+"."+k, float64(deltaCount), "", registry.Tags)
+			registry.sender.SendDeltaCounter(registry.prefix+"."+k, float64(deltaCount), "", registry.tags)
 			metric.(*DeltaCounter).dec(deltaCount)
 		case *MetricCounter:
-			registry.sender.SendMetric(registry.prefix+"."+k, float64(metric.(*MetricCounter).count()), 0, "", registry.Tags)
+			registry.sender.SendMetric(registry.prefix+"."+k, float64(metric.(*MetricCounter).count()), 0, "", registry.tags)
 		case *FunctionalGauge:
-			registry.sender.SendMetric(registry.prefix+"."+k, float64(metric.(*FunctionalGauge).instantValue()), 0, "", registry.Tags)
+			registry.sender.SendMetric(registry.prefix+"."+k, float64(metric.(*FunctionalGauge).instantValue()), 0, "", registry.tags)
 		case *FunctionalGaugeFloat64:
-			registry.sender.SendMetric(registry.prefix+"."+k, metric.(*FunctionalGaugeFloat64).instantValue(), 0, "", registry.Tags)
+			registry.sender.SendMetric(registry.prefix+"."+k, metric.(*FunctionalGaugeFloat64).instantValue(), 0, "", registry.tags)
 		}
 	}
 }

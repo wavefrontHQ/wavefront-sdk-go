@@ -58,6 +58,13 @@ func TestSendDirect(t *testing.T) {
 	doTest(t, wf)
 }
 
+func TestSendDirectWithTags(t *testing.T) {
+	tags := map[string]string{"foo": "bar"}
+	wf, err := senders.NewSender("http://"+token+"@localhost:"+wfPort, senders.SDKMetricsTags(tags))
+	require.NoError(t, err)
+	doTest(t, wf)
+}
+
 func TestSendProxy(t *testing.T) {
 	wf, err := senders.NewSender("http://localhost:" + proxyPort)
 	require.NoError(t, err)
