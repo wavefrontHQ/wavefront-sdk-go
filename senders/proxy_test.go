@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/senders"
@@ -27,6 +28,7 @@ func TestProxySends(t *testing.T) {
 	go netcat("localhost:40000", false)
 	go netcat("localhost:50000", false)
 
+	time.Sleep(time.Second)
 	proxyCfg := &senders.ProxyConfiguration{
 		Host:                 "localhost",
 		MetricsPort:          30000,
@@ -53,6 +55,8 @@ func TestProxySendsWithTags(t *testing.T) {
 	go netcat("localhost:30000", false)
 	go netcat("localhost:40000", false)
 	go netcat("localhost:50000", false)
+
+	time.Sleep(time.Second)
 
 	proxyCfg := &senders.ProxyConfiguration{
 		Host:                 "localhost",
