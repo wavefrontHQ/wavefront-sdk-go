@@ -11,8 +11,6 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
-var proxy senders.Sender
-
 func netcat(addr string, keepopen bool) {
 	laddr, _ := net.ResolveTCPAddr("tcp", addr)
 	lis, _ := net.ListenTCP("tcp", laddr)
@@ -38,11 +36,12 @@ func TestProxySends(t *testing.T) {
 	}
 
 	var err error
+	var proxy senders.Sender
 	if proxy, err = senders.NewProxySender(proxyCfg); err != nil {
 		t.Error("Failed Creating Sender", err)
 	}
 
-	verifyResults(t, err)
+	verifyResults(t, err, proxy)
 
 	proxy.Flush()
 	proxy.Close()
@@ -68,11 +67,12 @@ func TestProxySendsWithTags(t *testing.T) {
 	}
 
 	var err error
+	var proxy senders.Sender
 	if proxy, err = senders.NewProxySender(proxyCfg); err != nil {
 		t.Error("Failed Creating Sender", err)
 	}
 
-	verifyResults(t, err)
+	verifyResults(t, err, proxy)
 
 	proxy.Flush()
 	proxy.Close()
@@ -81,7 +81,7 @@ func TestProxySendsWithTags(t *testing.T) {
 	}
 }
 
-func verifyResults(t *testing.T, err error) {
+func verifyResults(t *testing.T, err error, proxy senders.Sender) {
 	if err = proxy.SendMetric("new-york.power.usage", 42422.0, 0, "go_test", map[string]string{"env": "test"}); err != nil {
 		t.Error("Failed SendMetric", err)
 	}
