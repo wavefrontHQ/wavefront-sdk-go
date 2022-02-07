@@ -187,6 +187,13 @@ func TracesPort(port int) Option {
 // SDKMetricsTags sets internal SDK metrics.
 func SDKMetricsTags(tags map[string]string) Option {
 	return func(cfg *configuration) {
-		cfg.SDKMetricsTags = tags
+		if cfg.SDKMetricsTags != nil {
+			for key, value := range tags {
+				cfg.SDKMetricsTags[key] = value
+			}
+		} else {
+			cfg.SDKMetricsTags = tags
+		}
+
 	}
 }

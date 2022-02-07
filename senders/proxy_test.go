@@ -26,6 +26,7 @@ func TestProxySends(t *testing.T) {
 	go netcat("localhost:40000", false)
 	go netcat("localhost:50000", false)
 
+	//TODO: need to check if there is a better way to avoid the race condition
 	time.Sleep(time.Second)
 	proxyCfg := &senders.ProxyConfiguration{
 		Host:                 "localhost",
@@ -55,6 +56,7 @@ func TestProxySendsWithTags(t *testing.T) {
 	go netcat("localhost:40000", false)
 	go netcat("localhost:50000", false)
 
+	//TODO: need to check if there is a better way to avoid the race condition
 	time.Sleep(time.Second)
 
 	proxyCfg := &senders.ProxyConfiguration{

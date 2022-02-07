@@ -86,8 +86,9 @@ func TestTracesPort(t *testing.T) {
 }
 
 func TestSDKMetricsTags(t *testing.T) {
-	cfg, err := senders.CreateConfig("https://localhost", senders.SDKMetricsTags(map[string]string{"foo": "bar"}))
+	cfg, err := senders.CreateConfig("https://localhost", senders.SDKMetricsTags(map[string]string{"foo": "bar"}), senders.SDKMetricsTags(map[string]string{"foo1": "bar1"}))
 	require.NoError(t, err)
 
 	assert.Equal(t, "bar", cfg.SDKMetricsTags["foo"])
+	assert.Equal(t, "bar1", cfg.SDKMetricsTags["foo1"])
 }
