@@ -10,26 +10,44 @@ import (
 	"time"
 )
 
-func netcat(addr string, keepopen bool, ch chan bool) {
-	laddr, _ := net.ResolveTCPAddr("tcp", addr)
-	lis, _ := net.ListenTCP("tcp", laddr)
-	ch <- true
-	for loop := true; loop; loop = keepopen {
-		conn, _ := lis.Accept()
-		io.Copy(os.Stdout, conn)
+func netcat(addr string, keepopen bool, portCh chan int) {
+	laddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		panic("netcat resolve " + addr + " failed with: " + err.Error())
 	}
-	lis.Close()
+
+	lis, err := net.ListenTCP("tcp", laddr)
+	if err != nil {
+		panic("netcat listen " + addr + " failed with: " + err.Error())
+	}
+	portCh <- lis.Addr().(*net.TCPAddr).Port
+
+	for loop := true; loop; loop = keepopen {
+		conn, err := lis.Accept()
+		if err != nil {
+			panic("netcat accept " + addr + " failed with: " + err.Error())
+		}
+		_, err = io.Copy(os.Stdout, conn)
+		if err != nil {
+			panic("netcat copy " + addr + " failed with: " + err.Error())
+		}
+	}
+	err = lis.Close()
+	if err != nil {
+		panic("netcat close " + addr + " failed with: " + err.Error())
+	}
+
 }
 
 func TestProxySends(t *testing.T) {
 
-	getConnection(t)
+	ports := getConnection(t)
 
 	proxyCfg := &senders.ProxyConfiguration{
 		Host:                 "localhost",
-		MetricsPort:          30000,
-		DistributionPort:     40000,
-		TracingPort:          50000,
+		MetricsPort:          ports[0],
+		DistributionPort:     ports[1],
+		TracingPort:          ports[2],
 		FlushIntervalSeconds: 10,
 	}
 
@@ -48,36 +66,36 @@ func TestProxySends(t *testing.T) {
 	}
 }
 
-func getConnection(t *testing.T) {
-	c1 := make(chan bool)
-	c2 := make(chan bool)
-	c3 := make(chan bool)
+func getConnection(t *testing.T) [3]int {
+	ch := make(chan int, 3)
+	var ports [3]int
 
-	go netcat("localhost:30000", false, c1)
-	go netcat("localhost:40000", false, c2)
-	go netcat("localhost:50000", false, c3)
+	go netcat("localhost:0", false, ch)
+	go netcat("localhost:0", false, ch)
+	go netcat("localhost:0", false, ch)
 
-	for i := 0; i < 5; i++ {
-		if <-c1 && <-c2 && <-c3 {
-			break
-		} else if i < 4 {
-			time.Sleep(time.Second)
-		} else {
+	for i := 0; i < 3; {
+		select {
+		case ports[i] = <-ch:
+			i++
+		case <-time.After(time.Second):
 			t.Fail()
-			t.Logf("Could not get a TCP connection")
+			t.Logf("Could not get netcats")
 		}
 	}
+
+	return ports
 }
 
 func TestProxySendsWithTags(t *testing.T) {
 
-	getConnection(t)
+	ports := getConnection(t)
 
 	proxyCfg := &senders.ProxyConfiguration{
 		Host:                 "localhost",
-		MetricsPort:          30000,
-		DistributionPort:     40000,
-		TracingPort:          50000,
+		MetricsPort:          ports[0],
+		DistributionPort:     ports[1],
+		TracingPort:          ports[2],
 		FlushIntervalSeconds: 10,
 		SDKMetricsTags:       map[string]string{"foo": "bar"},
 	}
