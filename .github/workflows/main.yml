@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  run_suite:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [ 1.15.x, 1.16.x, 1.17.x ]
+    name: Go ${{ matrix.go-version }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - run: go mod download
+      - name: check vendor
+        run: |
+          diff -u <(echo -n) <(gofmt -d $(go list -f {{.Dir}} ./... | grep -v /vendor/))
+      - run: go test -timeout 10m -v -race ./...
+      - run: go vet ./...
