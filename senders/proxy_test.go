@@ -1,14 +1,12 @@
 package senders_test
 
 import (
+	"github.com/wavefronthq/wavefront-sdk-go/histogram"
+	"github.com/wavefronthq/wavefront-sdk-go/senders"
 	"io"
 	"net"
 	"os"
 	"testing"
-	"time"
-
-	"github.com/wavefronthq/wavefront-sdk-go/histogram"
-	"github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
 func netcat(addr string, keepopen bool) {
@@ -26,8 +24,6 @@ func TestProxySends(t *testing.T) {
 	go netcat("localhost:40000", false)
 	go netcat("localhost:50000", false)
 
-	//TODO: need to check if there is a better way to avoid the race condition
-	time.Sleep(time.Second)
 	proxyCfg := &senders.ProxyConfiguration{
 		Host:                 "localhost",
 		MetricsPort:          30000,
@@ -55,9 +51,6 @@ func TestProxySendsWithTags(t *testing.T) {
 	go netcat("localhost:30000", false)
 	go netcat("localhost:40000", false)
 	go netcat("localhost:50000", false)
-
-	//TODO: need to check if there is a better way to avoid the race condition
-	time.Sleep(time.Second)
 
 	proxyCfg := &senders.ProxyConfiguration{
 		Host:                 "localhost",
