@@ -7,11 +7,13 @@ import (
 	"net"
 	"os"
 	"testing"
+	"time"
 )
 
-func netcat(addr string, keepopen bool) {
+func netcat(addr string, keepopen bool, ch chan bool) {
 	laddr, _ := net.ResolveTCPAddr("tcp", addr)
 	lis, _ := net.ListenTCP("tcp", laddr)
+	ch <- true
 	for loop := true; loop; loop = keepopen {
 		conn, _ := lis.Accept()
 		io.Copy(os.Stdout, conn)
@@ -20,9 +22,8 @@ func netcat(addr string, keepopen bool) {
 }
 
 func TestProxySends(t *testing.T) {
-	go netcat("localhost:30000", false)
-	go netcat("localhost:40000", false)
-	go netcat("localhost:50000", false)
+
+	getConnection(t)
 
 	proxyCfg := &senders.ProxyConfiguration{
 		Host:                 "localhost",
@@ -47,10 +48,30 @@ func TestProxySends(t *testing.T) {
 	}
 }
 
+func getConnection(t *testing.T) {
+	c1 := make(chan bool)
+	c2 := make(chan bool)
+	c3 := make(chan bool)
+
+	go netcat("localhost:30000", false, c1)
+	go netcat("localhost:40000", false, c2)
+	go netcat("localhost:50000", false, c3)
+
+	for i := 0; i < 5; i++ {
+		if <-c1 && <-c2 && <-c3 {
+			break
+		} else if i < 4 {
+			time.Sleep(time.Second)
+		} else {
+			t.Fail()
+			t.Logf("Could not get a TCP connection")
+		}
+	}
+}
+
 func TestProxySendsWithTags(t *testing.T) {
-	go netcat("localhost:30000", false)
-	go netcat("localhost:40000", false)
-	go netcat("localhost:50000", false)
+
+	getConnection(t)
 
 	proxyCfg := &senders.ProxyConfiguration{
 		Host:                 "localhost",
