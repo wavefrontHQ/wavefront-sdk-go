@@ -10,7 +10,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -83,42 +82,19 @@ func TestSendDirect(t *testing.T) {
 	wf, err := senders.NewSender("http://" + token + "@localhost:" + wfPort)
 	require.NoError(t, err)
 	doTest(t, wf)
-
-	assert.Equal(t, int64(0), wf.GetFailureCount(), "GetFailureCount")
-	wf.Flush()
-	wf.Close()
-	requests = map[string][]string{}
 }
 
 func TestSendDirectWithTags(t *testing.T) {
 	tags := map[string]string{"foo": "bar"}
-	wf, err := senders.NewSender("http://"+token+"@localhost:"+wfPort, senders.SDKMetricsTags(tags), senders.ReportTicker(time.Microsecond))
+	wf, err := senders.NewSender("http://"+token+"@localhost:"+wfPort, senders.SDKMetricsTags(tags))
 	require.NoError(t, err)
 	doTest(t, wf)
-
-	assert.Equal(t, int64(0), wf.GetFailureCount(), "GetFailureCount")
-	wf.Flush()
-	wf.Close()
-
-	flag := false
-	for _, request := range requests["8080"] {
-		if strings.Contains(request, "~sdk.go.core.sender.direct") && strings.Contains(request, "\"foo\"=\"bar\"") {
-			flag = true
-		}
-	}
-	assert.True(t, flag)
-	requests = map[string][]string{}
 }
 
 func TestSendProxy(t *testing.T) {
 	wf, err := senders.NewSender("http://localhost:" + proxyPort)
 	require.NoError(t, err)
 	doTest(t, wf)
-
-	assert.Equal(t, int64(0), wf.GetFailureCount(), "GetFailureCount")
-	wf.Flush()
-	wf.Close()
-	requests = map[string][]string{}
 }
 
 func doTest(t *testing.T, wf senders.Sender) {
@@ -151,4 +127,8 @@ func doTest(t *testing.T, wf senders.Sender) {
 		nil); err != nil {
 		t.Error("Failed SendSpan", err)
 	}
+
+	wf.Flush()
+	wf.Close()
+	assert.Equal(t, int64(0), wf.GetFailureCount(), "GetFailureCount")
 }
