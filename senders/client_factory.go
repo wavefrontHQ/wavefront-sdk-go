@@ -2,13 +2,11 @@ package senders
 
 import (
 	"fmt"
+	"github.com/wavefronthq/wavefront-sdk-go/internal"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
-	"time"
-
-	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
 const (
@@ -44,7 +42,6 @@ type configuration struct {
 	// together with batch size controls the max theoretical throughput of the sender.
 	FlushIntervalSeconds int
 	SDKMetricsTags       map[string]string
-	ReportTicker         time.Duration
 }
 
 // NewSender creates Wavefront client
@@ -126,10 +123,6 @@ func (sender *wavefrontSender) initializeInternalMetrics(cfg *configuration) {
 		setters = append(setters, internal.SetTag(key, value))
 	}
 
-	if cfg.ReportTicker != 0 {
-		setters = append(setters, internal.SetInterval(cfg.ReportTicker))
-	}
-
 	sender.internalRegistry = internal.NewMetricRegistry(
 		sender,
 		setters...,
@@ -201,11 +194,5 @@ func SDKMetricsTags(tags map[string]string) Option {
 			cfg.SDKMetricsTags = tags
 		}
 
-	}
-}
-
-func ReportTicker(reportTicker time.Duration) Option {
-	return func(cfg *configuration) {
-		cfg.ReportTicker = reportTicker
 	}
 }
