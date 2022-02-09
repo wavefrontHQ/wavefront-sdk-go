@@ -82,6 +82,7 @@ func TestSendDirect(t *testing.T) {
 	wf, err := senders.NewSender("http://" + token + "@localhost:" + wfPort)
 	require.NoError(t, err)
 	doTest(t, wf)
+	requests = map[string][]string{}
 }
 
 func TestSendDirectWithTags(t *testing.T) {
@@ -98,12 +99,14 @@ func TestSendDirectWithTags(t *testing.T) {
 	}
 
 	assert.True(t, flag)
+	requests = map[string][]string{}
 }
 
 func TestSendProxy(t *testing.T) {
 	wf, err := senders.NewSender("http://localhost:" + proxyPort)
 	require.NoError(t, err)
 	doTest(t, wf)
+	requests = map[string][]string{}
 }
 
 func doTest(t *testing.T, wf senders.Sender) {
