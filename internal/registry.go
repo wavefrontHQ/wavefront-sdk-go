@@ -38,7 +38,7 @@ func SetSource(source string) RegistryOption {
 
 func SetInterval(interval int) RegistryOption {
 	return func(registry *MetricRegistry) {
-		registry.reportTicker = time.NewTicker(time.Second * time.Duration(interval))
+		registry.reportTicker = time.NewTicker(time.Millisecond * time.Duration(interval))
 	}
 }
 

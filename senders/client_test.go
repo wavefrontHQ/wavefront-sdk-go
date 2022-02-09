@@ -1,7 +1,11 @@
 package senders_test
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -20,11 +24,14 @@ const (
 	token     = "DUMMY_TOKEN"
 )
 
+var requests = map[string][]string{}
+
 func TestMain(m *testing.M) {
 	wf := http.Server{Addr: "localhost:" + wfPort}
 	proxy := http.Server{Addr: "localhost:" + proxyPort}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		readBodyIntoString(r)
 		if strings.HasSuffix(r.Host, wfPort) {
 			if strings.HasSuffix(r.Header.Get("Authorization"), token) {
 				w.WriteHeader(http.StatusOK)
@@ -52,6 +59,25 @@ func TestMain(m *testing.M) {
 	os.Exit(exitVal)
 }
 
+func readBodyIntoString(r *http.Request) {
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer r.Body.Close()
+	if r.Header.Get("Content-Type") == "application/octet-stream" {
+		gr, err := gzip.NewReader(bytes.NewBuffer(b))
+		defer gr.Close()
+		data, err := ioutil.ReadAll(gr)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		requests[wfPort] = append(requests[wfPort], string(data))
+	} else {
+		requests[wfPort] = append(requests[wfPort], string(b))
+	}
+}
+
 func TestSendDirect(t *testing.T) {
 	wf, err := senders.NewSender("http://" + token + "@localhost:" + wfPort)
 	require.NoError(t, err)
@@ -60,9 +86,18 @@ func TestSendDirect(t *testing.T) {
 
 func TestSendDirectWithTags(t *testing.T) {
 	tags := map[string]string{"foo": "bar"}
-	wf, err := senders.NewSender("http://"+token+"@localhost:"+wfPort, senders.SDKMetricsTags(tags))
+	wf, err := senders.NewSender("http://"+token+"@localhost:"+wfPort, senders.SDKMetricsTags(tags), senders.ReportTicker(1))
 	require.NoError(t, err)
 	doTest(t, wf)
+
+	flag := false
+	for _, request := range requests["8080"] {
+		if strings.Contains(request, "~sdk.go.core.sender.direct") && strings.Contains(request, "\"foo\"=\"bar\"") {
+			flag = true
+		}
+	}
+
+	assert.True(t, flag)
 }
 
 func TestSendProxy(t *testing.T) {

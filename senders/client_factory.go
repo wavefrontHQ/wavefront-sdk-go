@@ -43,6 +43,7 @@ type configuration struct {
 	// together with batch size controls the max theoretical throughput of the sender.
 	FlushIntervalSeconds int
 	SDKMetricsTags       map[string]string
+	ReportTicker         int
 }
 
 // NewSender creates Wavefront client
@@ -124,6 +125,10 @@ func (sender *wavefrontSender) initializeInternalMetrics(cfg *configuration) {
 		setters = append(setters, internal.SetTag(key, value))
 	}
 
+	if cfg.ReportTicker != 0 {
+		setters = append(setters, internal.SetInterval(cfg.ReportTicker))
+	}
+
 	sender.internalRegistry = internal.NewMetricRegistry(
 		sender,
 		setters...,
@@ -195,5 +200,11 @@ func SDKMetricsTags(tags map[string]string) Option {
 			cfg.SDKMetricsTags = tags
 		}
 
+	}
+}
+
+func ReportTicker(reportTicker int) Option {
+	return func(cfg *configuration) {
+		cfg.ReportTicker = reportTicker
 	}
 }
