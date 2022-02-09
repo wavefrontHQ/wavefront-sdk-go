@@ -131,4 +131,24 @@ func doTest(t *testing.T, wf senders.Sender) {
 	wf.Flush()
 	wf.Close()
 	assert.Equal(t, int64(0), wf.GetFailureCount(), "GetFailureCount")
+
+	metricsFlag := false
+	hgFlag := false
+	spansFlag := false
+
+	for _, request := range requests["8080"] {
+		if strings.Contains(request, "new-york.power.usage") {
+			metricsFlag = true
+		}
+		if strings.Contains(request, "request.latency") {
+			hgFlag = true
+		}
+		if strings.Contains(request, "0313bafe-9457-11e8-9eb6-529269fb1459") {
+			spansFlag = true
+		}
+	}
+
+	assert.True(t, metricsFlag)
+	assert.True(t, hgFlag)
+	assert.True(t, spansFlag)
 }
