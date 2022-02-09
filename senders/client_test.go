@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -82,18 +83,20 @@ func TestSendDirect(t *testing.T) {
 	wf, err := senders.NewSender("http://" + token + "@localhost:" + wfPort)
 	require.NoError(t, err)
 	doTest(t, wf)
+
+	assert.Equal(t, int64(0), wf.GetFailureCount(), "GetFailureCount")
 	wf.Flush()
 	wf.Close()
-	assert.Equal(t, int64(0), wf.GetFailureCount(), "GetFailureCount")
 	requests = map[string][]string{}
 }
 
 func TestSendDirectWithTags(t *testing.T) {
 	tags := map[string]string{"foo": "bar"}
-	wf, err := senders.NewSender("http://"+token+"@localhost:"+wfPort, senders.SDKMetricsTags(tags), senders.ReportTicker(1))
+	wf, err := senders.NewSender("http://"+token+"@localhost:"+wfPort, senders.SDKMetricsTags(tags), senders.ReportTicker(time.Microsecond))
 	require.NoError(t, err)
 	doTest(t, wf)
 
+	assert.Equal(t, int64(0), wf.GetFailureCount(), "GetFailureCount")
 	wf.Flush()
 	wf.Close()
 
@@ -104,8 +107,6 @@ func TestSendDirectWithTags(t *testing.T) {
 		}
 	}
 	assert.True(t, flag)
-
-	assert.Equal(t, int64(0), wf.GetFailureCount(), "GetFailureCount")
 	requests = map[string][]string{}
 }
 
@@ -114,9 +115,9 @@ func TestSendProxy(t *testing.T) {
 	require.NoError(t, err)
 	doTest(t, wf)
 
+	assert.Equal(t, int64(0), wf.GetFailureCount(), "GetFailureCount")
 	wf.Flush()
 	wf.Close()
-	assert.Equal(t, int64(0), wf.GetFailureCount(), "GetFailureCount")
 	requests = map[string][]string{}
 }
 

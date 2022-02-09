@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
@@ -43,7 +44,7 @@ type configuration struct {
 	// together with batch size controls the max theoretical throughput of the sender.
 	FlushIntervalSeconds int
 	SDKMetricsTags       map[string]string
-	ReportTicker         int
+	ReportTicker         time.Duration
 }
 
 // NewSender creates Wavefront client
@@ -203,7 +204,7 @@ func SDKMetricsTags(tags map[string]string) Option {
 	}
 }
 
-func ReportTicker(reportTicker int) Option {
+func ReportTicker(reportTicker time.Duration) Option {
 	return func(cfg *configuration) {
 		cfg.ReportTicker = reportTicker
 	}
