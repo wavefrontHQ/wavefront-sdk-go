@@ -1,47 +1,121 @@
 package senders_test
 
 import (
+	"github.com/wavefronthq/wavefront-sdk-go/histogram"
+	"github.com/wavefronthq/wavefront-sdk-go/senders"
 	"io"
 	"net"
 	"os"
 	"testing"
-
-	"github.com/wavefronthq/wavefront-sdk-go/histogram"
-	"github.com/wavefronthq/wavefront-sdk-go/senders"
+	"time"
 )
 
-var proxy senders.Sender
-
-func netcat(addr string, keepopen bool) {
-	laddr, _ := net.ResolveTCPAddr("tcp", addr)
-	lis, _ := net.ListenTCP("tcp", laddr)
-	for loop := true; loop; loop = keepopen {
-		conn, _ := lis.Accept()
-		io.Copy(os.Stdout, conn)
+func netcat(addr string, keepopen bool, portCh chan int) {
+	laddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		panic("netcat resolve " + addr + " failed with: " + err.Error())
 	}
-	lis.Close()
-}
 
-func init() {
-	go netcat("localhost:30000", false)
-	go netcat("localhost:40000", false)
-	go netcat("localhost:50000", false)
+	lis, err := net.ListenTCP("tcp", laddr)
+	if err != nil {
+		panic("netcat listen " + addr + " failed with: " + err.Error())
+	}
+	portCh <- lis.Addr().(*net.TCPAddr).Port
+
+	for loop := true; loop; loop = keepopen {
+		conn, err := lis.Accept()
+		if err != nil {
+			panic("netcat accept " + addr + " failed with: " + err.Error())
+		}
+		_, err = io.Copy(os.Stdout, conn)
+		if err != nil {
+			panic("netcat copy " + addr + " failed with: " + err.Error())
+		}
+	}
+	err = lis.Close()
+	if err != nil {
+		panic("netcat close " + addr + " failed with: " + err.Error())
+	}
+
 }
 
 func TestProxySends(t *testing.T) {
+
+	ports := getConnection(t)
+
 	proxyCfg := &senders.ProxyConfiguration{
 		Host:                 "localhost",
-		MetricsPort:          30000,
-		DistributionPort:     40000,
-		TracingPort:          50000,
+		MetricsPort:          ports[0],
+		DistributionPort:     ports[1],
+		TracingPort:          ports[2],
 		FlushIntervalSeconds: 10,
 	}
 
 	var err error
+	var proxy senders.Sender
 	if proxy, err = senders.NewProxySender(proxyCfg); err != nil {
 		t.Error("Failed Creating Sender", err)
 	}
 
+	verifyResults(t, err, proxy)
+
+	proxy.Flush()
+	proxy.Close()
+	if proxy.GetFailureCount() > 0 {
+		t.Error("FailureCount =", proxy.GetFailureCount())
+	}
+}
+
+func getConnection(t *testing.T) [3]int {
+	ch := make(chan int, 3)
+	var ports [3]int
+
+	go netcat("localhost:0", false, ch)
+	go netcat("localhost:0", false, ch)
+	go netcat("localhost:0", false, ch)
+
+	for i := 0; i < 3; {
+		select {
+		case ports[i] = <-ch:
+			i++
+		case <-time.After(time.Second):
+			t.Fail()
+			t.Logf("Could not get netcats")
+		}
+	}
+
+	return ports
+}
+
+func TestProxySendsWithTags(t *testing.T) {
+
+	ports := getConnection(t)
+
+	proxyCfg := &senders.ProxyConfiguration{
+		Host:                 "localhost",
+		MetricsPort:          ports[0],
+		DistributionPort:     ports[1],
+		TracingPort:          ports[2],
+		FlushIntervalSeconds: 10,
+		SDKMetricsTags:       map[string]string{"foo": "bar"},
+	}
+
+	var err error
+	var proxy senders.Sender
+	if proxy, err = senders.NewProxySender(proxyCfg); err != nil {
+		t.Error("Failed Creating Sender", err)
+	}
+
+	verifyResults(t, err, proxy)
+
+	proxy.Flush()
+	proxy.Close()
+	if proxy.GetFailureCount() > 0 {
+		t.Error("FailureCount =", proxy.GetFailureCount())
+	}
+}
+
+func verifyResults(t *testing.T, err error, proxy senders.Sender) {
 	if err = proxy.SendMetric("new-york.power.usage", 42422.0, 0, "go_test", map[string]string{"env": "test"}); err != nil {
 		t.Error("Failed SendMetric", err)
 	}
@@ -73,11 +147,5 @@ func TestProxySends(t *testing.T) {
 		},
 		nil); err != nil {
 		t.Error("Failed SendSpan", err)
-	}
-
-	proxy.Flush()
-	proxy.Close()
-	if proxy.GetFailureCount() > 0 {
-		t.Error("FailureCount =", proxy.GetFailureCount())
 	}
 }
