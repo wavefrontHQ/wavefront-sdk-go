@@ -133,10 +133,10 @@ func SpanLine(name string, startMillis, durationMillis int64, source, traceId, s
 	}
 
 	if !isUUIDFormat(traceId) {
-		return "", fmt.Errorf("traceId is not in UUID format: span=%s", name)
+		return "", fmt.Errorf("traceId is not in UUID format: span=%s traceId=%s", name, traceId)
 	}
 	if !isUUIDFormat(spanId) {
-		return "", fmt.Errorf("spanId is not in UUID format: span=%s", name)
+		return "", fmt.Errorf("spanId is not in UUID format: span=%s spanId=%s", name, spanId)
 	}
 
 	sb := internal.GetBuffer()

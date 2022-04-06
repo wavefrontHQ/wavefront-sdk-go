@@ -201,13 +201,13 @@ func TestSpanLineErrors(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, "span name cannot be empty", err.Error())
 
-	_, err = SpanLine("a_name", 0, 0, "00-00", "", uuid, nil, nil, nil, nil, "")
+	_, err = SpanLine("a_name", 0, 0, "00-00", "x", uuid, nil, nil, nil, nil, "")
 	require.Error(t, err)
-	assert.Equal(t, "traceId is not in UUID format: span=a_name", err.Error())
+	assert.Equal(t, "traceId is not in UUID format: span=a_name traceId=x", err.Error())
 
-	_, err = SpanLine("a_name", 0, 0, "00-00", uuid, "", nil, nil, nil, nil, "")
+	_, err = SpanLine("a_name", 0, 0, "00-00", uuid, "x", nil, nil, nil, nil, "")
 	require.Error(t, err)
-	assert.Equal(t, "spanId is not in UUID format: span=a_name", err.Error())
+	assert.Equal(t, "spanId is not in UUID format: span=a_name spanId=x", err.Error())
 
 	_, err = SpanLine("a_name", 0, 0, "a_source", uuid, uuid, nil, nil,
 		[]SpanTag{{Key: "", Value: ""}}, nil, "")
