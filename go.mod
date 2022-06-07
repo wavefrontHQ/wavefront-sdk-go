@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/caio/go-tdigest v3.1.0+incompatible
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.7.2
 )
 
 require (
@@ -12,5 +12,5 @@ require (
 	github.com/leesper/go_rng v0.0.0-20190531154944-a612b043e353 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	gonum.org/v1/gonum v0.7.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
