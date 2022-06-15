@@ -185,14 +185,25 @@ func TracesPort(port int) Option {
 
 // SDKMetricsTags sets internal SDK metrics.
 func SDKMetricsTags(tags map[string]string) Option {
+	// prevent caller from accidentally mutating this option.
+	copiedTags := copyTags(tags)
 	return func(cfg *configuration) {
 		if cfg.SDKMetricsTags != nil {
-			for key, value := range tags {
+			for key, value := range copiedTags {
 				cfg.SDKMetricsTags[key] = value
 			}
 		} else {
-			cfg.SDKMetricsTags = tags
+			// We have to copy this option's tags once again or else this
+			// option gets mutated when SDKMetricsTags gets mutated.
+			cfg.SDKMetricsTags = copyTags(copiedTags)
 		}
-
 	}
+}
+
+func copyTags(orig map[string]string) map[string]string {
+	result := make(map[string]string, len(orig))
+	for key, value := range orig {
+		result[key] = value
+	}
+	return result
 }

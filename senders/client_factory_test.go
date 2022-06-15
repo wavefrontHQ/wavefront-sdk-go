@@ -92,3 +92,20 @@ func TestSDKMetricsTags(t *testing.T) {
 	assert.Equal(t, "bar", cfg.SDKMetricsTags["foo"])
 	assert.Equal(t, "bar1", cfg.SDKMetricsTags["foo1"])
 }
+
+func TestSDKMetricsTags_Immutability(t *testing.T) {
+	map1 := map[string]string{"foo": "bar"}
+	map2 := map[string]string{"baz": "none"}
+	option1 := senders.SDKMetricsTags(map1)
+	option2 := senders.SDKMetricsTags(map2)
+	map1["foo"] = "wrong"
+	map2["baz"] = "wrong"
+	cfg, err := senders.CreateConfig("https://localhost", option1, option2)
+	require.NoError(t, err)
+	assert.Equal(t, "bar", cfg.SDKMetricsTags["foo"])
+	assert.Equal(t, "none", cfg.SDKMetricsTags["baz"])
+
+	cfg2, err := senders.CreateConfig("https://localhost", option1)
+	require.NoError(t, err)
+	assert.Len(t, cfg2.SDKMetricsTags, 1)
+}
