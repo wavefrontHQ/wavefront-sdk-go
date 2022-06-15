@@ -44,6 +44,11 @@ type configuration struct {
 	SDKMetricsTags       map[string]string
 }
 
+func (c *configuration) setDefaultPort(port int) {
+	c.MetricsPort = port
+	c.TracesPort = port
+}
+
 // NewSender creates Wavefront client
 func NewSender(wfURL string, setters ...Option) (Sender, error) {
 	cfg, err := CreateConfig(wfURL, setters...)
@@ -67,13 +72,22 @@ func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
 		return nil, err
 	}
 
-	if !strings.HasPrefix(strings.ToLower(u.Scheme), "http") {
-		return nil, fmt.Errorf("invalid scheme '%s' in '%s', only 'http' is supported", u.Scheme, u)
-	}
-
 	if len(u.User.String()) > 0 {
 		cfg.Token = u.User.String()
 		u.User = nil
+	}
+
+	switch strings.ToLower(u.Scheme) {
+	case "http":
+		if cfg.Token != "" {
+			cfg.setDefaultPort(80)
+		}
+	case "https":
+		if cfg.Token != "" {
+			cfg.setDefaultPort(443)
+		}
+	default:
+		return nil, fmt.Errorf("invalid scheme '%s' in '%s', only 'http' is supported", u.Scheme, u)
 	}
 
 	if u.Port() != "" {
@@ -81,8 +95,7 @@ func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
 		if err != nil {
 			return nil, fmt.Errorf("unable to convert port to integer: %s", err)
 		}
-		cfg.MetricsPort = port
-		cfg.TracesPort = port
+		cfg.setDefaultPort(port)
 		u.Host = u.Hostname()
 	}
 	cfg.Server = u.String()

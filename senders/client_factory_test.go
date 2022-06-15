@@ -24,6 +24,27 @@ func TestScheme(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestDefaultPortsProxy(t *testing.T) {
+	cfg, err := senders.CreateConfig("http://localhost")
+	require.NoError(t, err)
+	assert.Equal(t, 2878, cfg.MetricsPort)
+	assert.Equal(t, 30001, cfg.TracesPort)
+}
+
+func TestDefaultPortsDIHttp(t *testing.T) {
+	cfg, err := senders.CreateConfig("http://11111111-2222-3333-4444-555555555555@localhost")
+	require.NoError(t, err)
+	assert.Equal(t, 80, cfg.MetricsPort)
+	assert.Equal(t, 80, cfg.TracesPort)
+}
+
+func TestDefaultPortsDIHttps(t *testing.T) {
+	cfg, err := senders.CreateConfig("https://11111111-2222-3333-4444-555555555555@localhost")
+	require.NoError(t, err)
+	assert.Equal(t, 443, cfg.MetricsPort)
+	assert.Equal(t, 443, cfg.TracesPort)
+}
+
 func TestPortExtractedFromURL(t *testing.T) {
 	cfg, err := senders.CreateConfig("http://localhost:1234")
 	require.NoError(t, err)
