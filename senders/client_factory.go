@@ -53,6 +53,7 @@ func NewSender(wfURL string, setters ...Option) (Sender, error) {
 	return newWavefrontClient(cfg)
 }
 
+// CreateConfig is for internal use only.
 func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
 	cfg := &configuration{
 		MetricsPort:          defaultMetricsPort,
