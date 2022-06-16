@@ -120,7 +120,6 @@ Although this library is mostly used by the other Wavefront Go SDKs to send data
 </table>
 
 ## Prerequisites
-* Go 1.9 or higher.
 * Import the `senders` package.
     ```go
     import (
@@ -135,11 +134,10 @@ You can send metrics, histograms, or trace data from your application to the Wav
 * Option 1: Use a [**Wavefront proxy**](https://docs.wavefront.com/proxies.html), which then forwards the data to the Wavefront service. This is the recommended choice for a large-scale deployment that needs resilience to internet outages, control over data queuing and filtering, and more.
 [Create a ProxyConfiguration](#option-1-sending-data-via-the-wavefront-proxy) to send data to a Wavefront proxy.
   
-* Use [**direct ingestion**](https://docs.wavefront.com/direct_ingestion.html) to send the data directly to the Wavefront service. This is the simplest way to get up and running quickly.
+* Option 2: Use [**direct ingestion**](https://docs.wavefront.com/direct_ingestion.html) to send the data directly to the Wavefront service. This is the simplest way to get up and running quickly.
 [Create a DirectConfiguration](#option-2-sending-data-via-direct-ingestion) to send data directly to a Wavefront service.
   
 ### Option 1: Sending Data via the Wavefront Proxy
-Depending on the data you wish to send to Wavefront (metrics, distributions (histograms) and/or spans), enable the relevant ports on the proxy and initialize the proxy sender.
 
 ```go
 import (
@@ -147,25 +145,17 @@ import (
 )
 
 func main() {
-    proxyCfg := &wavefront.ProxyConfiguration {
-        Host : "proxyHostname or proxyIPAddress",
-
-        // At least one port should be set below.
-        MetricsPort         : 2878,    // set this (typically 2878) to send metrics
-        DistributionPort    : 2878,   // set this (typically 2878) to send distributions
-        TracingPort         : 30000, // set this to send tracing spans. the same port as the customTracingListenerPorts configured in the wavefront proxy
-        FlushIntervalSeconds: 10,   // flush the buffer periodically, defaults to 5 seconds.
-    }
-
-    sender, err := wavefront.NewProxySender(proxyCfg)
+    // For Proxy endpoints, by default metrics and histograms are sent to
+    // port 2878 and spans are sent to port 30001.
+    sender, err := wavefront.NewSender("http://localhost")
     if err != nil {
         // handle error
     }
     // send data (see below for usage)
     
     time.Sleep(5 * time.Second)
-	sender.Flush()
-	sender.Close()
+    sender.Flush()
+    sender.Close()
 }
 ```
 
@@ -177,29 +167,10 @@ import (
 )
 
 func main() {
-    directCfg := &wavefront.DirectConfiguration {
-        Server : "https://INSTANCE.wavefront.com", // your Wavefront instance URL
-        Token : "YOUR_API_TOKEN",                  // API token with direct ingestion permission
-
-        // Optional configuration properties. Default values should suffice for most use cases.
-        // override the defaults only if you wish to set higher values.
-
-        // max batch of data sent per flush interval. defaults to 10,000.
-        // recommended not to exceed 40,000.
-        BatchSize : 10000,
-
-        // size of internal buffer beyond which received data is dropped.
-        // helps with handling brief increases in data and buffering on errors.
-        // separate buffers are maintained per data type (metrics, spans and distributions)
-        // defaults to 500,000. higher values could use more memory.
-        MaxBufferSize : 500000,
-
-        // interval (in seconds) at which to flush data to Wavefront. defaults to 1 Second.
-        // together with batch size controls the max theoretical throughput of the sender.
-        FlushIntervalSeconds : 1,
-    }
-
-    sender, err := wavefront.NewDirectSender(directCfg)
+    // For Direct Ingestion endpoints, by default all data is sent to port 80
+    // or port 443 for unencrypted or encrypted connections, respectively.
+    // 11111111-2222-3333-4444-555555555555 is your API token with direct ingestion permission.
+    sender, err := wavefront.NewSender("https://11111111-2222-3333-4444-555555555555@surf.wavefront.com")
     if err != nil {
         // handle error
     }
@@ -212,6 +183,24 @@ func main() {
 
 ```
 
+### Configuring the Sender
+
+```go
+import (
+	wavefront "github.com/wavefronthq/wavefront-sdk-go/senders"
+)
+
+func main() {
+    sender, err := wavefront.NewSender(
+        "http://localhost",
+        wavefront.BatchSize(20000), // Send batches of 20,000.
+        wavefront.FlushIntervalSeconds(5), // Flush every 5 seconds.
+        wavefront.MetricsPort(4321), // Use port 4321 for metrics.
+        wavefront.TracesPort(40001), // Use port 40001 for traces.
+    )
+    ...
+}
+````
 ## Send Data to Wavefront
 
 Wavefront supports different metric types, such as gauges, counters, delta counters, histograms, traces, and spans. See [Metrics](https://docs.wavefront.com/metric_types.html) for details. To send data to Wavefront using `Sender` you need to instantiate the following:
