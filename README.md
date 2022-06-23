@@ -1,4 +1,8 @@
-# wavefront-sdk-go [![build status][ci-img]][ci] [![Go Report Card][go-report-img]][go-report] [![GoDoc][godoc-img]][godoc]
+# wavefront-sdk-go
+
+[![CI Status](https://github.com/wavefrontHQ/wavefront-sdk-go/actions/workflows/main.yml/badge.svg)](https://github.com/wavefrontHQ/wavefront-sdk-go/actions/workflows/main.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/wavefronthq/wavefront-sdk-go.svg)](https://pkg.go.dev/github.com/wavefronthq/wavefront-sdk-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/wavefronthq/wavefront-sdk-go)](https://goreportcard.com/report/github.com/wavefronthq/wavefront-sdk-go)
 
 ## Table of Content
 * [Prerequisites](#Prerequisites)
@@ -313,10 +317,3 @@ sender.Close()
 
 * Reach out to us on our public [Slack channel](https://www.wavefront.com/join-public-slack).
 * If you run into any issues, let us know by creating a GitHub issue.
-
-[ci-img]: https://travis-ci.com/wavefrontHQ/wavefront-sdk-go.svg?branch=master
-[ci]: https://travis-ci.com/wavefrontHQ/wavefront-sdk-go
-[godoc]: https://godoc.org/github.com/wavefrontHQ/wavefront-sdk-go/senders
-[godoc-img]: https://godoc.org/github.com/wavefrontHQ/wavefront-sdk-go/senders?status.svg
-[go-report-img]: https://goreportcard.com/badge/github.com/wavefronthq/wavefront-sdk-go
-[go-report]: https://goreportcard.com/report/github.com/wavefronthq/wavefront-sdk-go
