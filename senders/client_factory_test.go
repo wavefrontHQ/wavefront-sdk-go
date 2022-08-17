@@ -31,6 +31,19 @@ func TestDefaultPortsProxy(t *testing.T) {
 	assert.Equal(t, 30001, cfg.TracesPort)
 }
 
+func TestMetricPrefixProxy(t *testing.T) {
+	cfg, err := senders.CreateConfig("http://localhost")
+	require.NoError(t, err)
+	assert.False(t, cfg.Direct())
+	assert.Equal(t, "~sdk.go.core.sender.proxy", cfg.MetricPrefix())
+}
+
+func TestMetricPrefixDirect(t *testing.T) {
+	cfg, err := senders.CreateConfig("http://11111111-2222-3333-4444-555555555555@localhost")
+	require.NoError(t, err)
+	assert.True(t, cfg.Direct())
+	assert.Equal(t, "~sdk.go.core.sender.direct", cfg.MetricPrefix())
+}
 func TestDefaultPortsDIHttp(t *testing.T) {
 	cfg, err := senders.CreateConfig("http://11111111-2222-3333-4444-555555555555@localhost")
 	require.NoError(t, err)
