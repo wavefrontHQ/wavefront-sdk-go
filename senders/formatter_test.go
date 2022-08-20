@@ -48,32 +48,32 @@ func BenchmarkMetricLine(b *testing.B) {
 
 	var r string
 	for n := 0; n < b.N; n++ {
-		r, _ = MetricLine(name, value, ts, src, tags, "")
+		r, _ = metricLine(name, value, ts, src, tags, "")
 	}
 	line = r
 }
 
 func TestMetricLine(t *testing.T) {
-	line, err := MetricLine("foo.metric", 1.2, 1533529977, "test_source",
+	line, err := metricLine("foo.metric", 1.2, 1533529977, "test_source",
 		map[string]string{"env": "test"}, "")
 	expected := "\"foo.metric\" 1.2 1533529977 source=\"test_source\" \"env\"=\"test\"\n"
 	assert.Nil(t, err)
 	assert.Equal(t, expected, line)
 
-	line, err = MetricLine("foo.metric", 1.2, 1533529977, "",
+	line, err = metricLine("foo.metric", 1.2, 1533529977, "",
 		map[string]string{"env": "test"}, "default")
 	expected = "\"foo.metric\" 1.2 1533529977 source=\"default\" \"env\"=\"test\"\n"
 	assert.Nil(t, err)
 	assert.Equal(t, expected, line)
 
-	line, err = MetricLine("foo.metric", 1.2, 1533529977, "1.2.3.4:8080",
+	line, err = metricLine("foo.metric", 1.2, 1533529977, "1.2.3.4:8080",
 		map[string]string{"env": "test"}, "default")
 	expected = "\"foo.metric\" 1.2 1533529977 source=\"1.2.3.4:8080\" \"env\"=\"test\"\n"
 	assert.Nil(t, err)
 	assert.Equal(t, expected, line)
 }
 
-func BenchmarkHistoLine(b *testing.B) {
+func BenchmarkHistogramLine(b *testing.B) {
 	name := "request.latency"
 	centroids := makeCentroids()
 	hgs := map[histogram.Granularity]bool{histogram.MINUTE: true}
@@ -83,12 +83,12 @@ func BenchmarkHistoLine(b *testing.B) {
 
 	var r string
 	for n := 0; n < b.N; n++ {
-		r, _ = HistoLine(name, centroids, hgs, ts, src, tags, "")
+		r, _ = histogramLine(name, centroids, hgs, ts, src, tags, "")
 	}
 	line = r
 }
 
-func TestHistoLineCentroidsFormat(t *testing.T) {
+func TestHistogramLineCentroidsFormat(t *testing.T) {
 	centroids := histogram.Centroids{
 		{Value: 30.0, Count: 20},
 		{Value: 5.1, Count: 10},
@@ -97,7 +97,7 @@ func TestHistoLineCentroidsFormat(t *testing.T) {
 		{Value: 30.0, Count: 20},
 	}
 
-	line, err := HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
+	line, err := histogramLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
 
 	assert.Nil(t, err)
@@ -117,34 +117,34 @@ func TestHistoLineCentroidsFormat(t *testing.T) {
 	}
 }
 
-func TestHistoLine(t *testing.T) {
+func TestHistogramLine(t *testing.T) {
 	centroids := makeCentroids()
 
-	line, err := HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
+	line, err := histogramLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
 	expected := "!M 1533529977 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
 	assert.Nil(t, err)
 	assert.Equal(t, expected, line)
 
-	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: false},
+	line, err = histogramLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: false},
 		1533529977, "", map[string]string{"env": "test"}, "default")
 	expected = "!M 1533529977 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assert.Nil(t, err)
 	assert.Equal(t, expected, line)
 
-	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.HOUR: true, histogram.MINUTE: false},
+	line, err = histogramLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.HOUR: true, histogram.MINUTE: false},
 		1533529977, "", map[string]string{"env": "test"}, "default")
 	expected = "!H 1533529977 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assert.Nil(t, err)
 	assert.Equal(t, expected, line)
 
-	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.DAY: true},
+	line, err = histogramLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.DAY: true},
 		1533529977, "", map[string]string{"env": "test"}, "default")
 	expected = "!D 1533529977 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assert.Nil(t, err)
 	assert.Equal(t, expected, line)
 
-	line, err = HistoLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: true, histogram.DAY: false},
+	line, err = histogramLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: true, histogram.DAY: false},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
 	expected = "!M 1533529977 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n" +
 		"!H 1533529977 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
@@ -162,13 +162,13 @@ func BenchmarkSpanLine(b *testing.B) {
 
 	var r string
 	for n := 0; n < b.N; n++ {
-		r, _ = SpanLine(name, start, dur, src, traceId, traceId, []string{traceId}, nil, nil, nil, "")
+		r, _ = spanLine(name, start, dur, src, traceId, traceId, []string{traceId}, nil, nil, nil, "")
 	}
 	line = r
 }
 
 func TestSpanLine(t *testing.T) {
-	line, err := SpanLine("order.shirts", 1533531013, 343500, "test_source",
+	line, err := spanLine("order.shirts", 1533531013, 343500, "test_source",
 		"7b3bf470-9456-11e8-9eb6-529269fb1459", "7b3bf470-9456-11e8-9eb6-529269fb1459",
 		[]string{"7b3bf470-9456-11e8-9eb6-529269fb1458"}, nil, nil, nil, "")
 	expected := "\"order.shirts\" source=\"test_source\" traceId=7b3bf470-9456-11e8-9eb6-529269fb1459" +
@@ -176,7 +176,7 @@ func TestSpanLine(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, expected, line)
 
-	line, err = SpanLine("order.shirts", 1533531013, 343500, "test_source",
+	line, err = spanLine("order.shirts", 1533531013, 343500, "test_source",
 		"7b3bf470-9456-11e8-9eb6-529269fb1459", "7b3bf470-9456-11e8-9eb6-529269fb1459", nil,
 		[]string{"7b3bf470-9456-11e8-9eb6-529269fb1458"}, []SpanTag{{Key: "env", Value: "test"}}, nil, "")
 	expected = "\"order.shirts\" source=\"test_source\" traceId=7b3bf470-9456-11e8-9eb6-529269fb1459" +
@@ -184,7 +184,7 @@ func TestSpanLine(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, expected, line)
 
-	line, err = SpanLine("order.shirts", 1533531013, 343500, "test_source",
+	line, err = spanLine("order.shirts", 1533531013, 343500, "test_source",
 		"7b3bf470-9456-11e8-9eb6-529269fb1459", "7b3bf470-9456-11e8-9eb6-529269fb1459", nil,
 		[]string{"7b3bf470-9456-11e8-9eb6-529269fb1458"},
 		[]SpanTag{{Key: "env", Value: "test"}, {Key: "env", Value: "dev"}}, nil, "")
@@ -197,24 +197,24 @@ func TestSpanLine(t *testing.T) {
 func TestSpanLineErrors(t *testing.T) {
 	uuid := "00000000-0000-0000-0000-000000000000"
 
-	_, err := SpanLine("", 0, 0, "", uuid, uuid, nil, nil, nil, nil, "")
+	_, err := spanLine("", 0, 0, "", uuid, uuid, nil, nil, nil, nil, "")
 	require.Error(t, err)
 	assert.Equal(t, "span name cannot be empty", err.Error())
 
-	_, err = SpanLine("a_name", 0, 0, "00-00", "x", uuid, nil, nil, nil, nil, "")
+	_, err = spanLine("a_name", 0, 0, "00-00", "x", uuid, nil, nil, nil, nil, "")
 	require.Error(t, err)
 	assert.Equal(t, "traceId is not in UUID format: span=a_name traceId=x", err.Error())
 
-	_, err = SpanLine("a_name", 0, 0, "00-00", uuid, "x", nil, nil, nil, nil, "")
+	_, err = spanLine("a_name", 0, 0, "00-00", uuid, "x", nil, nil, nil, nil, "")
 	require.Error(t, err)
 	assert.Equal(t, "spanId is not in UUID format: span=a_name spanId=x", err.Error())
 
-	_, err = SpanLine("a_name", 0, 0, "a_source", uuid, uuid, nil, nil,
+	_, err = spanLine("a_name", 0, 0, "a_source", uuid, uuid, nil, nil,
 		[]SpanTag{{Key: "", Value: ""}}, nil, "")
 	require.Error(t, err)
 	assert.Equal(t, "tag keys cannot be empty: span=a_name", err.Error())
 
-	_, err = SpanLine("a_name", 0, 0, "a_source", uuid, uuid, nil, nil,
+	_, err = spanLine("a_name", 0, 0, "a_source", uuid, uuid, nil, nil,
 		[]SpanTag{{Key: "a_tag", Value: ""}}, nil, "")
 	require.Error(t, err)
 	assert.Equal(t, "tag values cannot be empty: span=a_name tag=a_tag", err.Error())
