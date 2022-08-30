@@ -12,8 +12,11 @@ import (
 )
 
 const (
-	defaultTracesPort  = 30001
-	defaultMetricsPort = 2878
+	defaultTracesPort    = 30001
+	defaultMetricsPort   = 2878
+	defaultBatchSize     = 10000
+	defaultBufferSize    = 50000
+	defaultFlushInterval = 1
 )
 
 // Option Wavefront client configuration options
