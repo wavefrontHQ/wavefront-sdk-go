@@ -141,5 +141,7 @@ func TestSDKMetricsTags_Immutability(t *testing.T) {
 
 	cfg2, err := senders.CreateConfig("https://localhost", option1)
 	require.NoError(t, err)
-	assert.Len(t, cfg2.SDKMetricsTags, 1)
+	assert.Equal(t, "bar", cfg2.SDKMetricsTags["foo"])
+	_, ok := cfg2.SDKMetricsTags["baz"]
+	assert.False(t, ok)
 }
