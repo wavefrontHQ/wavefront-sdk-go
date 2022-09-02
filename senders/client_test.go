@@ -3,10 +3,10 @@ package senders_test
 import (
 	"bytes"
 	"compress/gzip"
-	"context"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -19,44 +19,60 @@ import (
 )
 
 const (
-	wfPort    = "8080"
-	proxyPort = "8081"
-	token     = "DUMMY_TOKEN"
+	token = "DUMMY_TOKEN"
 )
 
-var requests = map[string][]string{}
+var requests = []string{}
+var wfPort string
+var proxyPort string
 
 func TestMain(m *testing.M) {
-	wf := http.Server{Addr: "localhost:" + wfPort}
-	proxy := http.Server{Addr: "localhost:" + proxyPort}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		readBodyIntoString(r)
-		if strings.HasSuffix(r.Host, wfPort) {
-			if strings.HasSuffix(r.Header.Get("Authorization"), token) {
-				w.WriteHeader(http.StatusOK)
-				return
-			}
-		}
-
-		if strings.HasSuffix(r.Host, proxyPort) {
-			if len(r.Header.Get("Authorization")) == 0 {
-				w.WriteHeader(http.StatusOK)
-				return
-			}
-		}
-
-		w.WriteHeader(http.StatusForbidden)
-	})
-	go func() { wf.ListenAndServe() }()
-	go func() { proxy.ListenAndServe() }()
+	directServer := httptest.NewServer(directHandler())
+	proxyServer := httptest.NewServer(proxyHandler())
+	wfPort = extractPort(directServer.URL)
+	proxyPort = extractPort(proxyServer.URL)
 
 	exitVal := m.Run()
 
-	wf.Shutdown(context.Background())
-	proxy.Shutdown(context.Background())
+	directServer.Close()
+	proxyServer.Close()
 
 	os.Exit(exitVal)
+}
+
+func extractPort(url string) string {
+	idx := strings.LastIndex(url, ":")
+	if idx == -1 {
+		log.Fatal("No port found.")
+	}
+	return url[idx+1:]
+}
+
+func directHandler() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		readBodyIntoString(r)
+		if strings.HasSuffix(r.Header.Get("Authorization"), token) {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(http.StatusForbidden)
+	})
+	return mux
+}
+
+func proxyHandler() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		readBodyIntoString(r)
+		if len(r.Header.Get("Authorization")) == 0 {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(http.StatusForbidden)
+	})
+	return mux
 }
 
 func readBodyIntoString(r *http.Request) {
@@ -72,9 +88,9 @@ func readBodyIntoString(r *http.Request) {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		requests[wfPort] = append(requests[wfPort], string(data))
+		requests = append(requests, string(data))
 	} else {
-		requests[wfPort] = append(requests[wfPort], string(b))
+		requests = append(requests, string(b))
 	}
 }
 
@@ -136,7 +152,7 @@ func doTest(t *testing.T, wf senders.Sender) {
 	hgFlag := false
 	spansFlag := false
 
-	for _, request := range requests["8080"] {
+	for _, request := range requests {
 		if strings.Contains(request, "new-york.power.usage") {
 			metricsFlag = true
 		}
