@@ -11,6 +11,7 @@
 * [Close the Sender](#close-the-sender)
 * [License](#License)
 * [How to Get Support and Contribute](#how-to-get-support-and-contribute)
+* [How to Release the SDK](#how-to-release-the-sdk)
 
 # Welcome to the Wavefront Go SDK
 
@@ -307,27 +308,27 @@ sender.Close()
 * Reach out to us on our public [Slack channel](https://www.wavefront.com/join-public-slack).
 * If you run into any issues, let us know by creating a GitHub issue.
 
-## Releasing this SDK
+## How to Release the SDK
 
-1. Make sure that all changes for the release are merged with the master branch
-2. Make sure that no applications are running that bind port 8080. See [Issue #102](https://github.com/wavefrontHQ/wavefront-sdk-go/issues/102)
-3. From the root directory of the project in the master branch, check that the following command run cleanly
+1. Make sure that all changes for the release are merged with the master branch.
+2. Make sure that no applications bind port 8080. See [Issue #102](https://github.com/wavefrontHQ/wavefront-sdk-go/issues/102).
+3. From the root directory of the project in the master branch, check that the following command run cleanly.
    1. `go install ./...`
    2. `go test ./...`
    3. `go vet ./...`
-4. Run `go mod tidy` to make sure it doesn't introduce new changes. If it brings new changes, check those in first before doing the release
-5. Find out the version of the last release of the SDK clicking on "Releases" in the about section on the right.
+4. Run `go mod tidy` to make sure it doesn't introduce new changes. If it brings new changes, check those in first before doing the release.
+5. Click **Releases** in the about section to get the details on the version history.
 6. Decide what the version of the next release will be. We follow [semantic versioning](https://semver.org/).
 7. Execute `git tag -a -m 'v0.10.3' 'v0.10.3'` replacing v0.10.3 with the new version.
-8. Push the tag up to github `git push upstream v0.10.3`
-9. Log into github, click on "Releases" in the about section on the right, and click on "Draft a new release"
-10. For version, choose the version you decided upon in step 6.
-11. Provide a short but descriptive title for the release
-12. Fill in the details of the release. Please copy the mark down from the previous release and follow the same format
-13. Click on "Publish release"
-14. From your home directory run `mkdir -p go/src/cmd/scratch`
-15. Run `cd go/src/cmd/scratch`
-16. Run `go mod init`
-17. Run `go get github.com/wavefronthq/wavefront-sdk-go@v0.10.3` replacing v0.10.3 with the version you just published
-18. Step 17 lets pkg.go.dev know that there is a new version of the SDK to cache
-19. After 15 minutes or so check go to [pkg.go.dev](https://pkg.go.dev/github.com/wavefronthq/wavefront-sdk-go) to see if the version upgraded. Once the version upgrades on pkg.go.dev, other go users will get the new version you just published by default.
+8. Push the tag up to Github `git push upstream v0.10.3`.
+9. Log into Github, click on **Releases** in the about section on the right, and click on **Draft a new release.**
+10. For **version**, choose the version you decided upon in step 6.
+11. Provide a short but descriptive title for the release.
+12. Fill in the details of the release. Please copy the markdown from the previous release and follow the same format.
+13. Click on "Publish release."
+14. From your home directory run `mkdir -p go/src/cmd/scratch`.
+15. Run `cd go/src/cmd/scratch`.
+16. Run `go mod init`.
+17. Run `go get github.com/wavefronthq/wavefront-sdk-go@v0.10.3` replacing v0.10.3 with the version you just published.
+18. Step 17 lets `pkg.go.dev` know that there is a new version of the SDK to cache.
+19. After 15 minutes, go to [pkg.go.dev](https://pkg.go.dev/github.com/wavefronthq/wavefront-sdk-go) and see if the version upgraded. Once the version upgrades on `pkg.go.dev`, all the go users get the new version you just published.
