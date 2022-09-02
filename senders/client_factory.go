@@ -213,11 +213,12 @@ func TracesPort(port int) Option {
 	}
 }
 
-// SDKMetricsTags adds the tags provided in tags to all internal metrics
-// this library reports. Clients can use multiple SDKMetricsTags calls when
-// creating a sender. In that case, the sender attaches all the tags from
-// each of the SDKMetricsTags calls to all internal metrics. By default,
-// the sender does not attach any tags to internal metrics.
+// SDKMetricsTags adds the additional tags provided in tags to all internal
+// metrics this library reports. Clients can use multiple SDKMetricsTags
+// calls when creating a sender. In that case, the sender sends all the
+// tags from each of the SDKMetricsTags calls in addition to the standard
+// "pid" and "version" tags to all internal metrics. The "pid" tag is the
+// process ID; the "version" tag is the version of this SDK.
 func SDKMetricsTags(tags map[string]string) Option {
 	// prevent caller from accidentally mutating this option.
 	copiedTags := copyTags(tags)
