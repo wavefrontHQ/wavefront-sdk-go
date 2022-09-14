@@ -164,7 +164,7 @@ func (sender *proxySender) SendMetric(name string, value float64, ts int64, sour
 		}
 	}
 
-	line, err := MetricLine(name, value, ts, source, tags, sender.defaultSource)
+	line, err := metricLine(name, value, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		sender.pointsInvalid.Inc()
 		return err
@@ -206,7 +206,7 @@ func (sender *proxySender) SendDistribution(name string, centroids []histogram.C
 		}
 	}
 
-	line, err := HistoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
+	line, err := histogramLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		sender.histogramsInvalid.Inc()
 		return err
@@ -240,7 +240,7 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 		}
 	}
 
-	line, err := SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
+	line, err := spanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
 	if err != nil {
 		sender.spansInvalid.Inc()
 
@@ -255,7 +255,7 @@ func (sender *proxySender) SendSpan(name string, startMillis, durationMillis int
 	}
 
 	if len(spanLogs) > 0 {
-		logs, err := SpanLogJSON(traceId, spanId, spanLogs, line)
+		logs, err := spanLogJSON(traceId, spanId, spanLogs, line)
 		if err != nil {
 			sender.spanLogsInvalid.Inc()
 			return err
@@ -285,7 +285,7 @@ func (sender *proxySender) SendEvent(name string, startMillis, endMillis int64, 
 		}
 	}
 
-	line, err := EventLine(name, startMillis, endMillis, source, tags, setters...)
+	line, err := eventLine(name, startMillis, endMillis, source, tags, setters...)
 	if err != nil {
 		sender.eventsInvalid.Inc()
 		return err

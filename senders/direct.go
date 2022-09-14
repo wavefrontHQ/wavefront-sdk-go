@@ -132,7 +132,7 @@ func (sender *directSender) Start() {
 }
 
 func (sender *directSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
-	line, err := MetricLine(name, value, ts, source, tags, sender.defaultSource)
+	line, err := metricLine(name, value, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		sender.pointsInvalid.Inc()
 		return err
@@ -162,7 +162,7 @@ func (sender *directSender) SendDeltaCounter(name string, value float64, source 
 
 func (sender *directSender) SendDistribution(name string, centroids []histogram.Centroid,
 	hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
-	line, err := HistoLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
+	line, err := histogramLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		sender.histogramsInvalid.Inc()
 		return err
@@ -178,7 +178,7 @@ func (sender *directSender) SendDistribution(name string, centroids []histogram.
 
 func (sender *directSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
 	parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
-	line, err := SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
+	line, err := spanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
 	if err != nil {
 		sender.spansInvalid.Inc()
 		return err
@@ -192,7 +192,7 @@ func (sender *directSender) SendSpan(name string, startMillis, durationMillis in
 	}
 
 	if len(spanLogs) > 0 {
-		logs, err := SpanLogJSON(traceId, spanId, spanLogs, line)
+		logs, err := spanLogJSON(traceId, spanId, spanLogs, line)
 		if err != nil {
 			sender.spanLogsInvalid.Inc()
 			return err
@@ -209,7 +209,7 @@ func (sender *directSender) SendSpan(name string, startMillis, durationMillis in
 }
 
 func (sender *directSender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
-	line, err := EventLineJSON(name, startMillis, endMillis, source, tags, setters...)
+	line, err := eventLineJSON(name, startMillis, endMillis, source, tags, setters...)
 	if err != nil {
 		sender.eventsInvalid.Inc()
 		return err
