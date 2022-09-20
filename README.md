@@ -133,10 +133,10 @@ Although this library is mostly used by the other Wavefront Go SDKs to send data
 You can send metrics, histograms, or trace data from your application to the Wavefront service using a Wavefront proxy or direct ingestions.
 
 * Option 1: Use a [**Wavefront proxy**](https://docs.wavefront.com/proxies.html), which then forwards the data to the Wavefront service. This is the recommended choice for a large-scale deployment that needs resilience to internet outages, control over data queuing and filtering, and more.
-[Create a ProxyConfiguration](#option-1-sending-data-via-the-wavefront-proxy) to send data to a Wavefront proxy.
+[Provide a connection string for a Wavefront Proxy instance](#option-1-sending-data-via-the-wavefront-proxy) to send data to a Wavefront proxy.
   
 * Option 2: Use [**direct ingestion**](https://docs.wavefront.com/direct_ingestion.html) to send the data directly to the Wavefront service. This is the simplest way to get up and running quickly.
-[Create a DirectConfiguration](#option-2-sending-data-via-direct-ingestion) to send data directly to a Wavefront service.
+[Provide a connection string to your Wavefront tenant](#option-2-sending-data-via-direct-ingestion) to send data directly to a Wavefront service.
   
 ### Option 1: Sending Data via the Wavefront Proxy
 
