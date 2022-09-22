@@ -20,6 +20,26 @@ For detailed documentation of SDK types and functions, see [pkg.go.dev](https://
 
 # Internal SDK Metrics
 
+The SDK optionally adds its own metrics. The internal metrics are prefixed with `~sdk.go.core.sender.direct` or  `~sdk.go.core.sender.proxy`, depending on whether metrics are being sent directly or via a Wavefront Proxy.
+
+| metric name          |
+|----------------------|
+| `points.valid`       |
+| `points.invalid`     |  
+| `points.dropped`     |  
+| `histograms.valid`   | 
+| `histograms.invalid` |
+| `histograms.dropped` |
+| `spans.valid`        |
+| `spans.invalid`      |
+| `spans.dropped`      |
+| `span_logs.valid`    |
+| `span_logs.invalid`  |
+| `span_logs.dropped`  |
+| `events.valid`       |
+| `events.invalid`     |
+| `events.dropped`     |
+
 ## License
 [Apache 2.0 License](LICENSE).
 
