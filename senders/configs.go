@@ -5,6 +5,7 @@ const (
 	defaultBufferSize         = 50000
 	defaultFlushInterval      = 1
 	defaultProxyFlushInterval = 5
+	defaultTimeoutSeconds     = 10
 )
 
 // Configuration for the direct ingestion sender

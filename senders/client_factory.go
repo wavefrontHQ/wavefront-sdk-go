@@ -1,6 +1,7 @@
 package senders
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/url"
 	"os"
@@ -44,6 +45,10 @@ type configuration struct {
 	// together with batch size controls the max theoretical throughput of the sender.
 	FlushIntervalSeconds int
 	SDKMetricsTags       map[string]string
+
+	Timeout int
+
+	TLSConfigOptions *tls.Config
 }
 
 func (c *configuration) Direct() bool {
@@ -81,6 +86,7 @@ func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
 		MaxBufferSize:        defaultBufferSize,
 		FlushIntervalSeconds: defaultFlushInterval,
 		SDKMetricsTags:       map[string]string{},
+		Timeout:              defaultTimeoutSeconds,
 	}
 
 	u, err := url.Parse(wfURL)
@@ -124,8 +130,8 @@ func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
 
 // newWavefrontClient creates a Wavefront sender
 func newWavefrontClient(cfg *configuration) (Sender, error) {
-	metricsReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.MetricsPort), cfg.Token)
-	tracesReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.TracesPort), cfg.Token)
+	metricsReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.MetricsPort), cfg.Token, cfg.Timeout, cfg.TLSConfigOptions)
+	tracesReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.TracesPort), cfg.Token, cfg.Timeout, cfg.TLSConfigOptions)
 
 	sender := &wavefrontSender{
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
@@ -210,6 +216,19 @@ func MetricsPort(port int) Option {
 func TracesPort(port int) Option {
 	return func(cfg *configuration) {
 		cfg.TracesPort = port
+	}
+}
+
+// Timeout sets the HTTP timeout (in seconds). Defaults to 10 seconds.
+func Timeout(n int) Option {
+	return func(cfg *configuration) {
+		cfg.Timeout = n
+	}
+}
+
+func TLSConfigOptions(tlsCfg *tls.Config) Option {
+	return func(cfg *configuration) {
+		cfg.TLSConfigOptions = tlsCfg
 	}
 }
 
