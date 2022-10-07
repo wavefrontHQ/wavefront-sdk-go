@@ -32,22 +32,38 @@ func (reporter reporter) Report(format string, pointLines string) (*http.Respons
 		return nil, formatError
 	}
 
-	// compress
+	buf, err := linesToBuffer(pointLines)
+	if err != nil {
+		return &http.Response{}, err
+	}
+
+	req, err := reporter.buildRequest(format, buf)
+	if err != nil {
+		return &http.Response{}, err
+	}
+
+	return reporter.execute(req)
+}
+
+func linesToBuffer(pointLines string) (bytes.Buffer, error) {
 	var buf bytes.Buffer
 	zw := gzip.NewWriter(&buf)
 	_, err := zw.Write([]byte(pointLines))
 	if err != nil {
 		zw.Close()
-		return nil, err
+		return bytes.Buffer{}, err
 	}
 	if err = zw.Close(); err != nil {
-		return nil, err
+		return bytes.Buffer{}, err
 	}
+	return buf, err
+}
 
+func (reporter reporter) buildRequest(format string, buf bytes.Buffer) (*http.Request, error) {
 	apiURL := reporter.serverURL + reportEndpoint
 	req, err := http.NewRequest("POST", apiURL, &buf)
 	if err != nil {
-		return &http.Response{}, err
+		return nil, err
 	}
 
 	req.Header.Set(contentType, octetStream)
@@ -59,8 +75,7 @@ func (reporter reporter) Report(format string, pointLines string) (*http.Respons
 	q := req.URL.Query()
 	q.Add(formatKey, format)
 	req.URL.RawQuery = q.Encode()
-
-	return reporter.execute(req)
+	return req, nil
 }
 
 func (reporter reporter) ReportEvent(event string) (*http.Response, error) {
