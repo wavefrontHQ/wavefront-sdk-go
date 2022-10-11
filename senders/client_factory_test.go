@@ -77,8 +77,8 @@ func TestUrlWithPortAndPath(t *testing.T) {
 func TestMetricsURLWithPortAndPath(t *testing.T) {
 	cfg, err := senders.CreateConfig("http://localhost:8071/wavefront")
 	require.NoError(t, err)
-	assert.Equal(t, "http://localhost:8071/wavefront", senders.MetricsURL(cfg))
-	assert.Equal(t, "http://localhost:8071/wavefront", senders.TracesURL(cfg))
+	assert.Equal(t, "http://localhost:8071/wavefront", cfg.MetricsURL())
+	assert.Equal(t, "http://localhost:8071/wavefront", cfg.TracesURL())
 }
 
 func TestToken(t *testing.T) {

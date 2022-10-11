@@ -130,8 +130,8 @@ func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
 
 // newWavefrontClient creates a Wavefront sender
 func newWavefrontClient(cfg *configuration) (Sender, error) {
-	metricsReporter := internal.NewReporter(MetricsURL(cfg), cfg.Token)
-	tracesReporter := internal.NewReporter(TracesURL(cfg), cfg.Token)
+	metricsReporter := internal.NewReporter(cfg.MetricsURL(), cfg.Token)
+	tracesReporter := internal.NewReporter(cfg.TracesURL(), cfg.Token)
 
 	sender := &wavefrontSender{
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
@@ -148,11 +148,11 @@ func newWavefrontClient(cfg *configuration) (Sender, error) {
 	return sender, nil
 }
 
-func TracesURL(cfg *configuration) string {
+func (cfg *configuration) TracesURL() string {
 	return fmt.Sprintf("%s:%d%s", cfg.Server, cfg.TracesPort, cfg.Path)
 }
 
-func MetricsURL(cfg *configuration) string {
+func (cfg *configuration) MetricsURL() string {
 	return fmt.Sprintf("%s:%d%s", cfg.Server, cfg.MetricsPort, cfg.Path)
 }
 

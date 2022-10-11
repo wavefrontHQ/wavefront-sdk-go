@@ -32,12 +32,12 @@ func (reporter reporter) Report(format string, pointLines string) (*http.Respons
 		return nil, formatError
 	}
 
-	buf, err := linesToBuffer(pointLines)
+	requestBody, err := linesToGzippedBytes(pointLines)
 	if err != nil {
 		return &http.Response{}, err
 	}
 
-	req, err := reporter.buildRequest(format, buf)
+	req, err := reporter.buildRequest(format, requestBody)
 	if err != nil {
 		return &http.Response{}, err
 	}
@@ -45,23 +45,23 @@ func (reporter reporter) Report(format string, pointLines string) (*http.Respons
 	return reporter.execute(req)
 }
 
-func linesToBuffer(pointLines string) (bytes.Buffer, error) {
+func linesToGzippedBytes(pointLines string) ([]byte, error) {
 	var buf bytes.Buffer
 	zw := gzip.NewWriter(&buf)
 	_, err := zw.Write([]byte(pointLines))
 	if err != nil {
 		zw.Close()
-		return bytes.Buffer{}, err
+		return nil, err
 	}
 	if err = zw.Close(); err != nil {
-		return bytes.Buffer{}, err
+		return nil, err
 	}
-	return buf, err
+	return buf.Bytes(), err
 }
 
-func (reporter reporter) buildRequest(format string, buf bytes.Buffer) (*http.Request, error) {
+func (reporter reporter) buildRequest(format string, body []byte) (*http.Request, error) {
 	apiURL := reporter.serverURL + reportEndpoint
-	req, err := http.NewRequest("POST", apiURL, &buf)
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
