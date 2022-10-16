@@ -95,12 +95,14 @@ func readBodyIntoString(r *http.Request) {
 }
 
 func TestSendDirect(t *testing.T) {
+	requests = nil
 	wf, err := senders.NewSender("http://" + token + "@localhost:" + wfPort)
 	require.NoError(t, err)
 	doTest(t, wf)
 }
 
 func TestSendDirectWithTags(t *testing.T) {
+	requests = nil
 	tags := map[string]string{"foo": "bar"}
 	wf, err := senders.NewSender("http://"+token+"@localhost:"+wfPort, senders.SDKMetricsTags(tags))
 	require.NoError(t, err)
@@ -108,7 +110,15 @@ func TestSendDirectWithTags(t *testing.T) {
 }
 
 func TestSendProxy(t *testing.T) {
+	requests = nil
 	wf, err := senders.NewSender("http://localhost:" + proxyPort)
+	require.NoError(t, err)
+	doTest(t, wf)
+}
+
+func TestSendProxyWithPath(t *testing.T) {
+	requests = nil
+	wf, err := senders.NewSender("http://localhost:" + proxyPort + "/metrics")
 	require.NoError(t, err)
 	doTest(t, wf)
 }
