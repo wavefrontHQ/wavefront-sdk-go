@@ -16,7 +16,7 @@ type HeartbeatService interface {
 }
 
 type heartbeater struct {
-	sender      senders.Sender
+	sender      *senders.Sender
 	application Tags
 	source      string
 	components  []string
@@ -28,7 +28,7 @@ type heartbeater struct {
 }
 
 // StartHeartbeatService will create and start a new HeartbeatService
-func StartHeartbeatService(sender senders.Sender, application Tags, source string, components ...string) HeartbeatService {
+func StartHeartbeatService(sender *senders.Sender, application Tags, source string, components ...string) HeartbeatService {
 	hb := &heartbeater{
 		sender:      sender,
 		application: application,

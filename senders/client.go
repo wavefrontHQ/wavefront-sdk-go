@@ -9,8 +9,86 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
+// Sender is for sending metrics, distributions, and spans to Wavefront.
+// The zero value sends these nowhere and always returns success.
+type Sender struct {
+	spec senderSpec
+}
+
+// SendMetric implements the MetricSender interface.
+func (s *Sender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
+	if s.spec == nil {
+		return nil
+	}
+	return s.spec.SendMetric(name, value, ts, source, tags)
+}
+
+// SendDeltaCounter implements the MetricSender interface.
+func (s *Sender) SendDeltaCounter(name string, value float64, source string, tags map[string]string) error {
+	if s.spec == nil {
+		return nil
+	}
+	return s.spec.SendDeltaCounter(name, value, source, tags)
+}
+
+// SendDistribution implements the DistributionSender interface.
+func (s *Sender) SendDistribution(name string, centroids []histogram.Centroid,
+	hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
+	if s.spec == nil {
+		return nil
+	}
+	return s.spec.SendDistribution(name, centroids, hgs, ts, source, tags)
+}
+
+// SendSpan implements the SpanSender interface.
+func (s *Sender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
+	parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
+	if s.spec == nil {
+		return nil
+	}
+	return s.spec.SendSpan(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs)
+}
+
+// SendEvent implements the EventSender interface.
+func (s *Sender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
+	if s.spec == nil {
+		return nil
+	}
+	return s.spec.SendEvent(name, startMillis, endMillis, source, tags, setters...)
+}
+
+// Close closes the Sender.
+func (s *Sender) Close() {
+	if s.spec != nil {
+		s.spec.Close()
+	}
+}
+
+// Start starts autoflushing in this Sender
+func (s *Sender) Start() {
+	if s.spec != nil {
+		s.spec.Start()
+	}
+}
+
+// Flush manually flushes this Sender.
+func (s *Sender) Flush() error {
+	if s.spec == nil {
+		return nil
+	}
+	return s.spec.Flush()
+}
+
+// GetFailureCount returns the number of cumulative failures for this Sender
+func (s *Sender) GetFailureCount() int64 {
+	if s.spec == nil {
+		return 0
+	}
+	return s.spec.GetFailureCount()
+}
+
 // Sender Interface for sending metrics, distributions and spans to Wavefront
-type Sender interface {
+type senderSpec interface {
 	MetricSender
 	DistributionSender
 	SpanSender
@@ -88,7 +166,6 @@ func (sender *wavefrontSender) SendMetric(name string, value float64, ts int64, 
 	}
 	return err
 }
-
 func (sender *wavefrontSender) SendDeltaCounter(name string, value float64, source string, tags map[string]string) error {
 	if name == "" {
 		sender.pointsInvalid.Inc()
@@ -102,7 +179,6 @@ func (sender *wavefrontSender) SendDeltaCounter(name string, value float64, sour
 	}
 	return nil
 }
-
 func (sender *wavefrontSender) SendDistribution(name string, centroids []histogram.Centroid,
 	hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
 	line, err := histogramLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
@@ -118,7 +194,6 @@ func (sender *wavefrontSender) SendDistribution(name string, centroids []histogr
 	}
 	return err
 }
-
 func (sender *wavefrontSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
 	parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
 	line, err := spanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)

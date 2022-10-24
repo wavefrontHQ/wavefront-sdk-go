@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	var wfSenders []senders.Sender
+	var wfSenders []*senders.Sender
 
 	urls := strings.Split(os.Getenv("WF_URL"), "|")
 	for _, url := range urls {
@@ -55,7 +55,7 @@ func main() {
 	wf.Close()
 }
 
-func sendEvent(sender senders.Sender, name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) {
+func sendEvent(sender *senders.Sender, name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) {
 	err := sender.SendEvent(name, startMillis, endMillis, source, tags, setters...)
 	if err != nil {
 		println("error:", err)
