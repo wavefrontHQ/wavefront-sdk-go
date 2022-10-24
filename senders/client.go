@@ -17,6 +17,7 @@ type Sender interface {
 	EventSender
 	internal.Flusher
 	Close()
+	private()
 }
 
 type wavefrontSender struct {
@@ -72,6 +73,9 @@ func (sender *wavefrontSender) Start() {
 	sender.spanLogHandler.Start()
 	sender.internalRegistry.Start()
 	sender.eventHandler.Start()
+}
+
+func (sender *wavefrontSender) private() {
 }
 
 func (sender *wavefrontSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
