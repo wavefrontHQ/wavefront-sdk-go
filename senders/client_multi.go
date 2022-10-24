@@ -8,13 +8,8 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 )
 
-// MultiSender Interface for sending metrics, distributions and spans to multiple Wavefront services at the same time
-type MultiSender interface {
-	Sender
-}
-
 type multiSender struct {
-	senders []Sender
+	senders []senderSpec
 }
 
 type multiError struct {
@@ -48,10 +43,12 @@ func (m *multiError) get() error {
 }
 
 // NewMultiSender creates a new Wavefront MultiClient
-func NewMultiSender(senders ...Sender) MultiSender {
-	ms := &multiSender{}
-	ms.senders = append(ms.senders, senders...)
-	return ms
+func NewMultiSender(senders ...Sender) Sender {
+	specs := make([]senderSpec, 0, len(senders))
+	for _, s := range senders {
+		specs = append(specs, s.spec)
+	}
+	return Sender{spec: &multiSender{senders: specs}}
 }
 
 func (ms *multiSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {

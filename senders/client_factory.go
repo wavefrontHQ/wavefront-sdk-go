@@ -71,7 +71,7 @@ func (c *configuration) setDefaultPort(port int) {
 func NewSender(wfURL string, setters ...Option) (Sender, error) {
 	cfg, err := CreateConfig(wfURL, setters...)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create sender config: %s", err)
+		return Sender{}, fmt.Errorf("unable to create sender config: %s", err)
 	}
 	return newWavefrontClient(cfg)
 }
@@ -136,19 +136,19 @@ func newWavefrontClient(cfg *configuration) (Sender, error) {
 	metricsReporter := internal.NewReporter(cfg.MetricsURL(), cfg.Token)
 	tracesReporter := internal.NewReporter(cfg.TracesURL(), cfg.Token)
 
-	sender := &wavefrontSender{
+	spec := &wavefrontSender{
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
 		proxy:         !cfg.Direct(),
 	}
-	sender.initializeInternalMetrics(cfg)
-	sender.pointHandler = newLineHandler(metricsReporter, cfg, internal.MetricFormat, "points", sender.internalRegistry)
-	sender.histoHandler = newLineHandler(metricsReporter, cfg, internal.HistogramFormat, "histograms", sender.internalRegistry)
-	sender.spanHandler = newLineHandler(tracesReporter, cfg, internal.TraceFormat, "spans", sender.internalRegistry)
-	sender.spanLogHandler = newLineHandler(tracesReporter, cfg, internal.SpanLogsFormat, "span_logs", sender.internalRegistry)
-	sender.eventHandler = newLineHandler(metricsReporter, cfg, internal.EventFormat, "events", sender.internalRegistry)
+	spec.initializeInternalMetrics(cfg)
+	spec.pointHandler = newLineHandler(metricsReporter, cfg, internal.MetricFormat, "points", spec.internalRegistry)
+	spec.histoHandler = newLineHandler(metricsReporter, cfg, internal.HistogramFormat, "histograms", spec.internalRegistry)
+	spec.spanHandler = newLineHandler(tracesReporter, cfg, internal.TraceFormat, "spans", spec.internalRegistry)
+	spec.spanLogHandler = newLineHandler(tracesReporter, cfg, internal.SpanLogsFormat, "span_logs", spec.internalRegistry)
+	spec.eventHandler = newLineHandler(metricsReporter, cfg, internal.EventFormat, "events", spec.internalRegistry)
 
-	sender.Start()
-	return sender, nil
+	spec.Start()
+	return Sender{spec: spec}, nil
 }
 
 func (cfg *configuration) TracesURL() string {
