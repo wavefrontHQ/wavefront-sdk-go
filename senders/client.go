@@ -10,12 +10,13 @@ import (
 )
 
 // Sender is for sending metrics, distributions, and spans to Wavefront.
-// The zero value sends these nowhere and always returns success.
+// Method calls on the zero value are no-ops and always returns success.
 type Sender struct {
 	spec senderSpec
 }
 
-// SendMetric implements the MetricSender interface.
+// SendMetric sends a single metric to Wavefront with optional timestamp and
+// tags.
 func (s *Sender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
 	if s.spec == nil {
 		return nil
@@ -23,7 +24,8 @@ func (s *Sender) SendMetric(name string, value float64, ts int64, source string,
 	return s.spec.SendMetric(name, value, ts, source, tags)
 }
 
-// SendDeltaCounter implements the MetricSender interface.
+// SendDeltaCounter sends a delta counter (counter aggregated at the Wavefront
+// service) to Wavefront.
 func (s *Sender) SendDeltaCounter(name string, value float64, source string, tags map[string]string) error {
 	if s.spec == nil {
 		return nil
@@ -31,7 +33,11 @@ func (s *Sender) SendDeltaCounter(name string, value float64, source string, tag
 	return s.spec.SendDeltaCounter(name, value, source, tags)
 }
 
-// SendDistribution implements the DistributionSender interface.
+// SendDistribution sends a distribution of metrics to Wavefront with optional
+// timestamp and tags. Each centroid is a 2-dimensional entity with the first
+// dimension the mean value and the second dimension the count of points in
+// the centroid. The granularity informs the set of intervals (minute, hour,
+// and/or day) by which the histogram data should be aggregated.
 func (s *Sender) SendDistribution(name string, centroids []histogram.Centroid,
 	hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
 	if s.spec == nil {
@@ -40,7 +46,10 @@ func (s *Sender) SendDistribution(name string, centroids []histogram.Centroid,
 	return s.spec.SendDistribution(name, centroids, hgs, ts, source, tags)
 }
 
-// SendSpan implements the SpanSender interface.
+// SendSpan sends a tracing span to Wavefront.  traceId, spanId, parentIds and
+// preceding spanIds are expected to be UUID strings. parents and preceding
+// spans can be empty for a root span. Span tag keys can be repeated (example:
+// "user"="foo" and "user"="bar") span logs are currently omitted.
 func (s *Sender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
 	parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
 	if s.spec == nil {
@@ -49,7 +58,7 @@ func (s *Sender) SendSpan(name string, startMillis, durationMillis int64, source
 	return s.spec.SendSpan(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs)
 }
 
-// SendEvent implements the EventSender interface.
+// SendEvent sends an event to Wavefront with optional tags.
 func (s *Sender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
 	if s.spec == nil {
 		return nil
@@ -89,12 +98,13 @@ func (s *Sender) GetFailureCount() int64 {
 
 // Sender Interface for sending metrics, distributions and spans to Wavefront
 type senderSpec interface {
-	MetricSender
-	DistributionSender
-	SpanSender
-	EventSender
 	internal.Flusher
 	Close()
+	SendEvent(name string, millis int64, millis2 int64, source string, tags map[string]string, setters ...event.Option) error
+	SendSpan(name string, millis int64, millis2 int64, source string, id string, id2 string, parents []string, from []string, tags []SpanTag, logs []SpanLog) error
+	SendDistribution(name string, centroids []histogram.Centroid, hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error
+	SendDeltaCounter(name string, value float64, source string, tags map[string]string) error
+	SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error
 }
 
 type wavefrontSender struct {
