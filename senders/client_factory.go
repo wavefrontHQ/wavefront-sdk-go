@@ -148,7 +148,7 @@ func newWavefrontClient(cfg *configuration) (*Sender, error) {
 	spec.eventHandler = newLineHandler(metricsReporter, cfg, internal.EventFormat, "events", spec.internalRegistry)
 
 	spec.Start()
-	return &Sender{spec: spec}, nil
+	return &Sender{sender: spec}, nil
 }
 
 func (cfg *configuration) TracesURL() string {

@@ -12,25 +12,25 @@ import (
 // Sender is for sending metrics, distributions, and spans to Wavefront.
 // Method calls on the zero value are no-ops and always returns success.
 type Sender struct {
-	spec senderSpec
+	sender sender
 }
 
 // SendMetric sends a single metric to Wavefront with optional timestamp and
 // tags.
 func (s *Sender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
-	if s.spec == nil {
+	if s.sender == nil {
 		return nil
 	}
-	return s.spec.SendMetric(name, value, ts, source, tags)
+	return s.sender.SendMetric(name, value, ts, source, tags)
 }
 
 // SendDeltaCounter sends a delta counter (counter aggregated at the Wavefront
 // service) to Wavefront.
 func (s *Sender) SendDeltaCounter(name string, value float64, source string, tags map[string]string) error {
-	if s.spec == nil {
+	if s.sender == nil {
 		return nil
 	}
-	return s.spec.SendDeltaCounter(name, value, source, tags)
+	return s.sender.SendDeltaCounter(name, value, source, tags)
 }
 
 // SendDistribution sends a distribution of metrics to Wavefront with optional
@@ -40,10 +40,10 @@ func (s *Sender) SendDeltaCounter(name string, value float64, source string, tag
 // and/or day) by which the histogram data should be aggregated.
 func (s *Sender) SendDistribution(name string, centroids []histogram.Centroid,
 	hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
-	if s.spec == nil {
+	if s.sender == nil {
 		return nil
 	}
-	return s.spec.SendDistribution(name, centroids, hgs, ts, source, tags)
+	return s.sender.SendDistribution(name, centroids, hgs, ts, source, tags)
 }
 
 // SendSpan sends a tracing span to Wavefront.  traceId, spanId, parentIds and
@@ -52,52 +52,52 @@ func (s *Sender) SendDistribution(name string, centroids []histogram.Centroid,
 // "user"="foo" and "user"="bar") span logs are currently omitted.
 func (s *Sender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
 	parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
-	if s.spec == nil {
+	if s.sender == nil {
 		return nil
 	}
-	return s.spec.SendSpan(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs)
+	return s.sender.SendSpan(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs)
 }
 
 // SendEvent sends an event to Wavefront with optional tags.
 func (s *Sender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
-	if s.spec == nil {
+	if s.sender == nil {
 		return nil
 	}
-	return s.spec.SendEvent(name, startMillis, endMillis, source, tags, setters...)
+	return s.sender.SendEvent(name, startMillis, endMillis, source, tags, setters...)
 }
 
 // Close closes the Sender.
 func (s *Sender) Close() {
-	if s.spec != nil {
-		s.spec.Close()
+	if s.sender != nil {
+		s.sender.Close()
 	}
 }
 
 // Start starts autoflushing in this Sender
 func (s *Sender) Start() {
-	if s.spec != nil {
-		s.spec.Start()
+	if s.sender != nil {
+		s.sender.Start()
 	}
 }
 
 // Flush manually flushes this Sender.
 func (s *Sender) Flush() error {
-	if s.spec == nil {
+	if s.sender == nil {
 		return nil
 	}
-	return s.spec.Flush()
+	return s.sender.Flush()
 }
 
 // GetFailureCount returns the number of cumulative failures for this Sender
 func (s *Sender) GetFailureCount() int64 {
-	if s.spec == nil {
+	if s.sender == nil {
 		return 0
 	}
-	return s.spec.GetFailureCount()
+	return s.sender.GetFailureCount()
 }
 
 // Sender Interface for sending metrics, distributions and spans to Wavefront
-type senderSpec interface {
+type sender interface {
 	internal.Flusher
 	Close()
 	SendEvent(name string, millis int64, millis2 int64, source string, tags map[string]string, setters ...event.Option) error

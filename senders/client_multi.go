@@ -9,7 +9,7 @@ import (
 )
 
 type multiSender struct {
-	senders []senderSpec
+	senders []sender
 }
 
 type multiError struct {
@@ -44,11 +44,11 @@ func (m *multiError) get() error {
 
 // NewMultiSender creates a new Wavefront MultiClient
 func NewMultiSender(senders ...*Sender) *Sender {
-	specs := make([]senderSpec, 0, len(senders))
+	specs := make([]sender, 0, len(senders))
 	for _, s := range senders {
-		specs = append(specs, s.spec)
+		specs = append(specs, s.sender)
 	}
-	return &Sender{spec: &multiSender{senders: specs}}
+	return &Sender{sender: &multiSender{senders: specs}}
 }
 
 func (ms *multiSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
