@@ -13,8 +13,11 @@ import (
 )
 
 const (
-	defaultTracesPort  = 30001
-	defaultMetricsPort = 2878
+	defaultTracesPort    = 30001
+	defaultMetricsPort   = 2878
+	defaultBatchSize     = 10000
+	defaultBufferSize    = 50000
+	defaultFlushInterval = 1
 )
 
 // Option Wavefront client configuration options
@@ -45,6 +48,7 @@ type configuration struct {
 	// together with batch size controls the max theoretical throughput of the sender.
 	FlushIntervalSeconds int
 	SDKMetricsTags       map[string]string
+	Path                 string
 
 	Timeout int
 
@@ -112,6 +116,11 @@ func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
 		return nil, fmt.Errorf("invalid scheme '%s' in '%s', only 'http' is supported", u.Scheme, u)
 	}
 
+	if u.Path != "" {
+		cfg.Path = u.Path
+		u.Path = ""
+	}
+
 	if u.Port() != "" {
 		port, err := strconv.Atoi(u.Port())
 		if err != nil {
@@ -146,6 +155,14 @@ func newWavefrontClient(cfg *configuration) (Sender, error) {
 
 	sender.Start()
 	return sender, nil
+}
+
+func (cfg *configuration) TracesURL() string {
+	return fmt.Sprintf("%s:%d%s", cfg.Server, cfg.TracesPort, cfg.Path)
+}
+
+func (cfg *configuration) MetricsURL() string {
+	return fmt.Sprintf("%s:%d%s", cfg.Server, cfg.MetricsPort, cfg.Path)
 }
 
 func (sender *wavefrontSender) initializeInternalMetrics(cfg *configuration) {

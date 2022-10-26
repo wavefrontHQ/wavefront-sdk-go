@@ -67,6 +67,22 @@ func TestPortExtractedFromURL(t *testing.T) {
 	assert.Equal(t, 1234, cfg.TracesPort)
 }
 
+func TestUrlWithPortAndPath(t *testing.T) {
+	cfg, err := senders.CreateConfig("http://localhost:8071/wavefront")
+	require.NoError(t, err)
+	assert.Equal(t, 8071, cfg.MetricsPort)
+	assert.Equal(t, 8071, cfg.TracesPort)
+	assert.Equal(t, "http://localhost", cfg.Server)
+	assert.Equal(t, "/wavefront", cfg.Path)
+}
+
+func TestMetricsURLWithPortAndPath(t *testing.T) {
+	cfg, err := senders.CreateConfig("http://localhost:8071/wavefront")
+	require.NoError(t, err)
+	assert.Equal(t, "http://localhost:8071/wavefront", cfg.MetricsURL())
+	assert.Equal(t, "http://localhost:8071/wavefront", cfg.TracesURL())
+}
+
 func TestToken(t *testing.T) {
 	cfg, err := senders.CreateConfig("https://my-api-token@localhost")
 	require.NoError(t, err)
