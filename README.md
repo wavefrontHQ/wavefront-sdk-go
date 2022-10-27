@@ -5,6 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/wavefronthq/wavefront-sdk-go)](https://goreportcard.com/report/github.com/wavefronthq/wavefront-sdk-go)
 
 ## Table of Contents
+* [Internal SDK Metrics](#internal-sdk-metrics)
 * [License](#License)
 * [How to Get Support and Contribute](#how-to-get-support-and-contribute)
 
@@ -16,7 +17,7 @@ The data is then stored as metrics, histograms, and trace data. This SDK is also
 Although this library is mostly used by the other Wavefront Go SDKs to send data to Wavefront, 
 you can also use this SDK directly. For example, you can send data directly from a data store or CSV file to Wavefront.
 
-For detailed documentation of SDK types and functions, see [pkg.go.dev](https://pkg.go.dev/github.com/wavefronthq/wavefront-sdk-go/senders)
+To learn more about how to send data, the SDK types, and functions, see [pkg.go.dev documentation](https://pkg.go.dev/github.com/wavefronthq/wavefront-sdk-go)
 
 # Internal SDK Metrics
 
@@ -47,3 +48,5 @@ The SDK optionally adds its own metrics. The internal metrics are prefixed with 
 
 * Reach out to us on our public [Slack channel](https://www.wavefront.com/join-public-slack).
 * If you run into any issues, let us know by creating a GitHub issue.
+
+To create a new release, follow the instructions in [RELEASING.md](RELEASING.md)

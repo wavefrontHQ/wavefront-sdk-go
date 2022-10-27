@@ -1,7 +1,7 @@
 ## How to Release the SDK
 
 1. Make sure that all changes for the release are merged with the master branch.
-2. From the root directory of the project in the master branch, check that the following command run cleanly.
+2. From the root directory of the project in the master branch, run the following commands.
     1. `go install ./...`
     2. `go test ./...`
     3. `go vet ./...`
@@ -14,7 +14,7 @@
 9. For **version**, choose the version you decided upon in step 5.
 10. Provide a short but descriptive title for the release.
 11. Fill in the details of the release. Please copy the markdown from the previous release and follow the same format.
-12. Click on "Publish release."
+12. Click "Publish release."
 13. From your home directory run `mkdir -p go/src/cmd/scratch`.
 14. Run `cd go/src/cmd/scratch`.
 15. Run `go mod init`.
