@@ -1,6 +1,7 @@
 package senders_test
 
 import (
+	"github.com/wavefronthq/wavefront-sdk-go/internal/spans"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -41,7 +42,7 @@ func TestNoOpSender(t *testing.T) {
 	if err := wf.SendSpan("getAllUsers", 0, 343500, "localhost",
 		"7b3bf470-9456-11e8-9eb6-529269fb1459", "0313bafe-9457-11e8-9eb6-529269fb1459",
 		[]string{"2f64e538-9457-11e8-9eb6-529269fb1459"}, nil,
-		[]senders.SpanTag{
+		[]spans.SpanTag{
 			{Key: "application", Value: "Wavefront"},
 			{Key: "http.method", Value: "GET"},
 		},

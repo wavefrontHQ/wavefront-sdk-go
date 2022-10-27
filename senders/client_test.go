@@ -3,6 +3,7 @@ package senders_test
 import (
 	"bytes"
 	"compress/gzip"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/spans"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -136,7 +137,7 @@ func doTest(t *testing.T, wf senders.Sender) {
 	if err := wf.SendSpan("getAllUsers", 0, 343500, "localhost",
 		"7b3bf470-9456-11e8-9eb6-529269fb1459", "0313bafe-9457-11e8-9eb6-529269fb1459",
 		[]string{"2f64e538-9457-11e8-9eb6-529269fb1459"}, nil,
-		[]senders.SpanTag{
+		[]spans.SpanTag{
 			{Key: "application", Value: "Wavefront"},
 			{Key: "http.method", Value: "GET"},
 		},

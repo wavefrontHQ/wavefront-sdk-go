@@ -3,6 +3,7 @@ package senders
 import (
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/spans"
 )
 
 type wavefrontNoOpSender struct {
@@ -35,7 +36,7 @@ func (sender *wavefrontNoOpSender) SendDistribution(name string, centroids []his
 }
 
 func (sender *wavefrontNoOpSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
-	parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
+	parents, followsFrom []string, tags []spans.SpanTag, spanLogs []spans.SpanLog) error {
 	return nil
 }
 

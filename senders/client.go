@@ -2,18 +2,22 @@ package senders
 
 import (
 	"fmt"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/metric"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/spans"
 	"time"
 
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
+	eventInternal "github.com/wavefronthq/wavefront-sdk-go/internal/event"
+	histogramInternal "github.com/wavefronthq/wavefront-sdk-go/internal/histogram"
 )
 
 // Sender Interface for sending metrics, distributions and spans to Wavefront
 type Sender interface {
 	MetricSender
 	DistributionSender
-	SpanSender
+	spans.SpanSender
 	EventSender
 	internal.Flusher
 	Close()
@@ -75,7 +79,7 @@ func (sender *wavefrontSender) Start() {
 }
 
 func (sender *wavefrontSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
-	line, err := metricLine(name, value, ts, source, tags, sender.defaultSource)
+	line, err := metric.Line(name, value, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		sender.pointsInvalid.Inc()
 		return err
@@ -105,7 +109,7 @@ func (sender *wavefrontSender) SendDeltaCounter(name string, value float64, sour
 
 func (sender *wavefrontSender) SendDistribution(name string, centroids []histogram.Centroid,
 	hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
-	line, err := histogramLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
+	line, err := histogramInternal.Line(name, centroids, hgs, ts, source, tags, sender.defaultSource)
 	if err != nil {
 		sender.histogramsInvalid.Inc()
 		return err
@@ -120,8 +124,8 @@ func (sender *wavefrontSender) SendDistribution(name string, centroids []histogr
 }
 
 func (sender *wavefrontSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
-	parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
-	line, err := spanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
+	parents, followsFrom []string, tags []spans.SpanTag, spanLogs []spans.SpanLog) error {
+	line, err := spans.SpanLine(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs, sender.defaultSource)
 	if err != nil {
 		sender.spansInvalid.Inc()
 		return err
@@ -135,7 +139,7 @@ func (sender *wavefrontSender) SendSpan(name string, startMillis, durationMillis
 	}
 
 	if len(spanLogs) > 0 {
-		logs, err := spanLogJSON(traceId, spanId, spanLogs, line)
+		logs, err := spans.SpanLogJSON(traceId, spanId, spanLogs, line)
 		if err != nil {
 			sender.spanLogsInvalid.Inc()
 			return err
@@ -155,9 +159,9 @@ func (sender *wavefrontSender) SendEvent(name string, startMillis, endMillis int
 	var line string
 	var err error
 	if sender.proxy {
-		line, err = eventLine(name, startMillis, endMillis, source, tags, setters...)
+		line, err = eventInternal.Line(name, startMillis, endMillis, source, tags, setters...)
 	} else {
-		line, err = eventLineJSON(name, startMillis, endMillis, source, tags, setters...)
+		line, err = eventInternal.LineJSON(name, startMillis, endMillis, source, tags, setters...)
 	}
 	if err != nil {
 		sender.eventsInvalid.Inc()

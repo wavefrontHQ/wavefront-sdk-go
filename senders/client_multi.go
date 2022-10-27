@@ -2,6 +2,7 @@ package senders
 
 import (
 	"fmt"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/spans"
 	"strings"
 
 	"github.com/wavefronthq/wavefront-sdk-go/event"
@@ -87,7 +88,7 @@ func (ms *multiSender) SendDistribution(name string, centroids []histogram.Centr
 	return errors.get()
 }
 
-func (ms *multiSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
+func (ms *multiSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []spans.SpanTag, spanLogs []spans.SpanLog) error {
 	var errors multiError
 	for _, sender := range ms.senders {
 		err := sender.SendSpan(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs)

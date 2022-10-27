@@ -5,24 +5,6 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 )
 
-type SpanTag struct {
-	Key   string
-	Value string
-}
-
-type SpanLog struct {
-	Timestamp int64             `json:"timestamp"`
-	Fields    map[string]string `json:"fields"`
-}
-
-// SpanLogs is for internal use only.
-type SpanLogs struct {
-	TraceId string    `json:"traceId"`
-	SpanId  string    `json:"spanId"`
-	Logs    []SpanLog `json:"logs"`
-	Span    string    `json:"span"`
-}
-
 // MetricSender Interface for sending metrics to Wavefront
 type MetricSender interface {
 	// Sends a single metric to Wavefront with optional timestamp and tags.
@@ -41,16 +23,6 @@ type DistributionSender interface {
 	// The granularity informs the set of intervals (minute, hour, and/or day) by which the
 	// histogram data should be aggregated.
 	SendDistribution(name string, centroids []histogram.Centroid, hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error
-}
-
-// SpanSender Interface for sending tracing spans to Wavefront
-type SpanSender interface {
-	// Sends a tracing span to Wavefront.
-	// traceId, spanId, parentIds and preceding spanIds are expected to be UUID strings.
-	// parents and preceding spans can be empty for a root span.
-	// span tag keys can be repeated (example: "user"="foo" and "user"="bar")
-	// span logs are currently omitted
-	SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string, parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error
 }
 
 // EventSender Interface for sending events to Wavefront. NOT yet supported.
