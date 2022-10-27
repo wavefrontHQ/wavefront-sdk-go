@@ -84,7 +84,7 @@ func TestDefaults(t *testing.T) {
 	assert.Equal(t, 50000, cfg.MaxBufferSize)
 	assert.Equal(t, 2878, cfg.MetricsPort)
 	assert.Equal(t, 30001, cfg.TracesPort)
-	assert.Equal(t, 10, cfg.Timeout)
+	assert.Equal(t, 10, cfg.TimeoutInSeconds)
 	assert.Equal(t, (*tls.Config)(nil), cfg.TLSConfigOptions)
 }
 
@@ -132,10 +132,10 @@ func TestSDKMetricsTags(t *testing.T) {
 }
 
 func TestTimeout(t *testing.T) {
-	cfg, err := senders.CreateConfig("https://localhost", senders.Timeout(60))
+	cfg, err := senders.CreateConfig("https://localhost", senders.TimeoutInSeconds(60))
 	require.NoError(t, err)
 
-	assert.Equal(t, 60, cfg.Timeout)
+	assert.Equal(t, 60, cfg.TimeoutInSeconds)
 }
 
 func TestTLSConfigOptions(t *testing.T) {

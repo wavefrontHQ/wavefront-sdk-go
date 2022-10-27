@@ -198,7 +198,7 @@ func main() {
         wavefront.FlushIntervalSeconds(5), // Flush every 5 seconds.
         wavefront.MetricsPort(4321), // Use port 4321 for metrics.
         wavefront.TracesPort(40001), // Use port 40001 for traces. 
-        wavefront.Timeout(15), // Set an HTTP timeout in seconds (default is 10s)
+        wavefront.TimeoutInSeconds(15), // Set an HTTP timeout in seconds (default is 10s)
         wavefront.TLSConfigOptions(<*tls.Config>) // Set the TLS config options by passing in a pointer to a tls.Config struct.
     )
     ...

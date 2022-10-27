@@ -46,7 +46,7 @@ type configuration struct {
 	FlushIntervalSeconds int
 	SDKMetricsTags       map[string]string
 
-	Timeout int
+	TimeoutInSeconds int
 
 	TLSConfigOptions *tls.Config
 }
@@ -86,7 +86,7 @@ func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
 		MaxBufferSize:        defaultBufferSize,
 		FlushIntervalSeconds: defaultFlushInterval,
 		SDKMetricsTags:       map[string]string{},
-		Timeout:              defaultTimeoutSeconds,
+		TimeoutInSeconds:     defaultTimeoutSeconds,
 	}
 
 	u, err := url.Parse(wfURL)
@@ -130,8 +130,8 @@ func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
 
 // newWavefrontClient creates a Wavefront sender
 func newWavefrontClient(cfg *configuration) (Sender, error) {
-	metricsReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.MetricsPort), cfg.Token, cfg.Timeout, cfg.TLSConfigOptions)
-	tracesReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.TracesPort), cfg.Token, cfg.Timeout, cfg.TLSConfigOptions)
+	metricsReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.MetricsPort), cfg.Token, cfg.TimeoutInSeconds, cfg.TLSConfigOptions)
+	tracesReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.TracesPort), cfg.Token, cfg.TimeoutInSeconds, cfg.TLSConfigOptions)
 
 	sender := &wavefrontSender{
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
@@ -219,10 +219,10 @@ func TracesPort(port int) Option {
 	}
 }
 
-// Timeout sets the HTTP timeout (in seconds). Defaults to 10 seconds.
-func Timeout(n int) Option {
+// TimeoutInSeconds sets the HTTP timeout (in seconds). Defaults to 10 seconds.
+func TimeoutInSeconds(n int) Option {
 	return func(cfg *configuration) {
-		cfg.Timeout = n
+		cfg.TimeoutInSeconds = n
 	}
 }
 
