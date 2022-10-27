@@ -25,37 +25,6 @@ func main() {
 		wfSenders = append(wfSenders, sender)
 	}
 
-	// OLD PROXY way
-	proxyCfg := &senders.ProxyConfiguration{
-		Host:                 "localhost",
-		MetricsPort:          2878,
-		DistributionPort:     2878,
-		TracingPort:          2878,
-		EventsPort:           2878,
-		FlushIntervalSeconds: 10,
-	}
-
-	sender, err := senders.NewProxySender(proxyCfg)
-	if err != nil {
-		panic(err)
-	}
-	wfSenders = append(wfSenders, sender)
-
-	// OLD DIRECT way
-	directCfg := &senders.DirectConfiguration{
-		Server:               "https://-----.wavefront.com",
-		Token:                "--------------",
-		BatchSize:            10000,
-		MaxBufferSize:        500000,
-		FlushIntervalSeconds: 1,
-	}
-
-	sender, err = senders.NewDirectSender(directCfg)
-	if err != nil {
-		panic(err)
-	}
-	wfSenders = append(wfSenders, sender)
-
 	wf := senders.NewMultiSender(wfSenders...)
 	log.Print("senders ready")
 
