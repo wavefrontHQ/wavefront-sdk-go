@@ -1,7 +1,10 @@
 package senders_test
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -98,6 +101,8 @@ func TestDefaults(t *testing.T) {
 	assert.Equal(t, 50000, cfg.MaxBufferSize)
 	assert.Equal(t, 2878, cfg.MetricsPort)
 	assert.Equal(t, 30001, cfg.TracesPort)
+	assert.Equal(t, 10*time.Second, cfg.Timeout)
+	assert.Equal(t, (*tls.Config)(nil), cfg.TLSConfigOptions)
 }
 
 func TestBatchSize(t *testing.T) {
@@ -141,6 +146,26 @@ func TestSDKMetricsTags(t *testing.T) {
 
 	assert.Equal(t, "bar", cfg.SDKMetricsTags["foo"])
 	assert.Equal(t, "bar1", cfg.SDKMetricsTags["foo1"])
+}
+
+func TestTimeout(t *testing.T) {
+	cfg, err := senders.CreateConfig("https://localhost", senders.Timeout(60*time.Second))
+	require.NoError(t, err)
+
+	assert.Equal(t, 60*time.Second, cfg.Timeout)
+}
+
+func TestTLSConfigOptions(t *testing.T) {
+	caCertPool := x509.NewCertPool()
+	fakeCert := []byte("Not a real cert")
+	caCertPool.AppendCertsFromPEM(fakeCert)
+
+	tlsConfig := &tls.Config{
+		RootCAs: caCertPool,
+	}
+	cfg, err := senders.CreateConfig("https://localhost", senders.TLSConfigOptions(tlsConfig))
+	require.NoError(t, err)
+	assert.Equal(t, caCertPool, cfg.TLSConfigOptions.RootCAs)
 }
 
 func TestSDKMetricsTags_Immutability(t *testing.T) {
