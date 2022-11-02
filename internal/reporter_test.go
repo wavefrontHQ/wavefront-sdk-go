@@ -8,7 +8,7 @@ import (
 
 func TestBuildRequest(t *testing.T) {
 	var r *reporter
-	r = NewReporter("http://localhost:8010/wavefront", "").(*reporter)
+	r = NewReporter("http://localhost:8010/wavefront", "", 0, nil).(*reporter)
 	request, err := r.buildRequest("wavefront", nil)
 	require.NoError(t, err)
 	assert.Equal(t, "http://localhost:8010/wavefront/report?f=wavefront", request.URL.String())

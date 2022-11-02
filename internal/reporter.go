@@ -19,15 +19,14 @@ type reporter struct {
 }
 
 // NewReporter create a metrics Reporter
-func NewReporter(server string, token string, timeout int, tlsConfigOptions *tls.Config) Reporter {
-	httpTimeout := time.Second * time.Duration(timeout)
+func NewReporter(server string, token string, timeout time.Duration, tlsConfigOptions *tls.Config) Reporter {
 
 	var client *http.Client
 	if tlsConfigOptions == nil {
-		client = &http.Client{Timeout: httpTimeout}
+		client = &http.Client{Timeout: timeout}
 	} else {
 		transport := &http.Transport{TLSClientConfig: tlsConfigOptions}
-		client = &http.Client{Timeout: httpTimeout, Transport: transport}
+		client = &http.Client{Timeout: timeout, Transport: transport}
 	}
 
 	return &reporter{

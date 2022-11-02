@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 	"github.com/wavefronthq/wavefront-sdk-go/version"
@@ -18,6 +19,7 @@ const (
 	defaultBatchSize     = 10000
 	defaultBufferSize    = 50000
 	defaultFlushInterval = 1
+	defaultTimeout       = 10 * time.Second
 )
 
 // Option Wavefront client configuration options
@@ -50,7 +52,7 @@ type configuration struct {
 	SDKMetricsTags       map[string]string
 	Path                 string
 
-	TimeoutInSeconds int
+	Timeout time.Duration
 
 	TLSConfigOptions *tls.Config
 }
@@ -90,7 +92,7 @@ func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
 		MaxBufferSize:        defaultBufferSize,
 		FlushIntervalSeconds: defaultFlushInterval,
 		SDKMetricsTags:       map[string]string{},
-		TimeoutInSeconds:     defaultTimeoutSeconds,
+		Timeout:              defaultTimeout,
 	}
 
 	u, err := url.Parse(wfURL)
@@ -139,8 +141,8 @@ func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
 
 // newWavefrontClient creates a Wavefront sender
 func newWavefrontClient(cfg *configuration) (Sender, error) {
-	metricsReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.MetricsPort), cfg.Token, cfg.TimeoutInSeconds, cfg.TLSConfigOptions)
-	tracesReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.TracesPort), cfg.Token, cfg.TimeoutInSeconds, cfg.TLSConfigOptions)
+	metricsReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.MetricsPort), cfg.Token, cfg.Timeout, cfg.TLSConfigOptions)
+	tracesReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.TracesPort), cfg.Token, cfg.Timeout, cfg.TLSConfigOptions)
 
 	sender := &wavefrontSender{
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
@@ -236,10 +238,10 @@ func TracesPort(port int) Option {
 	}
 }
 
-// TimeoutInSeconds sets the HTTP timeout (in seconds). Defaults to 10 seconds.
-func TimeoutInSeconds(n int) Option {
+// Timeout sets the HTTP timeout (in seconds). Defaults to 10 seconds.
+func Timeout(timeout time.Duration) Option {
 	return func(cfg *configuration) {
-		cfg.TimeoutInSeconds = n
+		cfg.Timeout = timeout
 	}
 }
 
