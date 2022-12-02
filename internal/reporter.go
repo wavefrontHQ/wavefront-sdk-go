@@ -18,9 +18,16 @@ type reporter struct {
 	client    *http.Client
 }
 
-// NewReporter create a metrics Reporter
-func NewReporter(server string, token string, timeout time.Duration, tlsConfigOptions *tls.Config) Reporter {
+// NewReporter creates a metrics Reporter
+func NewReporter(server string, token string, client *http.Client) Reporter {
+	return &reporter{
+		serverURL: server,
+		token:     token,
+		client:    client,
+	}
+}
 
+func NewClient(timeout time.Duration, tlsConfigOptions *tls.Config) *http.Client {
 	var client *http.Client
 	if tlsConfigOptions == nil {
 		client = &http.Client{Timeout: timeout}
@@ -28,12 +35,7 @@ func NewReporter(server string, token string, timeout time.Duration, tlsConfigOp
 		transport := &http.Transport{TLSClientConfig: tlsConfigOptions}
 		client = &http.Client{Timeout: timeout, Transport: transport}
 	}
-
-	return &reporter{
-		serverURL: server,
-		token:     token,
-		client:    client,
-	}
+	return client
 }
 
 // Report creates and sends a POST to the reportEndpoint with the given pointLines
