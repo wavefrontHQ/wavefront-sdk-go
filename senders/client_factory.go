@@ -247,8 +247,9 @@ func Timeout(timeout time.Duration) Option {
 }
 
 func TLSConfigOptions(tlsCfg *tls.Config) Option {
+	tlsCfgCopy := tlsCfg.Clone()
 	return func(cfg *configuration) {
-		cfg.TLSConfigOptions = tlsCfg
+		cfg.TLSConfigOptions = tlsCfgCopy
 	}
 }
 
