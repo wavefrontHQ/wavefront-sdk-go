@@ -32,10 +32,10 @@ type testServer struct {
 	URL         string
 }
 
-func (s *testServer) TLSConfig() *tls.Config {
+func (s *testServer) TLSConfig() tls.Config {
 	certpool := x509.NewCertPool()
 	certpool.AddCert(s.httpServer.Certificate())
-	return &tls.Config{
+	return tls.Config{
 		RootCAs: certpool,
 	}
 }

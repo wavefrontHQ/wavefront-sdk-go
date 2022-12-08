@@ -163,7 +163,7 @@ func TestTLSConfigOptions(t *testing.T) {
 	tlsConfig := tls.Config{
 		RootCAs: caCertPool,
 	}
-	cfg, err := senders.CreateConfig("https://localhost", senders.TLSConfigOptions(tlsConfig))
+	cfg, err := senders.CreateConfig("https://localhost", senders.TLSConfigOptions(&tlsConfig))
 	require.NoError(t, err)
 	assert.Equal(t, caCertPool, cfg.TLSConfig.RootCAs)
 }
