@@ -102,7 +102,7 @@ func TestDefaults(t *testing.T) {
 	assert.Equal(t, 2878, cfg.MetricsPort)
 	assert.Equal(t, 30001, cfg.TracesPort)
 	assert.Equal(t, 10*time.Second, cfg.Timeout)
-	assert.Equal(t, (*tls.Config)(nil), cfg.TLSConfigOptions)
+	assert.Equal(t, (*tls.Config)(nil), cfg.TLSConfig)
 }
 
 func TestBatchSize(t *testing.T) {
@@ -160,12 +160,12 @@ func TestTLSConfigOptions(t *testing.T) {
 	fakeCert := []byte("Not a real cert")
 	caCertPool.AppendCertsFromPEM(fakeCert)
 
-	tlsConfig := &tls.Config{
+	tlsConfig := tls.Config{
 		RootCAs: caCertPool,
 	}
 	cfg, err := senders.CreateConfig("https://localhost", senders.TLSConfigOptions(tlsConfig))
 	require.NoError(t, err)
-	assert.Equal(t, caCertPool, cfg.TLSConfigOptions.RootCAs)
+	assert.Equal(t, caCertPool, cfg.TLSConfig.RootCAs)
 }
 
 func TestSDKMetricsTags_Immutability(t *testing.T) {

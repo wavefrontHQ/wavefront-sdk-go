@@ -54,7 +54,7 @@ type configuration struct {
 
 	Timeout time.Duration
 
-	TLSConfigOptions *tls.Config
+	TLSConfig *tls.Config
 }
 
 func (c *configuration) Direct() bool {
@@ -141,7 +141,7 @@ func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
 
 // newWavefrontClient creates a Wavefront sender
 func newWavefrontClient(cfg *configuration) (Sender, error) {
-	client := internal.NewClient(cfg.Timeout, cfg.TLSConfigOptions)
+	client := internal.NewClient(cfg.Timeout, cfg.TLSConfig)
 	metricsReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.MetricsPort), cfg.Token, client)
 	tracesReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.TracesPort), cfg.Token, client)
 
@@ -246,10 +246,10 @@ func Timeout(timeout time.Duration) Option {
 	}
 }
 
-func TLSConfigOptions(tlsCfg *tls.Config) Option {
+func TLSConfigOptions(tlsCfg tls.Config) Option {
 	tlsCfgCopy := tlsCfg.Clone()
 	return func(cfg *configuration) {
-		cfg.TLSConfigOptions = tlsCfgCopy
+		cfg.TLSConfig = tlsCfgCopy
 	}
 }
 

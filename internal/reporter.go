@@ -27,12 +27,12 @@ func NewReporter(server string, token string, client *http.Client) Reporter {
 	}
 }
 
-func NewClient(timeout time.Duration, tlsConfigOptions *tls.Config) *http.Client {
+func NewClient(timeout time.Duration, tlsConfig *tls.Config) *http.Client {
 	var client *http.Client
-	if tlsConfigOptions == nil {
+	if tlsConfig == nil {
 		client = &http.Client{Timeout: timeout}
 	} else {
-		transport := &http.Transport{TLSClientConfig: tlsConfigOptions}
+		transport := &http.Transport{TLSClientConfig: tlsConfig}
 		client = &http.Client{Timeout: timeout, Transport: transport}
 	}
 	return client
