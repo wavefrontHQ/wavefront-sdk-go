@@ -31,10 +31,10 @@ func NewClient(timeout time.Duration, tlsConfig *tls.Config) *http.Client {
 	var client *http.Client
 	if tlsConfig == nil {
 		client = &http.Client{Timeout: timeout}
-	} else {
-		transport := &http.Transport{TLSClientConfig: tlsConfig}
-		client = &http.Client{Timeout: timeout, Transport: transport}
 	}
+	transport := &http.Transport{TLSClientConfig: tlsConfig}
+	client = &http.Client{Timeout: timeout, Transport: transport}
+
 	return client
 }
 
