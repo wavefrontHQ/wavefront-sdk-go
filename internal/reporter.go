@@ -28,14 +28,11 @@ func NewReporter(server string, token string, client *http.Client) Reporter {
 }
 
 func NewClient(timeout time.Duration, tlsConfig *tls.Config) *http.Client {
-	var client *http.Client
 	if tlsConfig == nil {
-		client = &http.Client{Timeout: timeout}
+		return &http.Client{Timeout: timeout}
 	}
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
-	client = &http.Client{Timeout: timeout, Transport: transport}
-
-	return client
+	return &http.Client{Timeout: timeout, Transport: transport}
 }
 
 // Report creates and sends a POST to the reportEndpoint with the given pointLines
