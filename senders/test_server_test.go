@@ -3,6 +3,8 @@ package senders
 import (
 	"bufio"
 	"compress/gzip"
+	"crypto/tls"
+	"crypto/x509"
 	"net/http"
 	"net/http/httptest"
 )
@@ -16,10 +18,26 @@ func startTestServer() *testServer {
 
 }
 
+func startTLSTestServer() *testServer {
+	handler := &testServer{}
+	server := httptest.NewTLSServer(handler)
+	handler.httpServer = server
+	handler.URL = server.URL
+	return handler
+}
+
 type testServer struct {
 	MetricLines []string
 	httpServer  *httptest.Server
 	URL         string
+}
+
+func (s *testServer) TLSConfig() *tls.Config {
+	certpool := x509.NewCertPool()
+	certpool.AddCert(s.httpServer.Certificate())
+	return &tls.Config{
+		RootCAs: certpool,
+	}
 }
 
 func (s *testServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
