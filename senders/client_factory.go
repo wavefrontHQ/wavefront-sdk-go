@@ -16,9 +16,9 @@ import (
 const (
 	defaultTracesPort    = 30001
 	defaultMetricsPort   = 2878
-	defaultBatchSize     = 10000
-	defaultBufferSize    = 50000
-	defaultFlushInterval = 1
+	defaultBatchSize     = 10_000
+	defaultBufferSize    = 50_000
+	defaultFlushInterval = 1 * time.Second
 	defaultTimeout       = 10 * time.Second
 )
 
@@ -48,9 +48,9 @@ type configuration struct {
 
 	// interval (in seconds) at which to flush data to Wavefront. defaults to 1 Second.
 	// together with batch size controls the max theoretical throughput of the sender.
-	FlushIntervalSeconds int
-	SDKMetricsTags       map[string]string
-	Path                 string
+	FlushInterval  time.Duration
+	SDKMetricsTags map[string]string
+	Path           string
 
 	Timeout time.Duration
 
@@ -86,13 +86,13 @@ func NewSender(wfURL string, setters ...Option) (Sender, error) {
 // CreateConfig is for internal use only.
 func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
 	cfg := &configuration{
-		MetricsPort:          defaultMetricsPort,
-		TracesPort:           defaultTracesPort,
-		BatchSize:            defaultBatchSize,
-		MaxBufferSize:        defaultBufferSize,
-		FlushIntervalSeconds: defaultFlushInterval,
-		SDKMetricsTags:       map[string]string{},
-		Timeout:              defaultTimeout,
+		MetricsPort:    defaultMetricsPort,
+		TracesPort:     defaultTracesPort,
+		BatchSize:      defaultBatchSize,
+		MaxBufferSize:  defaultBufferSize,
+		FlushInterval:  defaultFlushInterval,
+		SDKMetricsTags: map[string]string{},
+		Timeout:        defaultTimeout,
 	}
 
 	u, err := url.Parse(wfURL)
@@ -221,7 +221,14 @@ func MaxBufferSize(n int) Option {
 // FlushIntervalSeconds set the interval (in seconds) at which to flush data to Wavefront. Defaults to 1 Second.
 func FlushIntervalSeconds(n int) Option {
 	return func(cfg *configuration) {
-		cfg.FlushIntervalSeconds = n
+		cfg.FlushInterval = time.Second * time.Duration(n)
+	}
+}
+
+// FlushInterval set the interval at which to flush data to Wavefront. Defaults to 1 Second.
+func FlushInterval(interval time.Duration) Option {
+	return func(cfg *configuration) {
+		cfg.FlushInterval = interval
 	}
 }
 

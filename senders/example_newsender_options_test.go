@@ -3,6 +3,7 @@ package senders_test
 import (
 	"crypto/tls"
 	wavefront "github.com/wavefronthq/wavefront-sdk-go/senders"
+	"time"
 )
 
 func ExampleNewSender_options() {
@@ -10,7 +11,7 @@ func ExampleNewSender_options() {
 	sender, err := wavefront.NewSender(
 		"http://localhost",
 		wavefront.BatchSize(20000),                // Send batches of 20,000.
-		wavefront.FlushIntervalSeconds(5),         // Flush every 5 seconds.
+		wavefront.FlushInterval(5*time.Second),    // Flush every 5 seconds.
 		wavefront.MetricsPort(4321),               // Use port 4321 for metrics.
 		wavefront.TracesPort(40001),               // Use port 40001 for traces.
 		wavefront.Timeout(15),                     // Set an HTTP timeout in seconds (default is 10s)

@@ -97,7 +97,7 @@ func TestDefaults(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, 10000, cfg.BatchSize)
-	assert.Equal(t, 1, cfg.FlushIntervalSeconds)
+	assert.Equal(t, 1*time.Second, cfg.FlushInterval)
 	assert.Equal(t, 50000, cfg.MaxBufferSize)
 	assert.Equal(t, 2878, cfg.MetricsPort)
 	assert.Equal(t, 30001, cfg.TracesPort)
@@ -116,7 +116,14 @@ func TestFlushIntervalSeconds(t *testing.T) {
 	cfg, err := senders.CreateConfig("https://localhost", senders.FlushIntervalSeconds(123))
 	require.NoError(t, err)
 
-	assert.Equal(t, 123, cfg.FlushIntervalSeconds)
+	assert.Equal(t, 123*time.Second, cfg.FlushInterval)
+}
+
+func TestFlushInterval(t *testing.T) {
+	cfg, err := senders.CreateConfig("https://localhost", senders.FlushInterval(1*time.Hour))
+	require.NoError(t, err)
+
+	assert.Equal(t, 1*time.Hour, cfg.FlushInterval)
 }
 
 func TestMaxBufferSize(t *testing.T) {
