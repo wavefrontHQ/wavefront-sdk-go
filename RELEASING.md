@@ -15,9 +15,4 @@
 10. Provide a short but descriptive title for the release.
 11. Fill in the details of the release. Please copy the markdown from the previous release and follow the same format.
 12. Click "Publish release."
-13. From your home directory run `mkdir -p go/src/cmd/scratch`.
-14. Run `cd go/src/cmd/scratch`.
-15. Run `go mod init`.
-16. Run `go get github.com/wavefronthq/wavefront-sdk-go@v0.10.3` replacing v0.10.3 with the version you just published.
-17. Step 16 lets `pkg.go.dev` know that there is a new version of the SDK to cache.
-18. After 15 minutes, go to [pkg.go.dev](https://pkg.go.dev/github.com/wavefronthq/wavefront-sdk-go) and see if the version upgraded. Once the version upgrades on `pkg.go.dev`, all the go users get the new version you just published.
+13. From your home directory run `./scripts/add-release-to-pkg-go-dev.sh` to notify pkg.go.dev of the new version.
