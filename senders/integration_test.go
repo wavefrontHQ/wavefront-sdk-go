@@ -16,6 +16,20 @@ func TestEndToEnd(t *testing.T) {
 
 	assert.Equal(t, 1, len(testServer.MetricLines))
 	assert.Equal(t, "\"my-metric\" 20 source=\"localhost\"", testServer.MetricLines[0])
+	assert.Equal(t, "/report?f=wavefront", testServer.LastRequestURL)
+}
+
+func TestEndToEndWithPath(t *testing.T) {
+	testServer := startTestServer()
+	defer testServer.Close()
+	sender, err := NewSender(testServer.URL + "/test-path")
+	require.NoError(t, err)
+	require.NoError(t, sender.SendMetric("my metric", 20, 0, "localhost", nil))
+	require.NoError(t, sender.Flush())
+
+	assert.Equal(t, 1, len(testServer.MetricLines))
+	assert.Equal(t, "\"my-metric\" 20 source=\"localhost\"", testServer.MetricLines[0])
+	assert.Equal(t, "/test-path/report?f=wavefront", testServer.LastRequestURL)
 }
 
 func TestTLSEndToEnd(t *testing.T) {

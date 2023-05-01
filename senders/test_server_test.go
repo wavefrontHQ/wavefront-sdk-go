@@ -15,7 +15,6 @@ func startTestServer() *testServer {
 	handler.httpServer = server
 	handler.URL = server.URL
 	return handler
-
 }
 
 func startTLSTestServer() *testServer {
@@ -27,9 +26,10 @@ func startTLSTestServer() *testServer {
 }
 
 type testServer struct {
-	MetricLines []string
-	httpServer  *httptest.Server
-	URL         string
+	MetricLines    []string
+	httpServer     *httptest.Server
+	URL            string
+	LastRequestURL string
 }
 
 func (s *testServer) TLSConfig() *tls.Config {
@@ -46,6 +46,7 @@ func (s *testServer) ServeHTTP(writer http.ResponseWriter, request *http.Request
 		writer.WriteHeader(500)
 	}
 	s.MetricLines = append(s.MetricLines, newLines...)
+	s.LastRequestURL = request.URL.String()
 	writer.WriteHeader(200)
 }
 

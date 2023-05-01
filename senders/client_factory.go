@@ -76,15 +76,14 @@ func (c *configuration) setDefaultPort(port int) {
 
 // NewSender creates Wavefront client
 func NewSender(wfURL string, setters ...Option) (Sender, error) {
-	cfg, err := CreateConfig(wfURL, setters...)
+	cfg, err := createConfig(wfURL, setters...)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create sender config: %s", err)
 	}
 	return newWavefrontClient(cfg)
 }
 
-// CreateConfig is for internal use only.
-func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
+func createConfig(wfURL string, setters ...Option) (*configuration, error) {
 	cfg := &configuration{
 		MetricsPort:    defaultMetricsPort,
 		TracesPort:     defaultTracesPort,
@@ -142,9 +141,8 @@ func CreateConfig(wfURL string, setters ...Option) (*configuration, error) {
 // newWavefrontClient creates a Wavefront sender
 func newWavefrontClient(cfg *configuration) (Sender, error) {
 	client := internal.NewClient(cfg.Timeout, cfg.TLSConfig)
-	metricsReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.MetricsPort), cfg.Token, client)
-	tracesReporter := internal.NewReporter(fmt.Sprintf("%s:%d", cfg.Server, cfg.TracesPort), cfg.Token, client)
-
+	metricsReporter := internal.NewReporter(cfg.metricsURL(), cfg.Token, client)
+	tracesReporter := internal.NewReporter(cfg.tracesURL(), cfg.Token, client)
 	sender := &wavefrontSender{
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
 		proxy:         !cfg.Direct(),
@@ -160,12 +158,12 @@ func newWavefrontClient(cfg *configuration) (Sender, error) {
 	return sender, nil
 }
 
-func (cfg *configuration) TracesURL() string {
-	return fmt.Sprintf("%s:%d%s", cfg.Server, cfg.TracesPort, cfg.Path)
+func (c *configuration) tracesURL() string {
+	return fmt.Sprintf("%s:%d%s", c.Server, c.TracesPort, c.Path)
 }
 
-func (cfg *configuration) MetricsURL() string {
-	return fmt.Sprintf("%s:%d%s", cfg.Server, cfg.MetricsPort, cfg.Path)
+func (c *configuration) metricsURL() string {
+	return fmt.Sprintf("%s:%d%s", c.Server, c.MetricsPort, c.Path)
 }
 
 func (sender *wavefrontSender) initializeInternalMetrics(cfg *configuration) {
