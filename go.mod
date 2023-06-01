@@ -1,6 +1,6 @@
 module github.com/wavefronthq/wavefront-sdk-go
 
-go 1.17
+go 1.19
 
 require (
 	github.com/caio/go-tdigest v3.1.0+incompatible
