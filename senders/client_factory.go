@@ -14,12 +14,13 @@ import (
 )
 
 const (
-	defaultTracesPort    = 30001
-	defaultMetricsPort   = 2878
-	defaultBatchSize     = 10_000
-	defaultBufferSize    = 50_000
-	defaultFlushInterval = 1 * time.Second
-	defaultTimeout       = 10 * time.Second
+	defaultTracesPort              = 30001
+	defaultMetricsPort             = 2878
+	defaultBatchSize               = 10_000
+	defaultBufferSize              = 50_000
+	defaultFlushInterval           = 1 * time.Second
+	defaultInternalMetricsInterval = 60 * time.Second
+	defaultTimeout                 = 10 * time.Second
 )
 
 // Option Wavefront client configuration options
@@ -38,6 +39,12 @@ type configuration struct {
 
 	// max batch of data sent per flush interval. defaults to 10,000. recommended not to exceed 40,000.
 	BatchSize int
+
+	// Enable or disable internal SDK metrics that begin with ~sdk.go.core
+	InternalMetricsEnabled bool
+
+	// interval at which to report internal SDK metrics
+	InternalMetricsInterval time.Duration
 
 	// size of internal buffers beyond which received data is dropped.
 	// helps with handling brief increases in data and buffering on errors.
@@ -74,24 +81,26 @@ func (c *configuration) setDefaultPort(port int) {
 	c.TracesPort = port
 }
 
-// NewSender creates Wavefront client
+// NewSender creates Wavefront Sender using the provided URL and Options
 func NewSender(wfURL string, setters ...Option) (Sender, error) {
 	cfg, err := createConfig(wfURL, setters...)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create sender config: %s", err)
 	}
-	return newWavefrontClient(cfg)
+	return newSender(cfg)
 }
 
 func createConfig(wfURL string, setters ...Option) (*configuration, error) {
 	cfg := &configuration{
-		MetricsPort:    defaultMetricsPort,
-		TracesPort:     defaultTracesPort,
-		BatchSize:      defaultBatchSize,
-		MaxBufferSize:  defaultBufferSize,
-		FlushInterval:  defaultFlushInterval,
-		SDKMetricsTags: map[string]string{},
-		Timeout:        defaultTimeout,
+		MetricsPort:             defaultMetricsPort,
+		TracesPort:              defaultTracesPort,
+		BatchSize:               defaultBatchSize,
+		MaxBufferSize:           defaultBufferSize,
+		FlushInterval:           defaultFlushInterval,
+		InternalMetricsEnabled:  true,
+		InternalMetricsInterval: defaultInternalMetricsInterval,
+		SDKMetricsTags:          map[string]string{},
+		Timeout:                 defaultTimeout,
 	}
 
 	u, err := url.Parse(wfURL)
@@ -138,8 +147,7 @@ func createConfig(wfURL string, setters ...Option) (*configuration, error) {
 	return cfg, nil
 }
 
-// newWavefrontClient creates a Wavefront sender
-func newWavefrontClient(cfg *configuration) (Sender, error) {
+func newSender(cfg *configuration) (Sender, error) {
 	client := internal.NewClient(cfg.Timeout, cfg.TLSConfig)
 	metricsReporter := internal.NewReporter(cfg.metricsURL(), cfg.Token, client)
 	tracesReporter := internal.NewReporter(cfg.tracesURL(), cfg.Token, client)
@@ -147,7 +155,11 @@ func newWavefrontClient(cfg *configuration) (Sender, error) {
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
 		proxy:         !cfg.Direct(),
 	}
-	sender.initializeInternalMetrics(cfg)
+	if cfg.InternalMetricsEnabled {
+		sender.internalRegistry = sender.realInternalRegistry(cfg)
+	} else {
+		sender.internalRegistry = internal.NewNoOpRegistry()
+	}
 	sender.pointHandler = newLineHandler(metricsReporter, cfg, internal.MetricFormat, "points", sender.internalRegistry)
 	sender.histoHandler = newLineHandler(metricsReporter, cfg, internal.HistogramFormat, "histograms", sender.internalRegistry)
 	sender.spanHandler = newLineHandler(tracesReporter, cfg, internal.TraceFormat, "spans", sender.internalRegistry)
@@ -166,9 +178,9 @@ func (c *configuration) metricsURL() string {
 	return fmt.Sprintf("%s:%d%s", c.Server, c.MetricsPort, c.Path)
 }
 
-func (sender *wavefrontSender) initializeInternalMetrics(cfg *configuration) {
-
+func (sender *wavefrontSender) realInternalRegistry(cfg *configuration) internal.MetricRegistry {
 	var setters []internal.RegistryOption
+	setters = append(setters, internal.SetInterval(cfg.InternalMetricsInterval))
 	setters = append(setters, internal.SetPrefix(cfg.MetricPrefix()))
 	setters = append(setters, internal.SetTag("pid", strconv.Itoa(os.Getpid())))
 	setters = append(setters, internal.SetTag("version", version.Version))
@@ -177,29 +189,11 @@ func (sender *wavefrontSender) initializeInternalMetrics(cfg *configuration) {
 		setters = append(setters, internal.SetTag(key, value))
 	}
 
-	sender.internalRegistry = internal.NewMetricRegistry(
+	return internal.NewMetricRegistry(
 		sender,
 		setters...,
 	)
-	sender.pointsValid = sender.internalRegistry.NewDeltaCounter("points.valid")
-	sender.pointsInvalid = sender.internalRegistry.NewDeltaCounter("points.invalid")
-	sender.pointsDropped = sender.internalRegistry.NewDeltaCounter("points.dropped")
 
-	sender.histogramsValid = sender.internalRegistry.NewDeltaCounter("histograms.valid")
-	sender.histogramsInvalid = sender.internalRegistry.NewDeltaCounter("histograms.invalid")
-	sender.histogramsDropped = sender.internalRegistry.NewDeltaCounter("histograms.dropped")
-
-	sender.spansValid = sender.internalRegistry.NewDeltaCounter("spans.valid")
-	sender.spansInvalid = sender.internalRegistry.NewDeltaCounter("spans.invalid")
-	sender.spansDropped = sender.internalRegistry.NewDeltaCounter("spans.dropped")
-
-	sender.spanLogsValid = sender.internalRegistry.NewDeltaCounter("span_logs.valid")
-	sender.spanLogsInvalid = sender.internalRegistry.NewDeltaCounter("span_logs.invalid")
-	sender.spanLogsDropped = sender.internalRegistry.NewDeltaCounter("span_logs.dropped")
-
-	sender.eventsValid = sender.internalRegistry.NewDeltaCounter("events.valid")
-	sender.eventsInvalid = sender.internalRegistry.NewDeltaCounter("events.invalid")
-	sender.eventsDropped = sender.internalRegistry.NewDeltaCounter("events.dropped")
 }
 
 // BatchSize set max batch of data sent per flush interval. Defaults to 10,000. recommended not to exceed 40,000.
@@ -255,6 +249,18 @@ func TLSConfigOptions(tlsCfg *tls.Config) Option {
 	tlsCfgCopy := tlsCfg.Clone()
 	return func(cfg *configuration) {
 		cfg.TLSConfig = tlsCfgCopy
+	}
+}
+
+func InternalMetricsEnabled(enabled bool) Option {
+	return func(cfg *configuration) {
+		cfg.InternalMetricsEnabled = enabled
+	}
+}
+
+func InternalMetricsInterval(interval time.Duration) Option {
+	return func(cfg *configuration) {
+		cfg.InternalMetricsInterval = interval
 	}
 }
 

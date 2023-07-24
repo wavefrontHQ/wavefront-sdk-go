@@ -33,7 +33,7 @@ type LineHandler struct {
 	Format        string
 	flushTicker   *time.Ticker
 
-	internalRegistry *MetricRegistry
+	internalRegistry MetricRegistry
 	prefix           string
 
 	mtx                sync.Mutex
@@ -48,7 +48,7 @@ var errThrottled = errors.New("error: throttled event creation")
 
 type LineHandlerOption func(*LineHandler)
 
-func SetRegistry(registry *MetricRegistry) LineHandlerOption {
+func SetRegistry(registry MetricRegistry) LineHandlerOption {
 	return func(handler *LineHandler) {
 		handler.internalRegistry = registry
 	}
