@@ -8,6 +8,7 @@ import (
 	eventInternal "github.com/wavefronthq/wavefront-sdk-go/internal/event"
 	histogramInternal "github.com/wavefronthq/wavefront-sdk-go/internal/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/internal/metric"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/sdkmetrics"
 	"github.com/wavefronthq/wavefront-sdk-go/internal/span"
 )
 
@@ -30,11 +31,11 @@ type wavefrontSender struct {
 	spanHandler      *internal.LineHandler
 	spanLogHandler   *internal.LineHandler
 	eventHandler     *internal.LineHandler
-	internalRegistry internal.MetricRegistry
+	internalRegistry sdkmetrics.Registry
 	proxy            bool
 }
 
-func newLineHandler(reporter internal.Reporter, cfg *configuration, format, prefix string, registry internal.MetricRegistry) *internal.LineHandler {
+func newLineHandler(reporter internal.Reporter, cfg *configuration, format, prefix string, registry sdkmetrics.Registry) *internal.LineHandler {
 	opts := []internal.LineHandlerOption{internal.SetHandlerPrefix(prefix), internal.SetRegistry(registry)}
 	batchSize := cfg.BatchSize
 	if format == internal.EventFormat {
@@ -92,7 +93,7 @@ func (sender *wavefrontSender) SendDistribution(name string, centroids []histogr
 	)
 }
 
-func trySendWith(line string, err error, handler *internal.LineHandler, tracker internal.SuccessTracker) error {
+func trySendWith(line string, err error, handler *internal.LineHandler, tracker sdkmetrics.SuccessTracker) error {
 	if err != nil {
 		tracker.IncValid()
 		return err

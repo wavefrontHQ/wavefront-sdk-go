@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 )
 
 func startTestServer() *testServer {
@@ -70,4 +71,14 @@ func decodeMetricLines(request *http.Request) ([]string, error) {
 
 func (s *testServer) Close() {
 	s.httpServer.Close()
+}
+
+func (s *testServer) hasReceivedInternalMetric(internalMetricName string) bool {
+	internalMetricFound := false
+	for _, line := range s.MetricLines {
+		if strings.Contains(line, internalMetricName) {
+			internalMetricFound = true
+		}
+	}
+	return internalMetricFound
 }

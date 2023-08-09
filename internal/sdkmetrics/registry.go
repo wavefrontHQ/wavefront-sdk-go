@@ -1,4 +1,4 @@
-package internal
+package sdkmetrics
 
 // mimics senders.MetricSender to avoid circular dependency
 type internalSender interface {
@@ -14,7 +14,7 @@ type Incrementer interface {
 	Inc()
 }
 
-type MetricRegistry interface {
+type Registry interface {
 	Start()
 	Stop()
 
