@@ -1,0 +1,68 @@
+---
+resource_types:
+- name: slack-alert
+  type: docker-image
+  source:
+    repository: harbor-repo.vmware.com/dockerhub-proxy-cache/arbourd/concourse-slack-alert-resource
+
+resources:
+- name: osspi-tool
+  type: git
+  icon: gitlab
+  source:
+    uri: git@gitlab.eng.vmware.com:source-insight-tooling/norsk-to-osspi.git
+    private_key: ((tas2to-osspi.norsk-to-osspi-private-key))
+    branch: main
+- name: slack-notify
+  type: slack-alert
+  source:
+    url: ((tas2to-osspi.slack-webhook))
+    channel: tas2to-build-alerts
+- name: wavefront-sdk-go
+  type: git
+  source:
+    uri: git@github.com:wavefrontHQ/wavefront-sdk-go
+    branch: master
+    private_key: ((tas2to-osspi.github-private-key))
+
+jobs:
+- name: wavefront-sdk-go-scan
+  on_failure:
+    put: slack-notify
+    params:
+      alert_type: failed
+  on_error:
+    put: slack-notify
+    params:
+      alert_type: errored
+  serial: true
+  plan:
+  - in_parallel:
+    - get: osspi-tool
+    - get: wavefront-sdk-go
+      trigger: true
+      params: { submodules: all }
+  - in_parallel:
+    - task: osspi-scan-wavefront-sdk-go
+      file: osspi-tool/tasks/osspi/run-osspi-source.yaml
+      input_mapping:
+        repo1: osspi-tool
+        repo2: wavefront-sdk-go
+      params:
+        REPO: repo2
+        OSM_ENVIRONMENT: ((osm-environment))
+        API_KEY: ((tas2to-osspi.apikey-((osm-environment))))
+        USERNAME: ((tas2to-osspi.user-((osm-environment))))
+        PRODUCT: wavefront-sdk-go
+        VERSION: ((version))
+        OSM_PACKAGE_GROUP_NAME: wavefront-sdk-go
+        PREPARE: |
+          go mod vendor
+        OSSPI_SCANNING_PARAMS: |
+          enable: true
+          include_bomtools: "go_mod"
+          search_depth: 5
+          go_mod.path: "/go/bin/go"
+        OSSPI_IGNORE_RULES: |
+          - name_regex: stretchr/testify
+            version_regex: .*
