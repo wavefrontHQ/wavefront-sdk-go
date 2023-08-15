@@ -25,6 +25,14 @@ type ConnectionHandler interface {
 	Flusher
 }
 
+type LineHandler interface {
+	HandleLine(line string) error
+	Start()
+	Stop()
+	Flush() error
+	GetFailureCount() int64
+}
+
 const (
 	contentType     = "Content-Type"
 	contentEncoding = "Content-Encoding"

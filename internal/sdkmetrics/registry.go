@@ -2,10 +2,10 @@ package sdkmetrics
 
 // mimics senders.MetricSender to avoid circular dependency
 type internalSender interface {
-	// Sends a single metric to Wavefront with optional timestamp and tags.
+	// SendMetric sends a single metric to Wavefront with optional timestamp and tags.
 	SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error
 
-	// Sends a delta counter (counter aggregated at the Wavefront service) to Wavefront.
+	// SendDeltaCounter sends a delta counter (counter aggregated at the Wavefront service) to Wavefront.
 	// the timestamp for a delta counter is assigned at the server side.
 	SendDeltaCounter(name string, value float64, source string, tags map[string]string) error
 }
@@ -25,4 +25,5 @@ type Registry interface {
 	EventsTracker() SuccessTracker
 
 	NewGauge(s string, f func() int64) *FunctionalGauge
+	Flush()
 }

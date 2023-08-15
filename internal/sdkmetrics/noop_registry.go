@@ -6,6 +6,9 @@ func NewNoOpRegistry() Registry {
 
 type noOpRegistry struct{}
 
+func (n *noOpRegistry) Flush() {
+}
+
 func (n *noOpRegistry) PointsTracker() SuccessTracker {
 	return &noOpTracker{}
 }

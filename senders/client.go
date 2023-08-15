@@ -26,16 +26,16 @@ type Sender interface {
 type wavefrontSender struct {
 	reporter         internal.Reporter
 	defaultSource    string
-	pointHandler     *internal.LineHandler
-	histoHandler     *internal.LineHandler
-	spanHandler      *internal.LineHandler
-	spanLogHandler   *internal.LineHandler
-	eventHandler     *internal.LineHandler
+	pointHandler     internal.LineHandler
+	histoHandler     internal.LineHandler
+	spanHandler      internal.LineHandler
+	spanLogHandler   internal.LineHandler
+	eventHandler     internal.LineHandler
 	internalRegistry sdkmetrics.Registry
 	proxy            bool
 }
 
-func newLineHandler(reporter internal.Reporter, cfg *configuration, format, prefix string, registry sdkmetrics.Registry) *internal.LineHandler {
+func newLineHandler(reporter internal.Reporter, cfg *configuration, format, prefix string, registry sdkmetrics.Registry) *internal.RealLineHandler {
 	opts := []internal.LineHandlerOption{internal.SetHandlerPrefix(prefix), internal.SetRegistry(registry)}
 	batchSize := cfg.BatchSize
 	if format == internal.EventFormat {
@@ -82,8 +82,14 @@ func (sender *wavefrontSender) SendDeltaCounter(name string, value float64, sour
 	return nil
 }
 
-func (sender *wavefrontSender) SendDistribution(name string, centroids []histogram.Centroid,
-	hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
+func (sender *wavefrontSender) SendDistribution(
+	name string,
+	centroids []histogram.Centroid,
+	hgs map[histogram.Granularity]bool,
+	ts int64,
+	source string,
+	tags map[string]string,
+) error {
 	line, err := histogramInternal.HistogramLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
 	return trySendWith(
 		line,
@@ -93,9 +99,9 @@ func (sender *wavefrontSender) SendDistribution(name string, centroids []histogr
 	)
 }
 
-func trySendWith(line string, err error, handler *internal.LineHandler, tracker sdkmetrics.SuccessTracker) error {
+func trySendWith(line string, err error, handler internal.LineHandler, tracker sdkmetrics.SuccessTracker) error {
 	if err != nil {
-		tracker.IncValid()
+		tracker.IncInvalid()
 		return err
 	} else {
 		tracker.IncValid()
@@ -107,11 +113,29 @@ func trySendWith(line string, err error, handler *internal.LineHandler, tracker 
 	return err
 }
 
-func (sender *wavefrontSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
-	parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
+func (sender *wavefrontSender) SendSpan(
+	name string,
+	startMillis, durationMillis int64,
+	source, traceId, spanId string,
+	parents, followsFrom []string,
+	tags []SpanTag,
+	spanLogs []SpanLog,
+) error {
 
 	logs := makeSpanLogs(spanLogs)
-	line, err := span.Line(name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom, makeSpanTags(tags), logs, sender.defaultSource)
+	line, err := span.Line(
+		name,
+		startMillis,
+		durationMillis,
+		source,
+		traceId,
+		spanId,
+		parents,
+		followsFrom,
+		makeSpanTags(tags),
+		logs,
+		sender.defaultSource,
+	)
 	err = trySendWith(
 		line,
 		err,
@@ -148,7 +172,13 @@ func makeSpanLogs(logs []SpanLog) []span.Log {
 	return spanLogs
 }
 
-func (sender *wavefrontSender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
+func (sender *wavefrontSender) SendEvent(
+	name string,
+	startMillis, endMillis int64,
+	source string,
+	tags map[string]string,
+	setters ...event.Option,
+) error {
 	var line string
 	var err error
 	if sender.proxy {

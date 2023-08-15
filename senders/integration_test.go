@@ -4,7 +4,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 func TestEndToEnd(t *testing.T) {
@@ -49,16 +48,13 @@ func TestTLSEndToEnd(t *testing.T) {
 }
 
 func TestEndToEndWithInternalMetrics(t *testing.T) {
-	waitTill1stInternalMetricsCollection := time.Millisecond * 1500
-	internalMetricsTicker := time.NewTicker(time.Millisecond * 900)
-
 	testServer := startTestServer()
 	defer testServer.Close()
 
-	sender, err := NewSender(testServer.URL, InternalMetricsTicker(internalMetricsTicker))
+	sender, err := NewSender(testServer.URL, InternalMetricsEnabled(true))
 	require.NoError(t, err)
 	require.NoError(t, sender.SendMetric("my metric", 20, 0, "localhost", nil))
-	time.Sleep(waitTill1stInternalMetricsCollection)
+	sender.(*wavefrontSender).internalRegistry.Flush()
 	require.NoError(t, sender.Flush())
 	metricLines := testServer.MetricLines
 
@@ -69,16 +65,14 @@ func TestEndToEndWithInternalMetrics(t *testing.T) {
 }
 
 func TestEndToEndWithInternalMetricsDisabled(t *testing.T) {
-	waitTill1stInternalMetricsCollection := time.Millisecond * 1500
-	internalMetricsTicker := time.NewTicker(time.Millisecond * 900)
 
 	testServer := startTestServer()
 	defer testServer.Close()
 
-	sender, err := NewSender(testServer.URL, InternalMetricsTicker(internalMetricsTicker), InternalMetricsEnabled(false))
+	sender, err := NewSender(testServer.URL, InternalMetricsEnabled(false))
 	require.NoError(t, err)
 	require.NoError(t, sender.SendMetric("my metric", 20, 0, "localhost", nil))
-	time.Sleep(waitTill1stInternalMetricsCollection)
+	sender.(*wavefrontSender).internalRegistry.Flush()
 	require.NoError(t, sender.Flush())
 	metricLines := testServer.MetricLines
 

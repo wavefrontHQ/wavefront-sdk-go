@@ -124,14 +124,6 @@ func TestFlushInterval(t *testing.T) {
 	assert.Equal(t, 1*time.Hour, cfg.FlushInterval)
 }
 
-func TestInternalMetricsTicker(t *testing.T) {
-	ticker := time.NewTicker(234 * time.Second)
-	cfg, err := createConfig("https://localhost", InternalMetricsTicker(ticker))
-	require.NoError(t, err)
-
-	assert.Equal(t, ticker, cfg.InternalMetricsTicker)
-}
-
 func TestMaxBufferSize(t *testing.T) {
 	cfg, err := createConfig("https://localhost", MaxBufferSize(123))
 	require.NoError(t, err)

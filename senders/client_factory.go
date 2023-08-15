@@ -23,8 +23,6 @@ const (
 	defaultTimeout       = 10 * time.Second
 )
 
-var defaultInternalMetricsTicker = time.NewTicker(60 * time.Second)
-
 // Option Wavefront client configuration options
 type Option func(*configuration)
 
@@ -44,10 +42,6 @@ type configuration struct {
 
 	// Enable or disable internal SDK metrics that begin with ~sdk.go.core
 	InternalMetricsEnabled bool
-
-	// A Ticker that stores the interval configured for reporting internal SDK metrics.
-	// The interval defaults to the one set on `defaultInternalMetricsTicker`.
-	InternalMetricsTicker *time.Ticker
 
 	// size of internal buffers beyond which received data is dropped.
 	// helps with handling brief increases in data and buffering on errors.
@@ -110,9 +104,7 @@ func NewSender(wfURL string, setters ...Option) (Sender, error) {
 	sender.eventHandler = newLineHandler(metricsReporter, cfg, internal.EventFormat, "events", sender.internalRegistry)
 
 	sender.Start()
-	var r Sender = sender
-	var r2 error = nil
-	return r, r2
+	return sender, nil
 }
 
 func createConfig(wfURL string, setters ...Option) (*configuration, error) {
@@ -123,7 +115,6 @@ func createConfig(wfURL string, setters ...Option) (*configuration, error) {
 		MaxBufferSize:          defaultBufferSize,
 		FlushInterval:          defaultFlushInterval,
 		InternalMetricsEnabled: true,
-		InternalMetricsTicker:  defaultInternalMetricsTicker,
 		SDKMetricsTags:         map[string]string{},
 		Timeout:                defaultTimeout,
 	}
@@ -183,7 +174,6 @@ func (c *configuration) metricsURL() string {
 func (sender *wavefrontSender) realInternalRegistry(cfg *configuration) sdkmetrics.Registry {
 	var setters []sdkmetrics.RegistryOption
 
-	setters = append(setters, sdkmetrics.SetReportTicker(cfg.InternalMetricsTicker))
 	setters = append(setters, sdkmetrics.SetPrefix(cfg.MetricPrefix()))
 	setters = append(setters, sdkmetrics.SetTag("pid", strconv.Itoa(os.Getpid())))
 	setters = append(setters, sdkmetrics.SetTag("version", version.Version))
@@ -258,12 +248,6 @@ func TLSConfigOptions(tlsCfg *tls.Config) Option {
 func InternalMetricsEnabled(enabled bool) Option {
 	return func(cfg *configuration) {
 		cfg.InternalMetricsEnabled = enabled
-	}
-}
-
-func InternalMetricsTicker(ticker *time.Ticker) Option {
-	return func(cfg *configuration) {
-		cfg.InternalMetricsTicker = ticker
 	}
 }
 

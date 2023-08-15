@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// metric registry for internal metrics
-type realMetricRegistry struct {
+// realRegistry collects internal valid/invalid/dropped metrics and periodically sends them to Wavefront
+type realRegistry struct {
 	source       string
 	prefix       string
 	tags         map[string]string
@@ -16,78 +16,58 @@ type realMetricRegistry struct {
 
 	mtx               sync.Mutex
 	metrics           map[string]interface{}
-	pointsTracker     *internalMetricFamily
-	histogramsTracker *internalMetricFamily
-	spansTracker      *internalMetricFamily
-	spanLogsTracker   *internalMetricFamily
-	eventsTracker     *internalMetricFamily
+	pointsTracker     *realSuccessTracker
+	histogramsTracker *realSuccessTracker
+	spansTracker      *realSuccessTracker
+	spanLogsTracker   *realSuccessTracker
+	eventsTracker     *realSuccessTracker
 }
 
-func (registry *realMetricRegistry) PointsTracker() SuccessTracker {
+func (registry *realRegistry) Flush() {
+	registry.report()
+}
+
+func (registry *realRegistry) PointsTracker() SuccessTracker {
 	return registry.pointsTracker
 }
 
-func (registry *realMetricRegistry) HistogramsTracker() SuccessTracker {
+func (registry *realRegistry) HistogramsTracker() SuccessTracker {
 	return registry.histogramsTracker
 }
 
-func (registry *realMetricRegistry) SpansTracker() SuccessTracker {
+func (registry *realRegistry) SpansTracker() SuccessTracker {
 	return registry.spansTracker
 }
 
-func (registry *realMetricRegistry) SpanLogsTracker() SuccessTracker {
+func (registry *realRegistry) SpanLogsTracker() SuccessTracker {
 	return registry.spanLogsTracker
 }
 
-func (registry *realMetricRegistry) EventsTracker() SuccessTracker {
+func (registry *realRegistry) EventsTracker() SuccessTracker {
 	return registry.eventsTracker
 }
 
-type internalMetricFamily struct {
-	Valid   *DeltaCounter
-	Invalid *DeltaCounter
-	Dropped *DeltaCounter
-}
-
-func (registry *realMetricRegistry) newInternalMetricFamily(prefix string) *internalMetricFamily {
-	return &internalMetricFamily{
+func (registry *realRegistry) newSuccessTracker(prefix string) *realSuccessTracker {
+	return &realSuccessTracker{
 		Valid:   registry.NewDeltaCounter(prefix + ".valid"),
 		Invalid: registry.NewDeltaCounter(prefix + ".invalid"),
 		Dropped: registry.NewDeltaCounter(prefix + ".dropped"),
 	}
 }
 
-type SuccessTracker interface {
-	IncValid()
-	IncInvalid()
-	IncDropped()
-}
-
-func (f *internalMetricFamily) IncValid() {
-	f.Valid.Inc()
-}
-
-func (f *internalMetricFamily) IncInvalid() {
-	f.Invalid.Inc()
-}
-
-func (f *internalMetricFamily) IncDropped() {
-	f.Dropped.Inc()
-}
-
 func NewMetricRegistry(sender internalSender, setters ...RegistryOption) Registry {
-	registry := &realMetricRegistry{
+	registry := &realRegistry{
 		sender:       sender,
 		metrics:      make(map[string]interface{}),
 		reportTicker: time.NewTicker(time.Second * 60),
 		done:         make(chan struct{}),
 	}
 
-	registry.pointsTracker = registry.newInternalMetricFamily("points")
-	registry.histogramsTracker = registry.newInternalMetricFamily("histograms")
-	registry.spansTracker = registry.newInternalMetricFamily("spans")
-	registry.spanLogsTracker = registry.newInternalMetricFamily("span_logs")
-	registry.eventsTracker = registry.newInternalMetricFamily("events")
+	registry.pointsTracker = registry.newSuccessTracker("points")
+	registry.histogramsTracker = registry.newSuccessTracker("histograms")
+	registry.spansTracker = registry.newSuccessTracker("spans")
+	registry.spanLogsTracker = registry.newSuccessTracker("span_logs")
+	registry.eventsTracker = registry.newSuccessTracker("events")
 
 	for _, setter := range setters {
 		setter(registry)
@@ -95,11 +75,11 @@ func NewMetricRegistry(sender internalSender, setters ...RegistryOption) Registr
 	return registry
 }
 
-func (registry *realMetricRegistry) Start() {
+func (registry *realRegistry) Start() {
 	go registry.start()
 }
 
-func (registry *realMetricRegistry) start() {
+func (registry *realRegistry) start() {
 	for {
 		select {
 		case <-registry.reportTicker.C:
@@ -110,12 +90,12 @@ func (registry *realMetricRegistry) start() {
 	}
 }
 
-func (registry *realMetricRegistry) Stop() {
+func (registry *realRegistry) Stop() {
 	registry.reportTicker.Stop()
 	registry.done <- struct{}{}
 }
 
-func (registry *realMetricRegistry) report() {
+func (registry *realRegistry) report() {
 	registry.mtx.Lock()
 	defer registry.mtx.Unlock()
 
@@ -135,7 +115,7 @@ func (registry *realMetricRegistry) report() {
 	}
 }
 
-func (registry *realMetricRegistry) getOrAdd(name string, metric interface{}) interface{} {
+func (registry *realRegistry) getOrAdd(name string, metric interface{}) interface{} {
 	registry.mtx.Lock()
 	defer registry.mtx.Unlock()
 
@@ -146,18 +126,18 @@ func (registry *realMetricRegistry) getOrAdd(name string, metric interface{}) in
 	return metric
 }
 
-func (registry *realMetricRegistry) NewCounter(name string) *MetricCounter {
+func (registry *realRegistry) NewCounter(name string) *MetricCounter {
 	return registry.getOrAdd(name, &MetricCounter{}).(*MetricCounter)
 }
 
-func (registry *realMetricRegistry) NewDeltaCounter(name string) *DeltaCounter {
+func (registry *realRegistry) NewDeltaCounter(name string) *DeltaCounter {
 	return registry.getOrAdd(name, &DeltaCounter{MetricCounter{}}).(*DeltaCounter)
 }
 
-func (registry *realMetricRegistry) NewGauge(name string, f func() int64) *FunctionalGauge {
+func (registry *realRegistry) NewGauge(name string, f func() int64) *FunctionalGauge {
 	return registry.getOrAdd(name, &FunctionalGauge{value: f}).(*FunctionalGauge)
 }
 
-func (registry *realMetricRegistry) NewGaugeFloat64(name string, f func() float64) *FunctionalGaugeFloat64 {
+func (registry *realRegistry) NewGaugeFloat64(name string, f func() float64) *FunctionalGaugeFloat64 {
 	return registry.getOrAdd(name, &FunctionalGaugeFloat64{value: f}).(*FunctionalGaugeFloat64)
 }

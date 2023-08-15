@@ -81,7 +81,7 @@ func checkLength(buffer chan string, length int, msg string, t *testing.T) {
 	}
 }
 
-func addLines(lh *LineHandler, linesToAdd int, expectedLen int, t *testing.T) {
+func addLines(lh *RealLineHandler, linesToAdd int, expectedLen int, t *testing.T) {
 	for i := 0; i < linesToAdd; i++ {
 		err := lh.HandleLine("dummyLine")
 		if err != nil {
@@ -101,8 +101,8 @@ func makeBuffer(num int) []string {
 	return buf
 }
 
-func makeLineHandler(bufSize, batchSize int) *LineHandler {
-	return &LineHandler{
+func makeLineHandler(bufSize, batchSize int) *RealLineHandler {
+	return &RealLineHandler{
 		Reporter:      &fakeReporter{},
 		MaxBufferSize: bufSize,
 		BatchSize:     batchSize,

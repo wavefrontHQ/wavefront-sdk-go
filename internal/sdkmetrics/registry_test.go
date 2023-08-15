@@ -41,7 +41,7 @@ func TestPrefix(t *testing.T) {
 	prefix := "sdk.go.test"
 	name := "test.counter"
 	sender := &fakeSender{prefix: prefix, name: name}
-	registry := NewMetricRegistry(sender, SetPrefix(prefix)).(*realMetricRegistry)
+	registry := NewMetricRegistry(sender, SetPrefix(prefix)).(*realRegistry)
 	registry.NewCounter(name)
 
 	registry.report()
@@ -52,7 +52,7 @@ func TestPrefix(t *testing.T) {
 
 func TestRegistration(t *testing.T) {
 	sender := &fakeSender{}
-	registry := NewMetricRegistry(sender).(*realMetricRegistry)
+	registry := NewMetricRegistry(sender).(*realRegistry)
 
 	c := registry.NewCounter("counter")
 	g := registry.NewGauge("gauge", func() int64 {
@@ -95,7 +95,7 @@ func TestRegistration(t *testing.T) {
 
 func TestTagging(t *testing.T) {
 	sender := &fakeSender{tags: []string{"foo", "bar"}}
-	registry := NewMetricRegistry(sender, SetTag("foo", "val"), SetTag("bar", "val")).(*realMetricRegistry)
+	registry := NewMetricRegistry(sender, SetTag("foo", "val"), SetTag("bar", "val")).(*realRegistry)
 	registry.NewCounter("counter")
 
 	registry.report()
