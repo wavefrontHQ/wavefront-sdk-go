@@ -1,18 +1,10 @@
 package sdkmetrics
 
-import "time"
-
 type RegistryOption func(*realRegistry)
 
 func SetSource(source string) RegistryOption {
 	return func(registry *realRegistry) {
 		registry.source = source
-	}
-}
-
-func SetReportTicker(ticker *time.Ticker) RegistryOption {
-	return func(registry *realRegistry) {
-		registry.reportTicker = ticker
 	}
 }
 

@@ -51,7 +51,7 @@ func TestEndToEndWithInternalMetrics(t *testing.T) {
 	testServer := startTestServer()
 	defer testServer.Close()
 
-	sender, err := NewSender(testServer.URL, InternalMetricsEnabled(true))
+	sender, err := NewSender(testServer.URL, SendInternalMetrics(true))
 	require.NoError(t, err)
 	require.NoError(t, sender.SendMetric("my metric", 20, 0, "localhost", nil))
 	sender.(*wavefrontSender).internalRegistry.Flush()
@@ -64,12 +64,12 @@ func TestEndToEndWithInternalMetrics(t *testing.T) {
 	assert.Equal(t, "/report?f=wavefront", testServer.LastRequestURL)
 }
 
-func TestEndToEndWithInternalMetricsDisabled(t *testing.T) {
+func TestEndToEndWithoutInternalMetrics(t *testing.T) {
 
 	testServer := startTestServer()
 	defer testServer.Close()
 
-	sender, err := NewSender(testServer.URL, InternalMetricsEnabled(false))
+	sender, err := NewSender(testServer.URL, SendInternalMetrics(false))
 	require.NoError(t, err)
 	require.NoError(t, sender.SendMetric("my metric", 20, 0, "localhost", nil))
 	sender.(*wavefrontSender).internalRegistry.Flush()

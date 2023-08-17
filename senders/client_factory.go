@@ -40,8 +40,8 @@ type configuration struct {
 	// max batch of data sent per flush interval. defaults to 10,000. recommended not to exceed 40,000.
 	BatchSize int
 
-	// Enable or disable internal SDK metrics that begin with ~sdk.go.core
-	InternalMetricsEnabled bool
+	// send, or don't send, internal SDK metrics that begin with ~sdk.go.core
+	SendInternalMetrics bool
 
 	// size of internal buffers beyond which received data is dropped.
 	// helps with handling brief increases in data and buffering on errors.
@@ -92,7 +92,7 @@ func NewSender(wfURL string, setters ...Option) (Sender, error) {
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
 		proxy:         !cfg.Direct(),
 	}
-	if cfg.InternalMetricsEnabled {
+	if cfg.SendInternalMetrics {
 		sender.internalRegistry = sender.realInternalRegistry(cfg)
 	} else {
 		sender.internalRegistry = sdkmetrics.NewNoOpRegistry()
@@ -109,14 +109,14 @@ func NewSender(wfURL string, setters ...Option) (Sender, error) {
 
 func createConfig(wfURL string, setters ...Option) (*configuration, error) {
 	cfg := &configuration{
-		MetricsPort:            defaultMetricsPort,
-		TracesPort:             defaultTracesPort,
-		BatchSize:              defaultBatchSize,
-		MaxBufferSize:          defaultBufferSize,
-		FlushInterval:          defaultFlushInterval,
-		InternalMetricsEnabled: true,
-		SDKMetricsTags:         map[string]string{},
-		Timeout:                defaultTimeout,
+		MetricsPort:         defaultMetricsPort,
+		TracesPort:          defaultTracesPort,
+		BatchSize:           defaultBatchSize,
+		MaxBufferSize:       defaultBufferSize,
+		FlushInterval:       defaultFlushInterval,
+		SendInternalMetrics: true,
+		SDKMetricsTags:      map[string]string{},
+		Timeout:             defaultTimeout,
 	}
 
 	u, err := url.Parse(wfURL)
@@ -238,6 +238,7 @@ func Timeout(timeout time.Duration) Option {
 	}
 }
 
+// TLSConfigOptions sets the tls.Config used by the HTTP Client to send data to Wavefront.
 func TLSConfigOptions(tlsCfg *tls.Config) Option {
 	tlsCfgCopy := tlsCfg.Clone()
 	return func(cfg *configuration) {
@@ -245,9 +246,10 @@ func TLSConfigOptions(tlsCfg *tls.Config) Option {
 	}
 }
 
-func InternalMetricsEnabled(enabled bool) Option {
+// SendInternalMetrics turns sending of internal SDK metrics on/off.
+func SendInternalMetrics(enabled bool) Option {
 	return func(cfg *configuration) {
-		cfg.InternalMetricsEnabled = enabled
+		cfg.SendInternalMetrics = enabled
 	}
 }
 
