@@ -3,6 +3,7 @@ package senders
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/sdkmetrics"
 	"net/url"
 	"os"
 	"strconv"
@@ -39,6 +40,9 @@ type configuration struct {
 	// max batch of data sent per flush interval. defaults to 10,000. recommended not to exceed 40,000.
 	BatchSize int
 
+	// send, or don't send, internal SDK metrics that begin with ~sdk.go.core
+	SendInternalMetrics bool
+
 	// size of internal buffers beyond which received data is dropped.
 	// helps with handling brief increases in data and buffering on errors.
 	// separate buffers are maintained per data type (metrics, spans and distributions)
@@ -74,24 +78,45 @@ func (c *configuration) setDefaultPort(port int) {
 	c.TracesPort = port
 }
 
-// NewSender creates Wavefront client
+// NewSender creates Wavefront Sender using the provided URL and Options
 func NewSender(wfURL string, setters ...Option) (Sender, error) {
 	cfg, err := createConfig(wfURL, setters...)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create sender config: %s", err)
 	}
-	return newWavefrontClient(cfg)
+
+	client := internal.NewClient(cfg.Timeout, cfg.TLSConfig)
+	metricsReporter := internal.NewReporter(cfg.metricsURL(), cfg.Token, client)
+	tracesReporter := internal.NewReporter(cfg.tracesURL(), cfg.Token, client)
+	sender := &wavefrontSender{
+		defaultSource: internal.GetHostname("wavefront_direct_sender"),
+		proxy:         !cfg.Direct(),
+	}
+	if cfg.SendInternalMetrics {
+		sender.internalRegistry = sender.realInternalRegistry(cfg)
+	} else {
+		sender.internalRegistry = sdkmetrics.NewNoOpRegistry()
+	}
+	sender.pointHandler = newLineHandler(metricsReporter, cfg, internal.MetricFormat, "points", sender.internalRegistry)
+	sender.histoHandler = newLineHandler(metricsReporter, cfg, internal.HistogramFormat, "histograms", sender.internalRegistry)
+	sender.spanHandler = newLineHandler(tracesReporter, cfg, internal.TraceFormat, "spans", sender.internalRegistry)
+	sender.spanLogHandler = newLineHandler(tracesReporter, cfg, internal.SpanLogsFormat, "span_logs", sender.internalRegistry)
+	sender.eventHandler = newLineHandler(metricsReporter, cfg, internal.EventFormat, "events", sender.internalRegistry)
+
+	sender.Start()
+	return sender, nil
 }
 
 func createConfig(wfURL string, setters ...Option) (*configuration, error) {
 	cfg := &configuration{
-		MetricsPort:    defaultMetricsPort,
-		TracesPort:     defaultTracesPort,
-		BatchSize:      defaultBatchSize,
-		MaxBufferSize:  defaultBufferSize,
-		FlushInterval:  defaultFlushInterval,
-		SDKMetricsTags: map[string]string{},
-		Timeout:        defaultTimeout,
+		MetricsPort:         defaultMetricsPort,
+		TracesPort:          defaultTracesPort,
+		BatchSize:           defaultBatchSize,
+		MaxBufferSize:       defaultBufferSize,
+		FlushInterval:       defaultFlushInterval,
+		SendInternalMetrics: true,
+		SDKMetricsTags:      map[string]string{},
+		Timeout:             defaultTimeout,
 	}
 
 	u, err := url.Parse(wfURL)
@@ -138,26 +163,6 @@ func createConfig(wfURL string, setters ...Option) (*configuration, error) {
 	return cfg, nil
 }
 
-// newWavefrontClient creates a Wavefront sender
-func newWavefrontClient(cfg *configuration) (Sender, error) {
-	client := internal.NewClient(cfg.Timeout, cfg.TLSConfig)
-	metricsReporter := internal.NewReporter(cfg.metricsURL(), cfg.Token, client)
-	tracesReporter := internal.NewReporter(cfg.tracesURL(), cfg.Token, client)
-	sender := &wavefrontSender{
-		defaultSource: internal.GetHostname("wavefront_direct_sender"),
-		proxy:         !cfg.Direct(),
-	}
-	sender.initializeInternalMetrics(cfg)
-	sender.pointHandler = newLineHandler(metricsReporter, cfg, internal.MetricFormat, "points", sender.internalRegistry)
-	sender.histoHandler = newLineHandler(metricsReporter, cfg, internal.HistogramFormat, "histograms", sender.internalRegistry)
-	sender.spanHandler = newLineHandler(tracesReporter, cfg, internal.TraceFormat, "spans", sender.internalRegistry)
-	sender.spanLogHandler = newLineHandler(tracesReporter, cfg, internal.SpanLogsFormat, "span_logs", sender.internalRegistry)
-	sender.eventHandler = newLineHandler(metricsReporter, cfg, internal.EventFormat, "events", sender.internalRegistry)
-
-	sender.Start()
-	return sender, nil
-}
-
 func (c *configuration) tracesURL() string {
 	return fmt.Sprintf("%s:%d%s", c.Server, c.TracesPort, c.Path)
 }
@@ -166,40 +171,22 @@ func (c *configuration) metricsURL() string {
 	return fmt.Sprintf("%s:%d%s", c.Server, c.MetricsPort, c.Path)
 }
 
-func (sender *wavefrontSender) initializeInternalMetrics(cfg *configuration) {
+func (sender *wavefrontSender) realInternalRegistry(cfg *configuration) sdkmetrics.Registry {
+	var setters []sdkmetrics.RegistryOption
 
-	var setters []internal.RegistryOption
-	setters = append(setters, internal.SetPrefix(cfg.MetricPrefix()))
-	setters = append(setters, internal.SetTag("pid", strconv.Itoa(os.Getpid())))
-	setters = append(setters, internal.SetTag("version", version.Version))
+	setters = append(setters, sdkmetrics.SetPrefix(cfg.MetricPrefix()))
+	setters = append(setters, sdkmetrics.SetTag("pid", strconv.Itoa(os.Getpid())))
+	setters = append(setters, sdkmetrics.SetTag("version", version.Version))
 
 	for key, value := range cfg.SDKMetricsTags {
-		setters = append(setters, internal.SetTag(key, value))
+		setters = append(setters, sdkmetrics.SetTag(key, value))
 	}
 
-	sender.internalRegistry = internal.NewMetricRegistry(
+	return sdkmetrics.NewMetricRegistry(
 		sender,
 		setters...,
 	)
-	sender.pointsValid = sender.internalRegistry.NewDeltaCounter("points.valid")
-	sender.pointsInvalid = sender.internalRegistry.NewDeltaCounter("points.invalid")
-	sender.pointsDropped = sender.internalRegistry.NewDeltaCounter("points.dropped")
 
-	sender.histogramsValid = sender.internalRegistry.NewDeltaCounter("histograms.valid")
-	sender.histogramsInvalid = sender.internalRegistry.NewDeltaCounter("histograms.invalid")
-	sender.histogramsDropped = sender.internalRegistry.NewDeltaCounter("histograms.dropped")
-
-	sender.spansValid = sender.internalRegistry.NewDeltaCounter("spans.valid")
-	sender.spansInvalid = sender.internalRegistry.NewDeltaCounter("spans.invalid")
-	sender.spansDropped = sender.internalRegistry.NewDeltaCounter("spans.dropped")
-
-	sender.spanLogsValid = sender.internalRegistry.NewDeltaCounter("span_logs.valid")
-	sender.spanLogsInvalid = sender.internalRegistry.NewDeltaCounter("span_logs.invalid")
-	sender.spanLogsDropped = sender.internalRegistry.NewDeltaCounter("span_logs.dropped")
-
-	sender.eventsValid = sender.internalRegistry.NewDeltaCounter("events.valid")
-	sender.eventsInvalid = sender.internalRegistry.NewDeltaCounter("events.invalid")
-	sender.eventsDropped = sender.internalRegistry.NewDeltaCounter("events.dropped")
 }
 
 // BatchSize set max batch of data sent per flush interval. Defaults to 10,000. recommended not to exceed 40,000.
@@ -251,10 +238,18 @@ func Timeout(timeout time.Duration) Option {
 	}
 }
 
+// TLSConfigOptions sets the tls.Config used by the HTTP Client to send data to Wavefront.
 func TLSConfigOptions(tlsCfg *tls.Config) Option {
 	tlsCfgCopy := tlsCfg.Clone()
 	return func(cfg *configuration) {
 		cfg.TLSConfig = tlsCfgCopy
+	}
+}
+
+// SendInternalMetrics turns sending of internal SDK metrics on/off.
+func SendInternalMetrics(enabled bool) Option {
+	return func(cfg *configuration) {
+		cfg.SendInternalMetrics = enabled
 	}
 }
 
