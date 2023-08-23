@@ -36,8 +36,6 @@ type LineHandler interface {
 const (
 	contentType     = "Content-Type"
 	contentEncoding = "Content-Encoding"
-	authzHeader     = "Authorization"
-	bearer          = "Bearer "
 	gzipFormat      = "gzip"
 
 	octetStream     = "application/octet-stream"

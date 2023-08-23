@@ -7,7 +7,7 @@ import (
 )
 
 func TestEndToEnd(t *testing.T) {
-	testServer := startTestServer()
+	testServer := startTestServer(false)
 	defer testServer.Close()
 	sender, err := NewSender(testServer.URL)
 	require.NoError(t, err)
@@ -20,7 +20,7 @@ func TestEndToEnd(t *testing.T) {
 }
 
 func TestEndToEndWithPath(t *testing.T) {
-	testServer := startTestServer()
+	testServer := startTestServer(false)
 	defer testServer.Close()
 	sender, err := NewSender(testServer.URL + "/test-path")
 	require.NoError(t, err)
@@ -33,7 +33,7 @@ func TestEndToEndWithPath(t *testing.T) {
 }
 
 func TestTLSEndToEnd(t *testing.T) {
-	testServer := startTLSTestServer()
+	testServer := startTestServer(true)
 	defer testServer.Close()
 	testServer.httpServer.Client()
 	tlsConfig := testServer.TLSConfig()
@@ -48,35 +48,34 @@ func TestTLSEndToEnd(t *testing.T) {
 }
 
 func TestEndToEndWithInternalMetrics(t *testing.T) {
-	testServer := startTestServer()
+	testServer := startTestServer(false)
 	defer testServer.Close()
 
 	sender, err := NewSender(testServer.URL, SendInternalMetrics(true))
 	require.NoError(t, err)
 	require.NoError(t, sender.SendMetric("my metric", 20, 0, "localhost", nil))
-	sender.(*wavefrontSender).internalRegistry.Flush()
+	sender.(*realSender).internalRegistry.Flush()
 	require.NoError(t, sender.Flush())
 	metricLines := testServer.MetricLines
 
-	assert.Equal(t, true, testServer.hasReceivedInternalMetric("points.valid"))
+	assert.Equal(t, true, testServer.hasReceivedLine("points.valid"))
 	assert.Equal(t, 12, len(metricLines))
 	assert.Equal(t, "\"my-metric\" 20 source=\"localhost\"", metricLines[0])
 	assert.Equal(t, "/report?f=wavefront", testServer.LastRequestURL)
 }
 
 func TestEndToEndWithoutInternalMetrics(t *testing.T) {
-
-	testServer := startTestServer()
+	testServer := startTestServer(false)
 	defer testServer.Close()
 
 	sender, err := NewSender(testServer.URL, SendInternalMetrics(false))
 	require.NoError(t, err)
 	require.NoError(t, sender.SendMetric("my metric", 20, 0, "localhost", nil))
-	sender.(*wavefrontSender).internalRegistry.Flush()
+	sender.(*realSender).internalRegistry.Flush()
 	require.NoError(t, sender.Flush())
 	metricLines := testServer.MetricLines
 
-	assert.Equal(t, false, testServer.hasReceivedInternalMetric("points.valid"))
+	assert.Equal(t, false, testServer.hasReceivedLine("points.valid"))
 	assert.Equal(t, 1, len(metricLines))
 	assert.Equal(t, "\"my-metric\" 20 source=\"localhost\"", metricLines[0])
 	assert.Equal(t, "/report?f=wavefront", testServer.LastRequestURL)

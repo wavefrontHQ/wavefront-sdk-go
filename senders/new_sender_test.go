@@ -3,6 +3,7 @@ package senders
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 	"testing"
 	"time"
 
@@ -82,11 +83,19 @@ func TestMetricsURLWithPortAndPath(t *testing.T) {
 	assert.Equal(t, "http://localhost:8071/wavefront", cfg.tracesURL())
 }
 
-func TestToken(t *testing.T) {
+func TestTokenInUrl(t *testing.T) {
 	cfg, err := createConfig("https://my-api-token@localhost")
 	require.NoError(t, err)
 
-	assert.Equal(t, "my-api-token", cfg.Token)
+	assert.Equal(t, "my-api-token", cfg.Authentication.(auth.APIToken).Token)
+	assert.Equal(t, "https://localhost", cfg.Server)
+}
+
+func TestTokenOption(t *testing.T) {
+	cfg, err := createConfig("https://localhost", APIToken("my-api-token"))
+	require.NoError(t, err)
+
+	assert.Equal(t, "my-api-token", cfg.Authentication.(auth.APIToken).Token)
 	assert.Equal(t, "https://localhost", cfg.Server)
 }
 
