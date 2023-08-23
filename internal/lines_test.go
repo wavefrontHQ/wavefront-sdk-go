@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 	"net/http"
 	"testing"
 
@@ -9,13 +10,13 @@ import (
 )
 
 type fakeReporter struct {
-	raiseError bool
-	errorCode  int
+	errorCode int
+	error     error
 }
 
-func (reporter *fakeReporter) Report(format string, pointLines string) (*http.Response, error) {
-	if reporter.raiseError {
-		return nil, fmt.Errorf("error reporting points")
+func (reporter *fakeReporter) Report(string, string) (*http.Response, error) {
+	if reporter.error != nil {
+		return nil, reporter.error
 	}
 	if reporter.errorCode != 0 {
 		return &http.Response{StatusCode: reporter.errorCode}, nil
@@ -23,7 +24,7 @@ func (reporter *fakeReporter) Report(format string, pointLines string) (*http.Re
 	return &http.Response{StatusCode: 200}, nil
 }
 
-func (reporter *fakeReporter) ReportEvent(event string) (*http.Response, error) {
+func (reporter *fakeReporter) ReportEvent(string) (*http.Response, error) {
 	return &http.Response{StatusCode: 200}, nil
 }
 
@@ -57,21 +58,38 @@ func TestBufferLines(t *testing.T) {
 	checkLength(lh.buffer, 95, "error buffering lines", t)
 }
 
+func TestHandleLine_OnAuthError_DoNotBuffer(t *testing.T) {
+	lh := makeLineHandler(100, 10) // cap: 100, batchSize: 10
+	lh.Reporter = &fakeReporter{
+		error: auth.NewAuthError(fmt.Errorf("fake auth error that shouldn't be buffered")),
+	}
+	assert.NoError(t, lh.HandleLine("this is a metric, but CSP is down, or my credentials are wrong"))
+	assert.Error(t, lh.Flush())
+	checkLength(lh.buffer, 0, "", t)
+	lh.Reporter = &fakeReporter{
+		error: fmt.Errorf("error that should be buffered"),
+	}
+	assert.NoError(t, lh.HandleLine("this is a metric, but it was a network timeout or something like that"))
+	assert.Error(t, lh.Flush())
+	checkLength(lh.buffer, 1, "", t)
+}
+
 func TestFlush(t *testing.T) {
 	lh := makeLineHandler(100, 10) // cap: 100, batchSize: 10
 
 	addLines(lh, 100, 100, t)
-	lh.Flush()
+	assert.NoError(t, lh.Flush())
 	assert.Equal(t, 90, len(lh.buffer), "error flushing lines")
 
-	lh.Reporter = &fakeReporter{raiseError: true}
-	lh.Flush()
+	e := fmt.Errorf("error reporting points")
+	lh.Reporter = &fakeReporter{error: e}
+	assert.Error(t, lh.Flush())
 	assert.Equal(t, 90, len(lh.buffer), "error flushing lines")
 
 	lh.Reporter = &fakeReporter{}
 	lh.buffer = make(chan string, 100)
 	addLines(lh, 5, 5, t)
-	lh.Flush()
+	assert.NoError(t, lh.Flush())
 	assert.Equal(t, 0, len(lh.buffer), "error flushing lines")
 }
 

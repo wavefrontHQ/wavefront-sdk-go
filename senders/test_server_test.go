@@ -10,24 +10,20 @@ import (
 	"strings"
 )
 
-func startTestServer() *testServer {
+func startTestServer(useTLS bool) *testServer {
 	handler := &testServer{}
-	server := httptest.NewServer(handler)
-	handler.httpServer = server
-	handler.URL = server.URL
-	return handler
-}
-
-func startTLSTestServer() *testServer {
-	handler := &testServer{}
-	server := httptest.NewTLSServer(handler)
-	handler.httpServer = server
-	handler.URL = server.URL
+	if useTLS {
+		handler.httpServer = httptest.NewTLSServer(handler)
+	} else {
+		handler.httpServer = httptest.NewServer(handler)
+	}
+	handler.URL = handler.httpServer.URL
 	return handler
 }
 
 type testServer struct {
 	MetricLines    []string
+	AuthHeaders    []string
 	httpServer     *httptest.Server
 	URL            string
 	LastRequestURL string
@@ -47,6 +43,7 @@ func (s *testServer) ServeHTTP(writer http.ResponseWriter, request *http.Request
 		writer.WriteHeader(500)
 	}
 	s.MetricLines = append(s.MetricLines, newLines...)
+	s.AuthHeaders = append(s.AuthHeaders, request.Header.Get("Authorization"))
 	s.LastRequestURL = request.URL.String()
 	writer.WriteHeader(200)
 }
@@ -73,10 +70,10 @@ func (s *testServer) Close() {
 	s.httpServer.Close()
 }
 
-func (s *testServer) hasReceivedInternalMetric(internalMetricName string) bool {
+func (s *testServer) hasReceivedLine(lineSubstring string) bool {
 	internalMetricFound := false
 	for _, line := range s.MetricLines {
-		if strings.Contains(line, internalMetricName) {
+		if strings.Contains(line, lineSubstring) {
 			internalMetricFound = true
 		}
 	}

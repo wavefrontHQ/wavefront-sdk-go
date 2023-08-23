@@ -3,6 +3,7 @@ package internal
 import (
 	"errors"
 	"fmt"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 	"github.com/wavefronthq/wavefront-sdk-go/internal/sdkmetrics"
 	"log"
 	"net/http"
@@ -181,7 +182,9 @@ func (lh *RealLineHandler) report(lines []string) error {
 	}
 
 	if err != nil {
-		lh.bufferLines(lines)
+		if shouldRetry(err) {
+			lh.bufferLines(lines)
+		}
 		return fmt.Errorf("error reporting %s format data to Wavefront: %q", lh.Format, err)
 	}
 
@@ -196,10 +199,18 @@ func (lh *RealLineHandler) report(lines []string) error {
 	return nil
 }
 
+func shouldRetry(err error) bool {
+	switch err.(type) {
+	case *auth.Err:
+		return false
+	}
+	return true
+}
+
 func (lh *RealLineHandler) bufferLines(batch []string) {
 	log.Println("error reporting to Wavefront. buffering lines.")
 	for _, line := range batch {
-		lh.HandleLine(line)
+		_ = lh.HandleLine(line)
 	}
 }
 

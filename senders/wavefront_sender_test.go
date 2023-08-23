@@ -15,7 +15,7 @@ func TestWavefrontSender_SendMetric(t *testing.T) {
 	spanHandler := &mockHandler{}
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
-	sender := wavefrontSender{
+	sender := realSender{
 		reporter:         nil,
 		defaultSource:    "test",
 		pointHandler:     pointHandler,
@@ -50,7 +50,7 @@ func TestWavefrontSender_SendDeltaCounter(t *testing.T) {
 	spanHandler := &mockHandler{}
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
-	sender := wavefrontSender{
+	sender := realSender{
 		reporter:         nil,
 		defaultSource:    "test",
 		pointHandler:     pointHandler,
@@ -90,7 +90,7 @@ func TestWavefrontSender_SendDistribution(t *testing.T) {
 	spanHandler := &mockHandler{}
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
-	sender := wavefrontSender{
+	sender := realSender{
 		reporter:         nil,
 		defaultSource:    "test",
 		pointHandler:     pointHandler,
@@ -135,7 +135,7 @@ func TestWavefrontSender_SendSpan(t *testing.T) {
 	spanHandler := &mockHandler{}
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
-	sender := wavefrontSender{
+	sender := realSender{
 		reporter:         nil,
 		defaultSource:    "test",
 		pointHandler:     pointHandler,
@@ -202,7 +202,7 @@ func TestWavefrontSender_SendSpan_SpanLogs(t *testing.T) {
 	spanHandler := &mockHandler{}
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
-	sender := wavefrontSender{
+	sender := realSender{
 		reporter:         nil,
 		defaultSource:    "test",
 		pointHandler:     pointHandler,
@@ -268,7 +268,7 @@ func TestWavefrontSender_SendEventWithProxyFalse(t *testing.T) {
 	spanHandler := &mockHandler{}
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
-	sender := wavefrontSender{
+	sender := realSender{
 		reporter:         nil,
 		defaultSource:    "test",
 		pointHandler:     pointHandler,
@@ -299,7 +299,7 @@ func TestWavefrontSender_SendEventWithProxyTrue(t *testing.T) {
 	spanHandler := &mockHandler{}
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
-	sender := wavefrontSender{
+	sender := realSender{
 		reporter:         nil,
 		defaultSource:    "test",
 		pointHandler:     pointHandler,
