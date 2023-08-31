@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/tls"
-	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 )
 
 // The implementation of a Reporter that reports points directly to a Wavefront server.

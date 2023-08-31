@@ -1,12 +1,13 @@
 package auth
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/wavefronthq/wavefront-sdk-go/internal/auth/csp"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/auth/csp"
 )
 
 func TestCSPService_MultipleCSPRequests(t *testing.T) {

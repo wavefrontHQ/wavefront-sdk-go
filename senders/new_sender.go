@@ -2,6 +2,7 @@ package senders
 
 import (
 	"fmt"
+
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 	"github.com/wavefronthq/wavefront-sdk-go/internal/sdkmetrics"
 )

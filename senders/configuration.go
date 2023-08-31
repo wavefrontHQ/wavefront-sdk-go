@@ -3,12 +3,13 @@ package senders
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 	"log"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 )
 
 const (

@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/wavefronthq/wavefront-sdk-go/internal"
 	"strconv"
+
+	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
 // Line gets a span line in the Wavefront span data format:

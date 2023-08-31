@@ -2,11 +2,11 @@ package internal
 
 import (
 	"fmt"
-	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 )
 
 type fakeReporter struct {

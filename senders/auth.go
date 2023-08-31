@@ -1,8 +1,9 @@
 package senders
 
 import (
-	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 	"log"
+
+	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 )
 
 func tokenServiceForCfg(cfg *configuration) auth.Service {
