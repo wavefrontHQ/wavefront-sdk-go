@@ -1,10 +1,4 @@
 ---
-resource_types:
-- name: slack-alert
-  type: docker-image
-  source:
-    repository: harbor-repo.vmware.com/dockerhub-proxy-cache/arbourd/concourse-slack-alert-resource
-
 resources:
 - name: osspi-tool
   type: git
@@ -13,11 +7,6 @@ resources:
     uri: git@gitlab.eng.vmware.com:source-insight-tooling/norsk-to-osspi.git
     private_key: ((tas2to-osspi.norsk-to-osspi-private-key))
     branch: main
-- name: slack-notify
-  type: slack-alert
-  source:
-    url: ((tas2to-osspi.slack-webhook))
-    channel: tas2to-build-alerts
 - name: wavefront-sdk-go
   type: git
   source:
@@ -27,14 +16,6 @@ resources:
 
 jobs:
 - name: wavefront-sdk-go-scan
-  on_failure:
-    put: slack-notify
-    params:
-      alert_type: failed
-  on_error:
-    put: slack-notify
-    params:
-      alert_type: errored
   serial: true
   plan:
   - in_parallel:
