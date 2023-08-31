@@ -1,15 +1,14 @@
 package senders
 
 import (
-	"github.com/wavefronthq/wavefront-sdk-go/internal/auth/csp"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/auth/csp"
 )
 
 func TestSendDirect(t *testing.T) {

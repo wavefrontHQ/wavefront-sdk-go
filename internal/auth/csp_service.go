@@ -1,11 +1,12 @@
 package auth
 
 import (
-	"github.com/wavefronthq/wavefront-sdk-go/internal/auth/csp"
 	"log"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/wavefronthq/wavefront-sdk-go/internal/auth/csp"
 )
 
 type tokenResult struct {

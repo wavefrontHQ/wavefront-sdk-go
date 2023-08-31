@@ -2,8 +2,9 @@ package senders
 
 import (
 	"crypto/tls"
-	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 	"time"
+
+	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 )
 
 // Option Wavefront client configuration options

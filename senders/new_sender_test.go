@@ -3,12 +3,12 @@ package senders
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 )
 
 func TestInvalidURL(t *testing.T) {

@@ -1,9 +1,10 @@
 package histogram
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
-	"testing"
 )
 
 var line string

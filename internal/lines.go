@@ -3,14 +3,15 @@ package internal
 import (
 	"errors"
 	"fmt"
-	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
-	"github.com/wavefronthq/wavefront-sdk-go/internal/sdkmetrics"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/sdkmetrics"
 )
 
 const (

@@ -2,8 +2,9 @@ package senders_test
 
 import (
 	"crypto/tls"
-	wavefront "github.com/wavefronthq/wavefront-sdk-go/senders"
 	"time"
+
+	wavefront "github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
 func ExampleNewSender_options() {

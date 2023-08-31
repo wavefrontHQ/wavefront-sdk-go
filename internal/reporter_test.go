@@ -3,12 +3,13 @@ package internal
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 )
 
 func TestReporter_BuildRequest(t *testing.T) {

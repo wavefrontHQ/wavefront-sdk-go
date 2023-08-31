@@ -2,6 +2,9 @@ package senders
 
 import (
 	"fmt"
+	"os"
+	"strconv"
+
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
@@ -11,8 +14,6 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/internal/sdkmetrics"
 	"github.com/wavefronthq/wavefront-sdk-go/internal/span"
 	"github.com/wavefronthq/wavefront-sdk-go/version"
-	"os"
-	"strconv"
 )
 
 // Sender Interface for sending metrics, distributions and spans to Wavefront
