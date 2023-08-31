@@ -1,0 +1,16 @@
+linters:
+  disable-all: true
+  enable:
+#  - errcheck
+#  - gosimple
+  - govet
+  - gofmt
+#  - gci
+#  - revive
+#  - ineffassign
+#  - staticcheck
+issues:
+  exclude-rules:
+  - path: example.*_test\.go
+    linters:
+    - ineffassign

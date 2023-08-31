@@ -21,8 +21,7 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       - run: go mod download
-      - name: check vendor
-        run: |
-          diff -u <(echo -n) <(gofmt -d $(go list -f {{.Dir}} ./... | grep -v /vendor/))
       - run: go test -timeout 10m -v -race ./...
       - run: go vet ./...
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
