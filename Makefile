@@ -1,4 +1,6 @@
-.PHONY: test godoc lint lint-fix
+.PHONY: all test godoc lint lint-fix
+
+all: test lint
 
 test:
 	go test -timeout 10m -v -race ./...
