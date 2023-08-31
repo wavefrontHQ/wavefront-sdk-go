@@ -19,4 +19,4 @@ go mod init example.com/scratch
 go get "github.com/wavefronthq/wavefront-sdk-go@$RELEASE_VERSION"
 
 echo "Done. Changes should show up within 15m"
-echo "  at https://pkg.go.dev/github.com/wavefronthq/wavefront-sdk-go@v$RELEASE_VERSION"
+echo "  at https://pkg.go.dev/github.com/wavefronthq/wavefront-sdk-go@$RELEASE_VERSION"
