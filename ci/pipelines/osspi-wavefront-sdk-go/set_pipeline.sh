@@ -14,12 +14,12 @@ fly -t runway sync || (
 )
 
 pipeline_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-VERSION=${VERSION:-"0.14.0"}
+VERSION=${VERSION:-"Latest"}
 OSM_ENVIRONMENT=${OSM_ENVIRONMENT:-"production"}
 echo "using OSM_ENVIRONMENT: ${OSM_ENVIRONMENT}. Valid environments are beta and production"
 
 fly --target runway set-pipeline \
-    --pipeline "osspi-wavefront-sdk-go-${VERSION}" \
+    --pipeline "osspi-wavefront-sdk-go" \
     --config "${pipeline_dir}/pipeline.yml" \
     --var osm-environment="${OSM_ENVIRONMENT}" \
     --var version="${VERSION}"
