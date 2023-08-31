@@ -13,4 +13,4 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: 1.21
-    - run: RELEASE_VERSION="$GITHUB_REF" ./scripts/add-release-to-pkg-go-dev.sh
+    - run: RELEASE_VERSION="$(echo "$GITHUB_REF" | sed 's/refs\/tags\///')" ./scripts/add-release-to-pkg-go-dev.sh
