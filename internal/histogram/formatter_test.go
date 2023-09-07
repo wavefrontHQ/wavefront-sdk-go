@@ -84,9 +84,9 @@ func TestHistogramLine(t *testing.T) {
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
 	expected = "!M 1533529977 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n" +
 		"!H 1533529977 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
-	if len(line) != len(expected) {
-		t.Errorf("lines don't match. expected: %s, actual: %s", expected, line)
-	}
+
+	assert.Nil(t, err)
+	assert.Equal(t, expected, line)
 }
 
 func makeCentroids() []histogram.Centroid {
