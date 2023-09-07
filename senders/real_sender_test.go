@@ -16,6 +16,7 @@ func TestSendDirect(t *testing.T) {
 	directServer := startTestServer(false)
 	defer directServer.Close()
 	updatedUrl, err := url.Parse(directServer.URL)
+	assert.NoError(t, err)
 	updatedUrl.User = url.User(token)
 	wf, err := NewSender(updatedUrl.String())
 
@@ -36,6 +37,7 @@ func TestSendDirectWithTags(t *testing.T) {
 	defer directServer.Close()
 
 	updatedUrl, err := url.Parse(directServer.URL)
+	assert.NoError(t, err)
 	updatedUrl.User = url.User(token)
 	tags := map[string]string{"foo": "bar"}
 	wf, err := NewSender(updatedUrl.String(), SDKMetricsTags(tags))

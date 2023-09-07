@@ -1,9 +1,6 @@
 package csp
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -36,16 +33,5 @@ func (c *APITokenClient) GetAccessToken() (*AuthorizeResponse, error) {
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode > 399 {
-		return nil, fmt.Errorf("authentication failed: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	var cspResponse AuthorizeResponse
-	err = json.Unmarshal(body, &cspResponse)
-
-	if err != nil {
-		return nil, err
-	}
-	return &cspResponse, nil
+	return parseAuthorizeResponse(resp)
 }
