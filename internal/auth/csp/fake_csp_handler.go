@@ -78,7 +78,6 @@ func FakeCSPHandler(apiTokens []string) http.Handler {
 		w.WriteHeader(http.StatusOK)
 		marshal, _ := json.Marshal(sup)
 		w.Write(marshal)
-		return
 	})
 	return mux
 }

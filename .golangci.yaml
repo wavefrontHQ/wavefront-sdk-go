@@ -2,7 +2,7 @@ linters:
   disable-all: true
   enable:
 #  - errcheck
-#  - gosimple
+  - gosimple
   - govet
   - gofmt
   - gci

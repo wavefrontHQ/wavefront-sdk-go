@@ -100,17 +100,17 @@ func (registry *realRegistry) report() {
 	defer registry.mtx.Unlock()
 
 	for k, metric := range registry.metrics {
-		switch metric.(type) {
+		switch m := metric.(type) {
 		case *DeltaCounter:
-			deltaCount := metric.(*DeltaCounter).count()
+			deltaCount := m.count()
 			registry.sender.SendDeltaCounter(registry.prefix+"."+k, float64(deltaCount), "", registry.tags)
 			metric.(*DeltaCounter).dec(deltaCount)
 		case *MetricCounter:
-			registry.sender.SendMetric(registry.prefix+"."+k, float64(metric.(*MetricCounter).count()), 0, "", registry.tags)
+			registry.sender.SendMetric(registry.prefix+"."+k, float64(m.count()), 0, "", registry.tags)
 		case *FunctionalGauge:
-			registry.sender.SendMetric(registry.prefix+"."+k, float64(metric.(*FunctionalGauge).instantValue()), 0, "", registry.tags)
+			registry.sender.SendMetric(registry.prefix+"."+k, float64(m.instantValue()), 0, "", registry.tags)
 		case *FunctionalGaugeFloat64:
-			registry.sender.SendMetric(registry.prefix+"."+k, metric.(*FunctionalGaugeFloat64).instantValue(), 0, "", registry.tags)
+			registry.sender.SendMetric(registry.prefix+"."+k, m.instantValue(), 0, "", registry.tags)
 		}
 	}
 }
