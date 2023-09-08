@@ -25,13 +25,11 @@ type CSPOption func(any)
 // CSPBaseURL sets an alternative base URL for the CSP server
 func CSPBaseURL(baseURL string) CSPOption {
 	return func(authentication any) {
-		switch authentication.(type) {
+		switch a := authentication.(type) {
 		case *auth.CSPClientCredentials:
-			credentials := authentication.(*auth.CSPClientCredentials)
-			credentials.BaseURL = baseURL
+			a.BaseURL = baseURL
 		case *auth.CSPAPIToken:
-			token := authentication.(*auth.CSPAPIToken)
-			token.BaseURL = baseURL
+			a.BaseURL = baseURL
 		}
 	}
 }
@@ -39,10 +37,9 @@ func CSPBaseURL(baseURL string) CSPOption {
 // CSPOrgID sets an explicit orgID for Client Credentials authentication
 func CSPOrgID(orgID string) CSPOption {
 	return func(authentication any) {
-		switch authentication.(type) {
+		switch a := authentication.(type) {
 		case auth.CSPClientCredentials:
-			credentials := authentication.(auth.CSPClientCredentials)
-			credentials.OrgID = &orgID
+			a.OrgID = &orgID
 		}
 	}
 }
