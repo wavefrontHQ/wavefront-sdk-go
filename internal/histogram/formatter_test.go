@@ -20,7 +20,7 @@ func BenchmarkHistogramLine(b *testing.B) {
 
 	var r string
 	for n := 0; n < b.N; n++ {
-		r, _ = HistogramLine(name, centroids, hgs, ts, src, tags, "")
+		r, _ = Line(name, centroids, hgs, ts, src, tags, "")
 	}
 	benchmarkLine = r
 }
@@ -34,7 +34,7 @@ func TestHistogramLineCentroidsFormat(t *testing.T) {
 		{Value: 30.0, Count: 20},
 	}
 
-	line, err := HistogramLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
+	line, err := Line("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
 
 	assert.Nil(t, err)
@@ -57,31 +57,31 @@ func TestHistogramLineCentroidsFormat(t *testing.T) {
 func TestHistogramLine(t *testing.T) {
 	centroids := makeCentroids()
 
-	line, err := HistogramLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
+	line, err := Line("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
 	expected := "!M 1533529977 #20 30 \"request.latency\" source=\"test_source\" \"env\"=\"test\"\n"
 	assert.NoError(t, err)
 	assert.Equal(t, expected, line)
 
-	line, err = HistogramLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: false},
+	line, err = Line("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: false},
 		1533529977, "", map[string]string{"env": "test"}, "default")
 	expected = "!M 1533529977 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assert.NoError(t, err)
 	assert.Equal(t, expected, line)
 
-	line, err = HistogramLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.HOUR: true, histogram.MINUTE: false},
+	line, err = Line("request.latency", centroids, map[histogram.Granularity]bool{histogram.HOUR: true, histogram.MINUTE: false},
 		1533529977, "", map[string]string{"env": "test"}, "default")
 	expected = "!H 1533529977 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assert.NoError(t, err)
 	assert.Equal(t, expected, line)
 
-	line, err = HistogramLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.DAY: true},
+	line, err = Line("request.latency", centroids, map[histogram.Granularity]bool{histogram.DAY: true},
 		1533529977, "", map[string]string{"env": "test"}, "default")
 	expected = "!D 1533529977 #20 30 \"request.latency\" source=\"default\" \"env\"=\"test\"\n"
 	assert.NoError(t, err)
 	assert.Equal(t, expected, line)
 
-	line, err = HistogramLine("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: true, histogram.DAY: false},
+	line, err = Line("request.latency", centroids, map[histogram.Granularity]bool{histogram.MINUTE: true, histogram.HOUR: true, histogram.DAY: false},
 		1533529977, "test_source", map[string]string{"env": "test"}, "")
 
 	assert.NoError(t, err)

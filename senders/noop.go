@@ -24,25 +24,23 @@ func (sender *noOpSender) Start() {
 	// no-op
 }
 
-func (sender *noOpSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
+func (sender *noOpSender) SendMetric(string, float64, int64, string, map[string]string) error {
 	return nil
 }
 
-func (sender *noOpSender) SendDeltaCounter(name string, value float64, source string, tags map[string]string) error {
+func (sender *noOpSender) SendDeltaCounter(string, float64, string, map[string]string) error {
 	return nil
 }
 
-func (sender *noOpSender) SendDistribution(name string, centroids []histogram.Centroid,
-	hgs map[histogram.Granularity]bool, ts int64, source string, tags map[string]string) error {
+func (sender *noOpSender) SendDistribution(string, []histogram.Centroid, map[histogram.Granularity]bool, int64, string, map[string]string) error {
 	return nil
 }
 
-func (sender *noOpSender) SendSpan(name string, startMillis, durationMillis int64, source, traceId, spanId string,
-	parents, followsFrom []string, tags []SpanTag, spanLogs []SpanLog) error {
+func (sender *noOpSender) SendSpan(string, int64, int64, string, string, string, []string, []string, []SpanTag, []SpanLog) error {
 	return nil
 }
 
-func (sender *noOpSender) SendEvent(name string, startMillis, endMillis int64, source string, tags map[string]string, setters ...event.Option) error {
+func (sender *noOpSender) SendEvent(string, int64, int64, string, map[string]string, ...event.Option) error {
 	return nil
 }
 

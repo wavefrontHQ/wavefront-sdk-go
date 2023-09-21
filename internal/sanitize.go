@@ -29,7 +29,7 @@ func Sanitize(str string) string {
 	if (strings.HasPrefix(str, DeltaPrefix) || strings.HasPrefix(str, AltDeltaPrefix)) &&
 		str[skipHead] == 126 {
 		sb.WriteString(string(str[skipHead]))
-		skipHead += 1
+		skipHead++
 	}
 	if str[0] == 126 {
 		sb.WriteString(string(str[0]))

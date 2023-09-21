@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	defaultCSPBaseUrl    = "https://console.cloud.vmware.com/"
+	defaultCSPBaseURL    = "https://console.cloud.vmware.com/"
 	defaultTracesPort    = 30001
 	defaultMetricsPort   = 2878
 	defaultBatchSize     = 10_000

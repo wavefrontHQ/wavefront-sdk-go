@@ -15,10 +15,10 @@ func TestSendDirect(t *testing.T) {
 	token := "direct-send-api-token"
 	directServer := startTestServer(false)
 	defer directServer.Close()
-	updatedUrl, err := url.Parse(directServer.URL)
+	updatedURL, err := url.Parse(directServer.URL)
 	assert.NoError(t, err)
-	updatedUrl.User = url.User(token)
-	wf, err := NewSender(updatedUrl.String())
+	updatedURL.User = url.User(token)
+	wf, err := NewSender(updatedURL.String())
 
 	require.NoError(t, err)
 	testSender(t, wf, directServer)
@@ -36,11 +36,11 @@ func TestSendDirectWithTags(t *testing.T) {
 	directServer := startTestServer(false)
 	defer directServer.Close()
 
-	updatedUrl, err := url.Parse(directServer.URL)
+	updatedURL, err := url.Parse(directServer.URL)
 	assert.NoError(t, err)
-	updatedUrl.User = url.User(token)
+	updatedURL.User = url.User(token)
 	tags := map[string]string{"foo": "bar"}
-	wf, err := NewSender(updatedUrl.String(), SDKMetricsTags(tags))
+	wf, err := NewSender(updatedURL.String(), SDKMetricsTags(tags))
 	require.NoError(t, err)
 	testSender(t, wf, directServer)
 
