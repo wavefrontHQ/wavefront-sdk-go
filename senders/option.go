@@ -49,7 +49,7 @@ func CSPAPIToken(cspAPIToken string, options ...CSPOption) Option {
 	return func(c *configuration) {
 		cspTokenAuth := auth.CSPAPIToken{
 			Token:   cspAPIToken,
-			BaseURL: defaultCSPBaseUrl,
+			BaseURL: defaultCSPBaseURL,
 		}
 		for _, option := range options {
 			option(&cspTokenAuth)
@@ -59,12 +59,12 @@ func CSPAPIToken(cspAPIToken string, options ...CSPOption) Option {
 }
 
 // CSPClientCredentials configures the sender to use a CSP Client Credentials for authentication
-func CSPClientCredentials(clientId string, clientSecret string, options ...CSPOption) Option {
+func CSPClientCredentials(clientID string, clientSecret string, options ...CSPOption) Option {
 	return func(c *configuration) {
 		clientCredentials := &auth.CSPClientCredentials{
-			ClientID:     clientId,
+			ClientID:     clientID,
 			ClientSecret: clientSecret,
-			BaseURL:      defaultCSPBaseUrl,
+			BaseURL:      defaultCSPBaseURL,
 		}
 		for _, option := range options {
 			option(clientCredentials)

@@ -148,15 +148,15 @@ func TestWavefrontSender_SendSpan(t *testing.T) {
 		proxy:            false,
 	}
 
-	traceId := "28e09666-9610-4690-a908-5298d95551ad"
-	spanId := "28b0ad93-58f5-4efe-a68b-7b7a84c8ace8"
+	traceID := "28e09666-9610-4690-a908-5298d95551ad"
+	spanID := "28b0ad93-58f5-4efe-a68b-7b7a84c8ace8"
 
 	assert.NoError(t, sender.SendSpan(
 		"foo",
 		200, 2000,
 		"test",
-		traceId,
-		spanId,
+		traceID,
+		spanID,
 		[]string{"pat", "marty"},
 		[]string{"gloria"},
 		[]SpanTag{},
@@ -170,8 +170,8 @@ func TestWavefrontSender_SendSpan(t *testing.T) {
 		"",
 		200, 2000,
 		"test",
-		traceId,
-		spanId,
+		traceID,
+		spanID,
 		[]string{"pat", "marty"},
 		[]string{"gloria"},
 		[]SpanTag{},
@@ -185,8 +185,8 @@ func TestWavefrontSender_SendSpan(t *testing.T) {
 		"foo",
 		2000, 400,
 		"test",
-		traceId,
-		spanId,
+		traceID,
+		spanID,
 		[]string{"pat", "marty"},
 		[]string{"gloria"},
 		[]SpanTag{},
@@ -215,15 +215,15 @@ func TestWavefrontSender_SendSpan_SpanLogs(t *testing.T) {
 		proxy:            false,
 	}
 
-	traceId := "28e09666-9610-4690-a908-5298d95551ad"
-	spanId := "28b0ad93-58f5-4efe-a68b-7b7a84c8ace8"
+	traceID := "28e09666-9610-4690-a908-5298d95551ad"
+	spanID := "28b0ad93-58f5-4efe-a68b-7b7a84c8ace8"
 
 	assert.NoError(t, sender.SendSpan(
 		"foo",
 		200, 2000,
 		"test",
-		traceId,
-		spanId,
+		traceID,
+		spanID,
 		[]string{"pat", "marty"},
 		[]string{"gloria"},
 		[]SpanTag{},
@@ -245,8 +245,8 @@ func TestWavefrontSender_SendSpan_SpanLogs(t *testing.T) {
 		"foo",
 		2000, 400,
 		"test",
-		traceId,
-		spanId,
+		traceID,
+		spanID,
 		[]string{"pat", "marty"},
 		[]string{"gloria"},
 		[]SpanTag{},

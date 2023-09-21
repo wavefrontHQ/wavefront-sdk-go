@@ -94,7 +94,7 @@ func (sender *realSender) SendDistribution(
 	source string,
 	tags map[string]string,
 ) error {
-	line, err := histogramInternal.HistogramLine(name, centroids, hgs, ts, source, tags, sender.defaultSource)
+	line, err := histogramInternal.Line(name, centroids, hgs, ts, source, tags, sender.defaultSource)
 	return trySendWith(
 		line,
 		err,
@@ -107,9 +107,9 @@ func trySendWith(line string, err error, handler internal.LineHandler, tracker s
 	if err != nil {
 		tracker.IncInvalid()
 		return err
-	} else {
-		tracker.IncValid()
 	}
+
+	tracker.IncValid()
 	err = handler.HandleLine(line)
 	if err != nil {
 		tracker.IncDropped()
@@ -120,7 +120,7 @@ func trySendWith(line string, err error, handler internal.LineHandler, tracker s
 func (sender *realSender) SendSpan(
 	name string,
 	startMillis, durationMillis int64,
-	source, traceId, spanId string,
+	source, traceID, spanID string,
 	parents, followsFrom []string,
 	tags []SpanTag,
 	spanLogs []SpanLog,
@@ -132,8 +132,8 @@ func (sender *realSender) SendSpan(
 		startMillis,
 		durationMillis,
 		source,
-		traceId,
-		spanId,
+		traceID,
+		spanID,
 		parents,
 		followsFrom,
 		makeSpanTags(tags),
@@ -150,7 +150,7 @@ func (sender *realSender) SendSpan(
 	}
 
 	if len(spanLogs) > 0 {
-		logJSON, logJSONErr := span.LogJSON(traceId, spanId, logs, line)
+		logJSON, logJSONErr := span.LogJSON(traceID, spanID, logs, line)
 		return trySendWith(
 			logJSON,
 			logJSONErr,

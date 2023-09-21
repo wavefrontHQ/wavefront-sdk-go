@@ -25,22 +25,22 @@ type CSPService struct {
 
 // NewCSPServerToServerService returns a Service instance that gets access tokens via CSP client credentials
 func NewCSPServerToServerService(
-	CSPBaseUrl string,
-	ClientId string,
+	CSPBaseURL string,
+	ClientID string,
 	ClientSecret string,
 	OrgID *string,
 ) Service {
 	return newService(&csp.ClientCredentialsClient{
-		BaseURL:      CSPBaseUrl,
-		ClientID:     ClientId,
+		BaseURL:      CSPBaseURL,
+		ClientID:     ClientID,
 		ClientSecret: ClientSecret,
 		OrgID:        OrgID,
 	})
 }
 
-func NewCSPTokenService(CSPBaseUrl, apiToken string) Service {
+func NewCSPTokenService(CSPBaseURL, apiToken string) Service {
 	return newService(&csp.APITokenClient{
-		BaseURL:  CSPBaseUrl,
+		BaseURL:  CSPBaseURL,
 		APIToken: apiToken,
 	})
 }

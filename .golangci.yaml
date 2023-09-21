@@ -6,11 +6,12 @@ linters:
   - govet
   - gofmt
   - gci
-#  - revive
+  - revive
   - ineffassign
-#  - staticcheck
+  - staticcheck
 issues:
   exclude-rules:
   - path: example.*_test\.go
     linters:
     - ineffassign
+    - revive
