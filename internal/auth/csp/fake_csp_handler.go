@@ -33,7 +33,7 @@ func FakeCSPHandler(apiTokens []string) http.Handler {
 
 			w.WriteHeader(http.StatusOK)
 			marshal, _ := json.Marshal(sup)
-			w.Write(marshal)
+			_, _ = w.Write(marshal)
 			return
 		}
 		w.WriteHeader(http.StatusUnauthorized)
@@ -77,7 +77,7 @@ func FakeCSPHandler(apiTokens []string) http.Handler {
 
 		w.WriteHeader(http.StatusOK)
 		marshal, _ := json.Marshal(sup)
-		w.Write(marshal)
+		_, _ = w.Write(marshal)
 	})
 	return mux
 }

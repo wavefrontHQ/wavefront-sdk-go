@@ -9,14 +9,14 @@ import (
 )
 
 func TestAppTagsEnv(t *testing.T) {
-	os.Setenv("app_label_1", "value_1")
-	os.Setenv("app_label_2", "value_2")
-	os.Setenv("label_3", "value_3")
+	assert.NoError(t, os.Setenv("app_label_1", "value_1"))
+	assert.NoError(t, os.Setenv("app_label_2", "value_2"))
+	assert.NoError(t, os.Setenv("label_3", "value_3"))
 
 	appTags := application.New("app", "srv")
 
-	appTags.AddCustomTagsFromEnv("app_.*")
-	appTags.AddCustomTagFromEnv("label_3", "app_3")
+	assert.NoError(t, appTags.AddCustomTagsFromEnv("app_.*"))
+	assert.NoError(t, appTags.AddCustomTagFromEnv("label_3", "app_3"))
 
 	tags := appTags.Map()
 	assert.Equal(t, "value_1", tags["app_label_1"])

@@ -95,6 +95,9 @@ func (registry *realRegistry) Stop() {
 	registry.done <- struct{}{}
 }
 
+// report sends internal SDK metrics and delta counters using an internalSender.
+// We should not get any synchronous errors from the sender.Send Methods,
+// and even if we did, there's not a good place to bubble them up to, so we ignore them.
 func (registry *realRegistry) report() {
 	registry.mtx.Lock()
 	defer registry.mtx.Unlock()
@@ -103,14 +106,14 @@ func (registry *realRegistry) report() {
 		switch m := metric.(type) {
 		case *DeltaCounter:
 			deltaCount := m.count()
-			registry.sender.SendDeltaCounter(registry.prefix+"."+k, float64(deltaCount), "", registry.tags)
+			_ = registry.sender.SendDeltaCounter(registry.prefix+"."+k, float64(deltaCount), "", registry.tags)
 			metric.(*DeltaCounter).dec(deltaCount)
 		case *MetricCounter:
-			registry.sender.SendMetric(registry.prefix+"."+k, float64(m.count()), 0, "", registry.tags)
+			_ = registry.sender.SendMetric(registry.prefix+"."+k, float64(m.count()), 0, "", registry.tags)
 		case *FunctionalGauge:
-			registry.sender.SendMetric(registry.prefix+"."+k, float64(m.instantValue()), 0, "", registry.tags)
+			_ = registry.sender.SendMetric(registry.prefix+"."+k, float64(m.instantValue()), 0, "", registry.tags)
 		case *FunctionalGaugeFloat64:
-			registry.sender.SendMetric(registry.prefix+"."+k, m.instantValue(), 0, "", registry.tags)
+			_ = registry.sender.SendMetric(registry.prefix+"."+k, m.instantValue(), 0, "", registry.tags)
 		}
 	}
 }
