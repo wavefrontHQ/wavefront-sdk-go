@@ -60,7 +60,7 @@ func linesToGzippedBytes(pointLines string) ([]byte, error) {
 	zw := gzip.NewWriter(&buf)
 	_, err := zw.Write([]byte(pointLines))
 	if err != nil {
-		zw.Close()
+		_ = zw.Close()
 		return nil, err
 	}
 	if err = zw.Close(); err != nil {
@@ -120,7 +120,7 @@ func (reporter reporter) execute(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return resp, err
 	}
-	io.Copy(io.Discard, resp.Body)
+	_, _ = io.Copy(io.Discard, resp.Body)
 	defer resp.Body.Close()
 	return resp, nil
 }
