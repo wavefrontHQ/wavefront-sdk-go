@@ -17,7 +17,7 @@ import (
 // Steps:
 // 1. brew install telegraf
 // 2. Configure telegraf.conf [[outputs.wavefront]] to point to the sleepyTestServer.
-// Note: This may require knowing the the port on which sleepyTestServer is listening.
+// Note: This may require knowing the port on which sleepyTestServer is listening.
 // To get this port, it may be worth creating sleepyTestServer using an `http` package (rather than an `httptest`) package method.
 // 3. Write code to send many metrics to the test server.
 // 4. Tail the Telegraf logs to see if the error appears.
