@@ -1,8 +1,11 @@
-package senders
+package main
 
 import (
+	"bufio"
+	"compress/gzip"
 	"crypto/tls"
 	"crypto/x509"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -25,12 +28,6 @@ import (
 func startSleepyTestServer(useTLS bool, secondsToSleep int) *sleepyTestServer {
 	handler := &sleepyTestServer{}
 
-	if useTLS {
-		handler.httpServer = httptest.NewTLSServer(handler)
-	} else {
-		handler.httpServer = httptest.NewServer(handler)
-	}
-	handler.URL = handler.httpServer.URL
 	return handler
 }
 
@@ -51,15 +48,35 @@ func (s *sleepyTestServer) TLSConfig() *tls.Config {
 }
 
 func (s *sleepyTestServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	time.Sleep(5 * time.Second)
+	log.Printf("========running func ServHTTP with url path: %s========\n", request.URL.Path[1:])
+	time.Sleep(11 * time.Second)
 	newLines, err := decodeMetricLines(request)
 	if err != nil {
 		writer.WriteHeader(500)
+		return
 	}
 	s.MetricLines = append(s.MetricLines, newLines...)
 	s.AuthHeaders = append(s.AuthHeaders, request.Header.Get("Authorization"))
 	s.LastRequestURL = request.URL.String()
 	writer.WriteHeader(200)
+}
+
+func decodeMetricLines(request *http.Request) ([]string, error) {
+	var metricLines []string
+	reader, err := gzip.NewReader(request.Body)
+	if err != nil {
+		return metricLines, err
+	}
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		metricLines = append(metricLines, line)
+	}
+	if scanner.Err() != nil {
+		reader.Close()
+		return metricLines, scanner.Err()
+	}
+	return metricLines, reader.Close()
 }
 
 func (s *sleepyTestServer) Close() {
@@ -75,16 +92,8 @@ func (s *sleepyTestServer) hasReceivedLine(lineSubstring string) bool {
 	}
 	return internalMetricFound
 }
-
 func main() {
-	testServer := startSleepyTestServer(false, 60)
-	defer testServer.Close()
-	sender, err := NewSender(testServer.URL)
-
-	if err != nil {
-		// handle error
-	}
-	// TODO: Send many metrics, not just one.
-	sender.SendMetric("my metric", 20, 0, "localhost", nil)
-	sender.Flush()
+	testServer := &sleepyTestServer{}
+	http.Handle("/", testServer)
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
