@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -180,14 +179,7 @@ func (lh *RealLineHandler) FlushAll() error {
 
 func (lh *RealLineHandler) report(lines []string) error {
 	strLines := strings.Join(lines, "")
-	var resp *http.Response
-	var err error
-
-	if lh.Format == EventFormat {
-		resp, err = lh.Reporter.ReportEvent(strLines)
-	} else {
-		resp, err = lh.Reporter.Report(lh.Format, strLines)
-	}
+	resp, err := lh.Reporter.Report(lh.Format, strLines)
 
 	if err != nil {
 		if shouldRetry(err) {
