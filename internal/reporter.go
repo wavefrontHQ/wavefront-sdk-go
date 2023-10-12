@@ -32,14 +32,18 @@ func (reporter reporter) Report(format string, pointLines string) (*http.Respons
 		return nil, formatError
 	}
 
+	if format == eventFormat {
+		return reporter.reportEvent(pointLines)
+	}
+
 	requestBody, err := linesToGzippedBytes(pointLines)
 	if err != nil {
-		return &http.Response{}, err
+		return nil, err
 	}
 
 	req, err := reporter.buildRequest(format, requestBody)
 	if err != nil {
-		return &http.Response{}, err
+		return nil, err
 	}
 
 	return reporter.execute(req)
@@ -80,7 +84,7 @@ func (reporter reporter) buildRequest(format string, body []byte) (*http.Request
 	return req, nil
 }
 
-func (reporter reporter) ReportEvent(event string) (*http.Response, error) {
+func (reporter reporter) reportEvent(event string) (*http.Response, error) {
 	if event == "" {
 		return nil, formatError
 	}
@@ -88,15 +92,12 @@ func (reporter reporter) ReportEvent(event string) (*http.Response, error) {
 	apiURL := reporter.serverURL + eventEndpoint
 	req, err := http.NewRequest("POST", apiURL, strings.NewReader(event))
 	if err != nil {
-		return &http.Response{}, err
+		return nil, err
 	}
-
-	req.Header.Set(contentType, applicationJSON)
 
 	if reporter.IsDirect() {
-		req.Header.Set(contentEncoding, gzipFormat)
+		req.Header.Set(contentType, applicationJSON)
 	}
-
 	err = reporter.tokenService.Authorize(req)
 	if err != nil {
 		return nil, err
@@ -108,7 +109,7 @@ func (reporter reporter) ReportEvent(event string) (*http.Response, error) {
 func (reporter reporter) execute(req *http.Request) (*http.Response, error) {
 	resp, err := reporter.client.Do(req)
 	if err != nil {
-		return resp, err
+		return nil, err
 	}
 	_, _ = io.Copy(io.Discard, resp.Body)
 	defer resp.Body.Close()
