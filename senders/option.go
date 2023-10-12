@@ -175,3 +175,12 @@ func SDKMetricsTags(tags map[string]string) Option {
 		}
 	}
 }
+
+func UseNonBufferingReporter() Option {
+	panic("not implemented")
+}
+
+func UseBufferingReporter() Option {
+	panic("not implemented")
+
+}

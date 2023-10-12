@@ -10,7 +10,13 @@ type Reporter interface {
 }
 
 type Flusher interface {
+	// Deprecated: the Flush method in this SDK behaves differently from typical methods of the same name.
+	// It flushes a single batch or lines, rather than all lines waiting to be sent.
+	// For a full flush, use FlushAll. For the legacy Flush behavior, use FlushOneBatch.
+	// Flush is now an alias for FlushOneBatch.
 	Flush() error
+	FlushAll() error
+	FlushOneBatch() error
 	GetFailureCount() int64
 	Start()
 }

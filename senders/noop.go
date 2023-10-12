@@ -8,6 +8,14 @@ import (
 type noOpSender struct {
 }
 
+func (sender *noOpSender) FlushAll() error {
+	return nil
+}
+
+func (sender *noOpSender) FlushOneBatch() error {
+	return nil
+}
+
 var (
 	defaultNoopClient Sender = &noOpSender{}
 )

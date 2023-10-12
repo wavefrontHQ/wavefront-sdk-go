@@ -17,6 +17,32 @@ type multiSender struct {
 	senders []Sender
 }
 
+func (ms *multiSender) FlushAll() error {
+	var errors multiError
+	for _, sender := range ms.senders {
+		err := sender.FlushAll()
+		if err != nil {
+			errors.add(err)
+		}
+	}
+	return errors.get()
+}
+
+func (ms *multiSender) FlushOneBatch() error {
+	var errors multiError
+	for _, sender := range ms.senders {
+		err := sender.FlushOneBatch()
+		if err != nil {
+			errors.add(err)
+		}
+	}
+	return errors.get()
+}
+
+func (ms *multiSender) Flush() error {
+	return ms.FlushOneBatch()
+}
+
 type multiError struct {
 	errors []error
 }
@@ -105,17 +131,6 @@ func (ms *multiSender) SendEvent(name string, startMillis, endMillis int64, sour
 	var errors multiError
 	for _, sender := range ms.senders {
 		err := sender.SendEvent(name, startMillis, endMillis, source, tags, setters...)
-		if err != nil {
-			errors.add(err)
-		}
-	}
-	return errors.get()
-}
-
-func (ms *multiSender) Flush() error {
-	var errors multiError
-	for _, sender := range ms.senders {
-		err := sender.Flush()
 		if err != nil {
 			errors.add(err)
 		}
