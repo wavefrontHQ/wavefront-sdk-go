@@ -5,65 +5,93 @@ import (
 	"compress/gzip"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 )
 
 func startTestServer(useTLS bool) *testServer {
-	handler := &testServer{}
+	ts := &testServer{}
+	handler := http.NewServeMux()
+	handler.HandleFunc("/api/v2/event", ts.EventAPIEndpoint)
+	handler.HandleFunc("/", ts.ReportEndpoint)
 	if useTLS {
-		handler.httpServer = httptest.NewTLSServer(handler)
+		ts.httpServer = httptest.NewTLSServer(handler)
 	} else {
-		handler.httpServer = httptest.NewServer(handler)
+		ts.httpServer = httptest.NewServer(handler)
 	}
-	handler.URL = handler.httpServer.URL
-	return handler
+	ts.URL = ts.httpServer.URL
+	return ts
 }
 
 type testServer struct {
-	MetricLines    []string
-	AuthHeaders    []string
-	httpServer     *httptest.Server
-	URL            string
-	LastRequestURL string
+	MetricLines []string
+	EventLines  []string
+	AuthHeaders []string
+	httpServer  *httptest.Server
+	URL         string
+	RequestURLs []string
 }
 
 func (s *testServer) TLSConfig() *tls.Config {
-	certpool := x509.NewCertPool()
-	certpool.AddCert(s.httpServer.Certificate())
+	certPool := x509.NewCertPool()
+	certPool.AddCert(s.httpServer.Certificate())
 	return &tls.Config{
-		RootCAs: certpool,
+		RootCAs: certPool,
 	}
 }
 
-func (s *testServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	newLines, err := decodeMetricLines(request)
+func (s *testServer) ReportEndpoint(writer http.ResponseWriter, request *http.Request) {
+	newLines, err := decodeLines(request)
 	if err != nil {
 		writer.WriteHeader(500)
+		return
 	}
 	s.MetricLines = append(s.MetricLines, newLines...)
 	s.AuthHeaders = append(s.AuthHeaders, request.Header.Get("Authorization"))
-	s.LastRequestURL = request.URL.String()
+	s.RequestURLs = append(s.RequestURLs, request.URL.String())
 	writer.WriteHeader(200)
 }
 
-func decodeMetricLines(request *http.Request) ([]string, error) {
-	var metricLines []string
-	reader, err := gzip.NewReader(request.Body)
+func (s *testServer) EventAPIEndpoint(writer http.ResponseWriter, request *http.Request) {
+	fmt.Println(request.URL.Path)
+	newLines, err := decodeLines(request)
 	if err != nil {
-		return metricLines, err
+		writer.WriteHeader(500)
+		return
 	}
-	scanner := bufio.NewScanner(reader)
+	s.EventLines = append(s.EventLines, newLines...)
+	s.AuthHeaders = append(s.AuthHeaders, request.Header.Get("Authorization"))
+	s.RequestURLs = append(s.RequestURLs, request.URL.String())
+	writer.WriteHeader(200)
+}
+
+func decodeLines(request *http.Request) ([]string, error) {
+	var metricLines []string
+	var bodyReader io.Reader
+	defer request.Body.Close()
+	if request.Header.Get("Content-Encoding") == "gzip" {
+		r, err := gzip.NewReader(request.Body)
+		if err != nil {
+			return metricLines, err
+		}
+		defer r.Close()
+		bodyReader = r
+	} else {
+		bodyReader = request.Body
+	}
+
+	scanner := bufio.NewScanner(bodyReader)
 	for scanner.Scan() {
 		line := scanner.Text()
 		metricLines = append(metricLines, line)
 	}
 	if scanner.Err() != nil {
-		reader.Close()
 		return metricLines, scanner.Err()
 	}
-	return metricLines, reader.Close()
+	return metricLines, nil
 }
 
 func (s *testServer) Close() {
