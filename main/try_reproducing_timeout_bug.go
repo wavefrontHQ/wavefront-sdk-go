@@ -5,10 +5,13 @@ import (
 	"compress/gzip"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -24,12 +27,6 @@ import (
 // To get this port, it may be worth creating sleepyTestServer using an `http` package (rather than an `httptest`) package method.
 // 3. Write code to send many metrics to the test server.
 // 4. Tail the Telegraf logs to see if the error appears.
-
-func startSleepyTestServer(useTLS bool, secondsToSleep int) *sleepyTestServer {
-	handler := &sleepyTestServer{}
-
-	return handler
-}
 
 type sleepyTestServer struct {
 	MetricLines    []string
@@ -92,8 +89,44 @@ func (s *sleepyTestServer) hasReceivedLine(lineSubstring string) bool {
 	}
 	return internalMetricFound
 }
+
+type ConnectionWatcher struct {
+	n int64
+}
+
+// OnStateChange records open connections in response to connection
+// state changes. Set net/http Server.ConnState to this method
+// as value.
+func (cw *ConnectionWatcher) OnStateChange(conn net.Conn, state http.ConnState) {
+	switch state {
+	case http.StateNew:
+		cw.Add(1)
+	case http.StateHijacked, http.StateClosed:
+		cw.Add(-1)
+	}
+	fmt.Printf("Connection state: %s\n", state)
+	fmt.Printf("Connection count: %d\n", cw.Count())
+}
+
+// Count returns the number of connections at the time
+// the call.
+func (cw *ConnectionWatcher) Count() int {
+	return int(atomic.LoadInt64(&cw.n))
+}
+
+// Add adds c to the number of active connections.
+func (cw *ConnectionWatcher) Add(c int64) {
+	atomic.AddInt64(&cw.n, c)
+}
+
 func main() {
 	testServer := &sleepyTestServer{}
-	http.Handle("/", testServer)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	cw := &ConnectionWatcher{}
+	s := &http.Server{
+		Addr:      "localhost:8080",
+		Handler:   testServer,
+		ConnState: cw.OnStateChange,
+	}
+
+	log.Fatal(s.ListenAndServe())
 }
