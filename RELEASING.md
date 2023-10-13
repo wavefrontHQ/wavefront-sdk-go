@@ -1,7 +1,7 @@
 ## How to Release the SDK
 
-1. Make sure that all changes for the release are merged with the master branch.
-2. From the root directory of the project in the master branch, run the following commands.
+1. Make sure that all changes for the release are merged with the `main` branch.
+2. From the root directory of the project in the `main` branch, run the following commands.
     1. `go install ./...`
     2. `go test ./...`
     3. `go vet ./...`

@@ -11,7 +11,7 @@ resources:
   type: git
   source:
     uri: git@github.com:wavefrontHQ/wavefront-sdk-go
-    branch: master
+    branch: main
     private_key: ((tas2to-osspi.github-private-key))
 
 jobs:
