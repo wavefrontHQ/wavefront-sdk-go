@@ -2,6 +2,7 @@ package senders
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -39,7 +40,7 @@ func TestTLSEndToEnd(t *testing.T) {
 	testServer.httpServer.Client()
 	tlsConfig := testServer.TLSConfig()
 
-	sender, err := NewSender(testServer.URL, TLSConfigOptions(tlsConfig))
+	sender, err := NewSender(testServer.URL, TLSConfigOptions(tlsConfig), Timeout(10*time.Second))
 	require.NoError(t, err)
 	require.NoError(t, sender.SendMetric("my metric", 20, 0, "localhost", nil))
 	require.NoError(t, sender.Flush())

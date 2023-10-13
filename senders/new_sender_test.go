@@ -3,6 +3,7 @@ package senders
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"net/http"
 	"testing"
 	"time"
 
@@ -108,8 +109,8 @@ func TestDefaults(t *testing.T) {
 	assert.Equal(t, 50000, cfg.MaxBufferSize)
 	assert.Equal(t, 2878, cfg.MetricsPort)
 	assert.Equal(t, 30001, cfg.TracesPort)
-	assert.Equal(t, 10*time.Second, cfg.Timeout)
-	assert.Equal(t, (*tls.Config)(nil), cfg.TLSConfig)
+	assert.Equal(t, 10*time.Second, cfg.HTTPClient.Timeout)
+	assert.Nil(t, cfg.HTTPClient.Transport.(*http.Transport).TLSClientConfig)
 }
 
 func TestBatchSize(t *testing.T) {
@@ -166,7 +167,7 @@ func TestTimeout(t *testing.T) {
 	cfg, err := createConfig("https://localhost", Timeout(60*time.Second))
 	require.NoError(t, err)
 
-	assert.Equal(t, 60*time.Second, cfg.Timeout)
+	assert.Equal(t, 60*time.Second, cfg.HTTPClient.Timeout)
 }
 
 func TestTLSConfigOptions(t *testing.T) {
@@ -179,7 +180,29 @@ func TestTLSConfigOptions(t *testing.T) {
 	}
 	cfg, err := createConfig("https://localhost", TLSConfigOptions(&tlsConfig))
 	require.NoError(t, err)
-	assert.Equal(t, caCertPool, cfg.TLSConfig.RootCAs)
+	assert.Equal(t, caCertPool, cfg.HTTPClient.Transport.(*http.Transport).TLSClientConfig.RootCAs)
+}
+
+func TestHTTPClient(t *testing.T) {
+	client := &http.Client{}
+	cfg, err := createConfig("https://localhost", HTTPClient(client))
+	require.NoError(t, err)
+	assert.Equal(t, client, cfg.HTTPClient)
+
+	caCertPool := x509.NewCertPool()
+	fakeCert := []byte("Not a real cert")
+	caCertPool.AppendCertsFromPEM(fakeCert)
+
+	tlsConfig := tls.Config{
+		RootCAs: caCertPool,
+	}
+	cfg, err = createConfig("https://localhost", HTTPClient(&http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tlsConfig,
+		},
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, caCertPool, cfg.HTTPClient.Transport.(*http.Transport).TLSClientConfig.RootCAs)
 }
 
 func TestSDKMetricsTags_Immutability(t *testing.T) {

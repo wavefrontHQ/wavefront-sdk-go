@@ -2,6 +2,8 @@ package senders
 
 import (
 	"crypto/tls"
+	"log"
+	"net/http"
 	"time"
 
 	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
@@ -9,6 +11,11 @@ import (
 
 // Option Wavefront client configuration options
 type Option func(*configuration)
+
+type httpClientConfiguration struct {
+	Timeout         time.Duration
+	TLSClientConfig *tls.Config
+}
 
 // APIToken configures the sender to use a Wavefront API Token for authentication
 func APIToken(apiToken string) Option {
@@ -115,10 +122,22 @@ func TracesPort(port int) Option {
 	}
 }
 
-// Timeout sets the HTTP timeout (in seconds). Defaults to 10 seconds.
+// Timeout sets the HTTP timeout. Defaults to 10 seconds.
 func Timeout(timeout time.Duration) Option {
 	return func(cfg *configuration) {
-		cfg.Timeout = timeout
+		if cfg.HTTPClient != nil {
+			log.Println("using Timeout after setting the HTTPClient is not supported." +
+				"If you are using the HTTPClient Option, set Timeout on the HTTPClient directly")
+		}
+		cfg.httpClientConfiguration.Timeout = timeout
+	}
+}
+
+// HTTPClient sets the http.Client used to send data to Wavefront.
+// Overrides TLSConfigOptions and Timeout.
+func HTTPClient(client *http.Client) Option {
+	return func(cfg *configuration) {
+		cfg.HTTPClient = client
 	}
 }
 
@@ -126,7 +145,11 @@ func Timeout(timeout time.Duration) Option {
 func TLSConfigOptions(tlsCfg *tls.Config) Option {
 	tlsCfgCopy := tlsCfg.Clone()
 	return func(cfg *configuration) {
-		cfg.TLSConfig = tlsCfgCopy
+		if cfg.HTTPClient != nil {
+			log.Println("using TLSConfigOptions after setting the HTTPClient is not supported." +
+				"If you are using the HTTPClient Option, set TLSClientConfig on the HTTPClient directly")
+		}
+		cfg.httpClientConfiguration.TLSClientConfig = tlsCfgCopy
 	}
 }
 

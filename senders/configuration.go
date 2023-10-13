@@ -1,9 +1,9 @@
 package senders
 
 import (
-	"crypto/tls"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -47,15 +47,12 @@ type configuration struct {
 
 	// interval (in seconds) at which to flush data to Wavefront. defaults to 1 Second.
 	// together with batch size controls the max theoretical throughput of the sender.
-	FlushInterval  time.Duration
-	SDKMetricsTags map[string]string
-	Path           string
-
-	Timeout time.Duration
-
-	TLSConfig *tls.Config
-
-	Authentication interface{}
+	FlushInterval           time.Duration
+	SDKMetricsTags          map[string]string
+	Path                    string
+	Authentication          interface{}
+	httpClientConfiguration *httpClientConfiguration
+	HTTPClient              *http.Client
 }
 
 func (c *configuration) Direct() bool {
@@ -64,14 +61,14 @@ func (c *configuration) Direct() bool {
 
 func createConfig(wfURL string, setters ...Option) (*configuration, error) {
 	cfg := &configuration{
-		MetricsPort:         defaultMetricsPort,
-		TracesPort:          defaultTracesPort,
-		BatchSize:           defaultBatchSize,
-		MaxBufferSize:       defaultBufferSize,
-		FlushInterval:       defaultFlushInterval,
-		SendInternalMetrics: true,
-		SDKMetricsTags:      map[string]string{},
-		Timeout:             defaultTimeout,
+		MetricsPort:             defaultMetricsPort,
+		TracesPort:              defaultTracesPort,
+		BatchSize:               defaultBatchSize,
+		MaxBufferSize:           defaultBufferSize,
+		FlushInterval:           defaultFlushInterval,
+		SendInternalMetrics:     true,
+		SDKMetricsTags:          map[string]string{},
+		httpClientConfiguration: &httpClientConfiguration{Timeout: defaultTimeout},
 	}
 
 	u, err := url.Parse(wfURL)
@@ -119,6 +116,16 @@ func createConfig(wfURL string, setters ...Option) (*configuration, error) {
 		u.Host = u.Hostname()
 	}
 	cfg.Server = u.String()
+
+	if cfg.HTTPClient == nil {
+		cfg.HTTPClient = &http.Client{
+			Timeout: cfg.httpClientConfiguration.Timeout,
+			Transport: &http.Transport{
+				TLSClientConfig: cfg.httpClientConfiguration.TLSClientConfig,
+			},
+		}
+	}
+
 	return cfg, nil
 }
 

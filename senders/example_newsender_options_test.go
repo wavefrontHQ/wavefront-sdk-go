@@ -2,6 +2,7 @@ package senders_test
 
 import (
 	"crypto/tls"
+	"net/http"
 	"time"
 
 	wavefront "github.com/wavefronthq/wavefront-sdk-go/senders"
@@ -18,6 +19,13 @@ func ExampleNewSender_options() {
 		wavefront.Timeout(15),                     // Set an HTTP timeout in seconds (default is 10s)
 		wavefront.SendInternalMetrics(false),      // Don't send internal ~sdk.go.* metrics
 		wavefront.TLSConfigOptions(&tls.Config{}), // Set TLS config options.
+		wavefront.HTTPClient(&http.Client{
+			Timeout: 15 * time.Second,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{},
+				IdleConnTimeout: 4 * time.Second,
+			},
+		}), // Provide a fully configured http.Client
 	)
 
 	if err != nil {
