@@ -3,11 +3,9 @@ package internal
 import (
 	"bytes"
 	"compress/gzip"
-	"crypto/tls"
 	"io"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 )
@@ -26,14 +24,6 @@ func NewReporter(server string, tokenService auth.Service, client *http.Client) 
 		tokenService: tokenService,
 		client:       client,
 	}
-}
-
-func NewClient(timeout time.Duration, tlsConfig *tls.Config) *http.Client {
-	if tlsConfig == nil {
-		return &http.Client{Timeout: timeout}
-	}
-	transport := &http.Transport{TLSClientConfig: tlsConfig}
-	return &http.Client{Timeout: timeout, Transport: transport}
 }
 
 // Report creates and sends a POST to the reportEndpoint with the given pointLines

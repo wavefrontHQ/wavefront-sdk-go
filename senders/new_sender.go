@@ -15,7 +15,7 @@ func NewSender(wfURL string, setters ...Option) (Sender, error) {
 	}
 
 	tokenService := tokenServiceForCfg(cfg)
-	client := internal.NewClient(cfg.Timeout, cfg.TLSConfig)
+	client := cfg.HTTPClient
 	metricsReporter := internal.NewReporter(cfg.metricsURL(), tokenService, client)
 	tracesReporter := internal.NewReporter(cfg.tracesURL(), tokenService, client)
 
