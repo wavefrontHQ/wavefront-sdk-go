@@ -28,7 +28,6 @@ type Sender interface {
 }
 
 type realSender struct {
-	reporter         internal.Reporter
 	defaultSource    string
 	pointHandler     internal.LineHandler
 	histoHandler     internal.LineHandler
