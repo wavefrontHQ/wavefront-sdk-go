@@ -17,7 +17,6 @@ func TestWavefrontSender_SendMetric(t *testing.T) {
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
 	sender := realSender{
-		reporter:         nil,
 		defaultSource:    "test",
 		pointHandler:     pointHandler,
 		histoHandler:     histoHandler,
@@ -52,7 +51,6 @@ func TestWavefrontSender_SendDeltaCounter(t *testing.T) {
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
 	sender := realSender{
-		reporter:         nil,
 		defaultSource:    "test",
 		pointHandler:     pointHandler,
 		histoHandler:     histoHandler,
@@ -92,7 +90,6 @@ func TestWavefrontSender_SendDistribution(t *testing.T) {
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
 	sender := realSender{
-		reporter:         nil,
 		defaultSource:    "test",
 		pointHandler:     pointHandler,
 		histoHandler:     histoHandler,
@@ -137,7 +134,6 @@ func TestWavefrontSender_SendSpan(t *testing.T) {
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
 	sender := realSender{
-		reporter:         nil,
 		defaultSource:    "test",
 		pointHandler:     pointHandler,
 		histoHandler:     histoHandler,
@@ -204,7 +200,6 @@ func TestWavefrontSender_SendSpan_SpanLogs(t *testing.T) {
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
 	sender := realSender{
-		reporter:         nil,
 		defaultSource:    "test",
 		pointHandler:     pointHandler,
 		histoHandler:     histoHandler,
@@ -270,7 +265,6 @@ func TestWavefrontSender_SendEventWithProxyFalse(t *testing.T) {
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
 	sender := realSender{
-		reporter:         nil,
 		defaultSource:    "test",
 		pointHandler:     pointHandler,
 		histoHandler:     histoHandler,
@@ -301,7 +295,6 @@ func TestWavefrontSender_SendEventWithProxyTrue(t *testing.T) {
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
 	sender := realSender{
-		reporter:         nil,
 		defaultSource:    "test",
 		pointHandler:     pointHandler,
 		histoHandler:     histoHandler,

@@ -1,4 +1,4 @@
-package internal
+package lines
 
 import (
 	"fmt"
@@ -99,7 +99,7 @@ func checkLength(buffer chan string, length int, msg string, t *testing.T) {
 	}
 }
 
-func addLines(lh *RealLineHandler, linesToAdd int, expectedLen int, t *testing.T) {
+func addLines(lh *RealHandler, linesToAdd int, expectedLen int, t *testing.T) {
 	for i := 0; i < linesToAdd; i++ {
 		err := lh.HandleLine("dummyLine")
 		if err != nil {
@@ -119,8 +119,8 @@ func makeBuffer(num int) []string {
 	return buf
 }
 
-func makeLineHandler(bufSize, batchSize int) *RealLineHandler {
-	return &RealLineHandler{
+func makeLineHandler(bufSize, batchSize int) *RealHandler {
+	return &RealHandler{
 		Reporter:      &fakeReporter{},
 		MaxBufferSize: bufSize,
 		BatchSize:     batchSize,

@@ -1,4 +1,4 @@
-package internal
+package lines
 
 import (
 	"net/http"

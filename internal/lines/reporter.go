@@ -1,4 +1,4 @@
-package internal
+package lines
 
 import (
 	"bytes"
@@ -6,9 +6,33 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 )
+
+const (
+	MetricFormat    = "wavefront"
+	HistogramFormat = "histogram"
+	TraceFormat     = "trace"
+	SpanLogsFormat  = "spanLogs"
+	EventFormat     = "event"
+)
+
+type ReporterOptions struct {
+	// max batch of data sent per flush interval. defaults to 10,000. recommended not to exceed 40,000.
+	BatchSize int
+	// size of internal buffers beyond which received data is dropped.
+	// helps with handling brief increases in data and buffering on errors.
+	// separate buffers are maintained per data type (metrics, spans and distributions)
+	// buffers are not pre-allocated to max size and vary based on actual usage.
+	// defaults to 500,000. higher values could use more memory.
+	MaxBufferSize int
+
+	// interval (in seconds) at which to flush data to Wavefront. defaults to 1 Second.
+	// together with batch size controls the max theoretical throughput of the sender.
+	FlushInterval time.Duration
+}
 
 // The implementation of a Reporter that reports points directly to a Wavefront server.
 type reporter struct {
@@ -27,6 +51,7 @@ func NewReporter(server string, tokenService auth.Service, client *http.Client) 
 }
 
 // Report creates and sends a POST to the reportEndpoint with the given pointLines
+// nit: format is string as enum/polymorphism
 func (reporter reporter) Report(format string, pointLines string) (*http.Response, error) {
 	if format == "" || pointLines == "" {
 		return nil, formatError

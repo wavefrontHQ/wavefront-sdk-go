@@ -2,6 +2,7 @@ package senders
 
 import (
 	"fmt"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/lines"
 	"log"
 	"net/http"
 	"net/url"
@@ -32,27 +33,16 @@ type configuration struct {
 	MetricsPort int
 	TracesPort  int
 
-	// max batch of data sent per flush interval. defaults to 10,000. recommended not to exceed 40,000.
-	BatchSize int
+
 
 	// send, or don't send, internal SDK metrics that begin with ~sdk.go.core
 	SendInternalMetrics bool
-
-	// size of internal buffers beyond which received data is dropped.
-	// helps with handling brief increases in data and buffering on errors.
-	// separate buffers are maintained per data type (metrics, spans and distributions)
-	// buffers are not pre-allocated to max size and vary based on actual usage.
-	// defaults to 500,000. higher values could use more memory.
-	MaxBufferSize int
-
-	// interval (in seconds) at which to flush data to Wavefront. defaults to 1 Second.
-	// together with batch size controls the max theoretical throughput of the sender.
-	FlushInterval           time.Duration
 	SDKMetricsTags          map[string]string
 	Path                    string
 	Authentication          interface{}
 	httpClientConfiguration *httpClientConfiguration
 	HTTPClient              *http.Client
+	ReporterOptions *lines.ReporterOptions
 }
 
 func (c *configuration) Direct() bool {
@@ -63,9 +53,7 @@ func createConfig(wfURL string, setters ...Option) (*configuration, error) {
 	cfg := &configuration{
 		MetricsPort:             defaultMetricsPort,
 		TracesPort:              defaultTracesPort,
-		BatchSize:               defaultBatchSize,
-		MaxBufferSize:           defaultBufferSize,
-		FlushInterval:           defaultFlushInterval,
+
 		SendInternalMetrics:     true,
 		SDKMetricsTags:          map[string]string{},
 		httpClientConfiguration: &httpClientConfiguration{Timeout: defaultTimeout},

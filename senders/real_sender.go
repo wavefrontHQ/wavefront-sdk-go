@@ -2,8 +2,10 @@ package senders
 
 import (
 	"fmt"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/lines"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
@@ -28,27 +30,38 @@ type Sender interface {
 }
 
 type realSender struct {
-	reporter         internal.Reporter
 	defaultSource    string
-	pointHandler     internal.LineHandler
-	histoHandler     internal.LineHandler
-	spanHandler      internal.LineHandler
-	spanLogHandler   internal.LineHandler
-	eventHandler     internal.LineHandler
+	pointHandler     lines.Handler
+	histoHandler     lines.Handler
+	spanHandler      lines.Handler
+	spanLogHandler   lines.Handler
+	eventHandler     lines.Handler
 	internalRegistry sdkmetrics.Registry
 	proxy            bool
 }
 
-func newLineHandler(reporter internal.Reporter, cfg *configuration, format, prefix string, registry sdkmetrics.Registry) *internal.RealLineHandler {
-	opts := []internal.LineHandlerOption{internal.SetHandlerPrefix(prefix), internal.SetRegistry(registry)}
-	batchSize := cfg.BatchSize
-	if format == internal.EventFormat {
-		batchSize = 1
-		opts = append(opts, internal.SetLockOnThrottledError(true))
+func (sender *realSender) FlushAll() error {
+	var errs = []error{
+		sender.pointHandler.FlushAll(),
+		sender.histoHandler.FlushAll(),
+		sender.spanHandler.FlushAll(),
+		sender.spanLogHandler.FlushAll(),
+		sender.eventHandler.FlushAll(),
 	}
 
-	return internal.NewLineHandler(reporter, format, cfg.FlushInterval, batchSize, cfg.MaxBufferSize, opts...)
+	errStrings := make([]string, 0)
+	for _, err := range errs {
+		if err != nil {
+			errStrings = append(errStrings, err.Error())
+		}
+	}
+
+	if len(errStrings) > 0 {
+		return fmt.Errorf(strings.Join(errStrings, "\n"))
+	}
+	return nil
 }
+
 
 func (sender *realSender) Start() {
 	sender.pointHandler.Start()
@@ -103,7 +116,7 @@ func (sender *realSender) SendDistribution(
 	)
 }
 
-func trySendWith(line string, err error, handler internal.LineHandler, tracker sdkmetrics.SuccessTracker) error {
+func trySendWith(line string, err error, handler lines.Handler, tracker sdkmetrics.SuccessTracker) error {
 	if err != nil {
 		tracker.IncInvalid()
 		return err

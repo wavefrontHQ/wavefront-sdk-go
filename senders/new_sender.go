@@ -2,6 +2,7 @@ package senders
 
 import (
 	"fmt"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/lines"
 
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 	"github.com/wavefronthq/wavefront-sdk-go/internal/sdkmetrics"
@@ -16,8 +17,8 @@ func NewSender(wfURL string, setters ...Option) (Sender, error) {
 
 	tokenService := tokenServiceForCfg(cfg)
 	client := cfg.HTTPClient
-	metricsReporter := internal.NewReporter(cfg.metricsURL(), tokenService, client)
-	tracesReporter := internal.NewReporter(cfg.tracesURL(), tokenService, client)
+	metricsReporter := lines.NewReporter(cfg.metricsURL(), tokenService, client)
+	tracesReporter := lines.NewReporter(cfg.tracesURL(), tokenService, client)
 
 	sender := &realSender{
 		defaultSource: internal.GetHostname("wavefront_direct_sender"),
@@ -28,11 +29,23 @@ func NewSender(wfURL string, setters ...Option) (Sender, error) {
 	} else {
 		sender.internalRegistry = sdkmetrics.NewNoOpRegistry()
 	}
-	sender.pointHandler = newLineHandler(metricsReporter, cfg, internal.MetricFormat, "points", sender.internalRegistry)
-	sender.histoHandler = newLineHandler(metricsReporter, cfg, internal.HistogramFormat, "histograms", sender.internalRegistry)
-	sender.spanHandler = newLineHandler(tracesReporter, cfg, internal.TraceFormat, "spans", sender.internalRegistry)
-	sender.spanLogHandler = newLineHandler(tracesReporter, cfg, internal.SpanLogsFormat, "span_logs", sender.internalRegistry)
-	sender.eventHandler = newLineHandler(metricsReporter, cfg, internal.EventFormat, "events", sender.internalRegistry)
+
+	//TODO: style: could have format-specific handler factories instead
+	// this would avoid exposing the format string constants and the prefixes
+
+	factory := lines.NewHandlerFactory(metricsURL, tracesURL, tokenService, client, internalRegistry)
+	factory.NewPointsHandler()
+	factory.NewHistogramHandler()
+
+	// BatchSender
+	// uses a ReportHTTPRequestSender
+	// can optionally use a BackgroundFlusher
+
+	sender.pointHandler = lines.NewHandler(metricsReporter, cfg, lines.MetricFormat, "points", sender.internalRegistry)
+	sender.histoHandler = lines.NewHandler(metricsReporter, cfg, lines.HistogramFormat, "histograms", sender.internalRegistry)
+	sender.spanHandler = lines.NewHandler(tracesReporter, cfg, lines.TraceFormat, "spans", sender.internalRegistry)
+	sender.spanLogHandler = lines.NewHandler(tracesReporter, cfg, lines.SpanLogsFormat, "span_logs", sender.internalRegistry)
+	sender.eventHandler = lines.NewHandler(metricsReporter, cfg, lines.EventFormat, "events", sender.internalRegistry)
 
 	sender.Start()
 	return sender, nil
