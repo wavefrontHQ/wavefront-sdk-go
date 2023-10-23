@@ -175,3 +175,11 @@ func SDKMetricsTags(tags map[string]string) Option {
 		}
 	}
 }
+
+func copyTags(orig map[string]string) map[string]string {
+	result := make(map[string]string, len(orig))
+	for key, value := range orig {
+		result[key] = value
+	}
+	return result
+}

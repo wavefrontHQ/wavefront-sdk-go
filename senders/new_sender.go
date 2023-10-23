@@ -28,20 +28,20 @@ func NewSender(wfURL string, setters ...Option) (Sender, error) {
 	} else {
 		sender.internalRegistry = sdkmetrics.NewNoOpRegistry()
 	}
-	sender.pointHandler = newLineHandler(metricsReporter, cfg, internal.MetricFormat, "points", sender.internalRegistry)
-	sender.histoHandler = newLineHandler(metricsReporter, cfg, internal.HistogramFormat, "histograms", sender.internalRegistry)
-	sender.spanHandler = newLineHandler(tracesReporter, cfg, internal.TraceFormat, "spans", sender.internalRegistry)
-	sender.spanLogHandler = newLineHandler(tracesReporter, cfg, internal.SpanLogsFormat, "span_logs", sender.internalRegistry)
-	sender.eventHandler = newLineHandler(metricsReporter, cfg, internal.EventFormat, "events", sender.internalRegistry)
 
+	hf := internal.NewHandlerFactory(
+		metricsReporter,
+		tracesReporter,
+		cfg.FlushInterval,
+		cfg.MaxBufferSize,
+		sender.internalRegistry,
+	)
+
+	sender.pointHandler = hf.NewPointHandler(cfg.BatchSize)
+	sender.histoHandler = hf.NewHistogramHandler(cfg.BatchSize)
+	sender.spanHandler = hf.NewSpanHandler(cfg.BatchSize)
+	sender.spanLogHandler = hf.NewSpanLogHandler(cfg.BatchSize)
+	sender.eventHandler = hf.NewEventHandler()
 	sender.Start()
 	return sender, nil
-}
-
-func copyTags(orig map[string]string) map[string]string {
-	result := make(map[string]string, len(orig))
-	for key, value := range orig {
-		result[key] = value
-	}
-	return result
 }
