@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	MetricFormat    = "wavefront"
-	HistogramFormat = "histogram"
-	TraceFormat     = "trace"
-	SpanLogsFormat  = "spanLogs"
-	EventFormat     = "event"
+	metricFormat    = "wavefront"
+	histogramFormat = "histogram"
+	traceFormat     = "trace"
+	spanLogsFormat  = "spanLogs"
+	eventFormat     = "event"
 )
 
 type RealLineHandler struct {
@@ -183,7 +183,7 @@ func (lh *RealLineHandler) report(lines []string) error {
 	var resp *http.Response
 	var err error
 
-	if lh.Format == EventFormat {
+	if lh.Format == eventFormat {
 		resp, err = lh.Reporter.ReportEvent(strLines)
 	} else {
 		resp, err = lh.Reporter.Report(lh.Format, strLines)

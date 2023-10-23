@@ -38,17 +38,6 @@ type realSender struct {
 	proxy            bool
 }
 
-func newLineHandler(reporter internal.Reporter, cfg *configuration, format, prefix string, registry sdkmetrics.Registry) *internal.RealLineHandler {
-	opts := []internal.LineHandlerOption{internal.SetHandlerPrefix(prefix), internal.SetRegistry(registry)}
-	batchSize := cfg.BatchSize
-	if format == internal.EventFormat {
-		batchSize = 1
-		opts = append(opts, internal.SetLockOnThrottledError(true))
-	}
-
-	return internal.NewLineHandler(reporter, format, cfg.FlushInterval, batchSize, cfg.MaxBufferSize, opts...)
-}
-
 func (sender *realSender) Start() {
 	sender.pointHandler.Start()
 	sender.histoHandler.Start()
