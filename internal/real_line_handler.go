@@ -14,11 +14,12 @@ import (
 )
 
 const (
-	metricFormat    = "wavefront"
-	histogramFormat = "histogram"
-	traceFormat     = "trace"
-	spanLogsFormat  = "spanLogs"
-	eventFormat     = "event"
+	metricFormat                  = "wavefront"
+	histogramFormat               = "histogram"
+	traceFormat                   = "trace"
+	spanLogsFormat                = "spanLogs"
+	eventFormat                   = "event"
+	defaultThrottledSleepDuration = time.Second * 30
 )
 
 type RealLineHandler struct {
@@ -32,20 +33,23 @@ type RealLineHandler struct {
 	Reporter      Reporter
 	BatchSize     int
 	MaxBufferSize int
-	Format        string
-	flushTicker   *time.Ticker
+	format        string
 
-	internalRegistry sdkmetrics.Registry
-	prefix           string
+	internalRegistry       sdkmetrics.Registry
+	prefix                 string
+	throttleOnBackpressure bool
+	throttledSleepDuration time.Duration
+	mtx                    sync.Mutex
 
-	mtx                sync.Mutex
-	lockOnErrThrottled bool
-
-	buffer chan string
-	done   chan struct{}
+	buffer   chan string
+	flusher  BackgroundFlusher
+	resumeAt time.Time
 }
 
-var throttledSleepDuration = time.Second * 30
+func (lh *RealLineHandler) Format() string {
+	return lh.format
+}
+
 var errThrottled = errors.New("error: throttled event creation")
 
 type LineHandlerOption func(*RealLineHandler)
@@ -62,21 +66,23 @@ func SetHandlerPrefix(prefix string) LineHandlerOption {
 	}
 }
 
-func SetLockOnThrottledError(lock bool) LineHandlerOption {
+func ThrottleRequestsOnBackpressure() LineHandlerOption {
 	return func(handler *RealLineHandler) {
-		handler.lockOnErrThrottled = lock
+		handler.throttleOnBackpressure = true
 	}
 }
 
 func NewLineHandler(reporter Reporter, format string, flushInterval time.Duration, batchSize, maxBufferSize int, setters ...LineHandlerOption) *RealLineHandler {
 	lh := &RealLineHandler{
-		Reporter:           reporter,
-		BatchSize:          batchSize,
-		MaxBufferSize:      maxBufferSize,
-		flushTicker:        time.NewTicker(flushInterval),
-		Format:             format,
-		lockOnErrThrottled: false,
+		Reporter:               reporter,
+		BatchSize:              batchSize,
+		MaxBufferSize:          maxBufferSize,
+		format:                 format,
+		throttledSleepDuration: defaultThrottledSleepDuration,
 	}
+
+	lh.buffer = make(chan string, lh.MaxBufferSize)
+	lh.flusher = NewBackgroundFlusher(flushInterval, lh)
 
 	for _, setter := range setters {
 		setter(lh)
@@ -94,31 +100,7 @@ func NewLineHandler(reporter Reporter, format string, flushInterval time.Duratio
 }
 
 func (lh *RealLineHandler) Start() {
-	lh.buffer = make(chan string, lh.MaxBufferSize)
-	lh.done = make(chan struct{})
-
-	go func() {
-		for {
-			select {
-			case <-lh.flushTicker.C:
-				err := lh.Flush()
-				if err != nil {
-					log.Println(lh.lockOnErrThrottled, "---", err)
-					if err == errThrottled && lh.lockOnErrThrottled {
-						go func() {
-							lh.mtx.Lock()
-							atomic.AddInt64(&lh.throttled, 1)
-							log.Printf("sleeping for %v, buffer size: %d\n", throttledSleepDuration, len(lh.buffer))
-							time.Sleep(throttledSleepDuration)
-							lh.mtx.Unlock()
-						}()
-					}
-				}
-			case <-lh.done:
-				return
-			}
-		}
-	}()
+	lh.flusher.Start()
 }
 
 func (lh *RealLineHandler) HandleLine(line string) error {
@@ -138,7 +120,7 @@ func minInt(x, y int) int {
 	return y
 }
 
-func (lh *RealLineHandler) Flush() error {
+func (lh *RealLineHandler) flush() error {
 	lh.mtx.Lock()
 	defer lh.mtx.Unlock()
 	bufLen := len(lh.buffer)
@@ -151,6 +133,25 @@ func (lh *RealLineHandler) Flush() error {
 		return lh.report(lines)
 	}
 	return nil
+}
+
+func (lh *RealLineHandler) FlushWithThrottling() error {
+	if time.Now().Before(lh.resumeAt) {
+		log.Println("attempting to flush, but flushing is currently throttled by the server")
+		log.Printf("sleeping until: %s\n", lh.resumeAt.Format(time.RFC3339))
+		time.Sleep(time.Until(lh.resumeAt))
+	}
+	return lh.Flush()
+}
+
+func (lh *RealLineHandler) Flush() error {
+	flushErr := lh.flush()
+	if flushErr == errThrottled && lh.throttleOnBackpressure {
+		atomic.AddInt64(&lh.throttled, 1)
+		log.Printf("pausing requests for %v, buffer size: %d\n", lh.throttledSleepDuration, len(lh.buffer))
+		lh.resumeAt = time.Now().Add(lh.throttledSleepDuration)
+	}
+	return flushErr
 }
 
 func (lh *RealLineHandler) FlushAll() error {
@@ -179,13 +180,13 @@ func (lh *RealLineHandler) FlushAll() error {
 
 func (lh *RealLineHandler) report(lines []string) error {
 	strLines := strings.Join(lines, "")
-	resp, err := lh.Reporter.Report(lh.Format, strLines)
+	resp, err := lh.Reporter.Report(lh.format, strLines)
 
 	if err != nil {
 		if shouldRetry(err) {
 			lh.bufferLines(lines)
 		}
-		return fmt.Errorf("error reporting %s format data to Wavefront: %q", lh.Format, err)
+		return fmt.Errorf("error reporting %s format data to Wavefront: %q", lh.format, err)
 	}
 
 	if 400 <= resp.StatusCode && resp.StatusCode <= 599 {
@@ -194,7 +195,7 @@ func (lh *RealLineHandler) report(lines []string) error {
 		if resp.StatusCode == 406 {
 			return errThrottled
 		}
-		return fmt.Errorf("error reporting %s format data to Wavefront. status=%d", lh.Format, resp.StatusCode)
+		return fmt.Errorf("error reporting %s format data to Wavefront. status=%d", lh.format, resp.StatusCode)
 	}
 	return nil
 }
@@ -224,11 +225,9 @@ func (lh *RealLineHandler) GetThrottledCount() int64 {
 }
 
 func (lh *RealLineHandler) Stop() {
-	lh.flushTicker.Stop()
-	lh.done <- struct{}{} // block until goroutine exits
+	lh.flusher.Stop()
 	if err := lh.FlushAll(); err != nil {
 		log.Println(err)
 	}
-	lh.done = nil
 	lh.buffer = nil
 }

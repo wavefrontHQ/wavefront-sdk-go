@@ -29,7 +29,9 @@ type LineHandler interface {
 	Start()
 	Stop()
 	Flush() error
+	FlushWithThrottling() error
 	GetFailureCount() int64
+	Format() string
 }
 
 const (

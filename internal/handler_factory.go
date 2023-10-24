@@ -80,7 +80,7 @@ func (f *HandlerFactory) NewSpanLogHandler(batchSize int) *RealLineHandler {
 }
 
 // NewEventHandler creates a RealLineHandler for the Event type
-// The Event handler always sets "SetLockOnThrottledError" to true
+// The Event handler always sets "ThrottleRequestsOnBackpressure" to true
 // And always uses a batch size of exactly 1.
 func (f *HandlerFactory) NewEventHandler() *RealLineHandler {
 	return NewLineHandler(
@@ -91,6 +91,6 @@ func (f *HandlerFactory) NewEventHandler() *RealLineHandler {
 		f.bufferSize,
 		append(f.lineHandlerOptions,
 			SetHandlerPrefix("events"),
-			SetLockOnThrottledError(true))...,
+			ThrottleRequestsOnBackpressure())...,
 	)
 }

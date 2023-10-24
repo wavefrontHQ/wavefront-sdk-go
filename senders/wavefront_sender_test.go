@@ -322,6 +322,10 @@ type mockHandler struct {
 	Lines []string
 }
 
+func (m *mockHandler) Format() string {
+	return "mock-handler"
+}
+
 func (m *mockHandler) HandleLine(line string) error {
 	m.Lines = append(m.Lines, line)
 	return m.Error
@@ -335,6 +339,10 @@ func (m *mockHandler) Stop() {
 
 func (m *mockHandler) Flush() error {
 	return m.Error
+}
+
+func (m *mockHandler) FlushWithThrottling() error {
+	return m.Flush()
 }
 
 func (m *mockHandler) GetFailureCount() int64 {
