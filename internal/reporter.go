@@ -10,8 +10,8 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/internal/auth"
 )
 
-// The implementation of a Reporter that reports points directly to a Wavefront server.
-type reporter struct {
+// batchingHTTPReporter is a Reporter that reports points in batches via HTTP(S)
+type batchingHTTPReporter struct {
 	serverURL    string
 	tokenService auth.Service
 	client       *http.Client
@@ -19,7 +19,7 @@ type reporter struct {
 
 // NewReporter creates a metrics Reporter
 func NewReporter(server string, tokenService auth.Service, client *http.Client) Reporter {
-	return &reporter{
+	return &batchingHTTPReporter{
 		serverURL:    server,
 		tokenService: tokenService,
 		client:       client,
@@ -27,7 +27,7 @@ func NewReporter(server string, tokenService auth.Service, client *http.Client) 
 }
 
 // Report creates and sends a POST to the reportEndpoint with the given pointLines
-func (reporter reporter) Report(format string, pointLines string) (*http.Response, error) {
+func (reporter batchingHTTPReporter) Report(format string, pointLines string) (*http.Response, error) {
 	if format == "" || pointLines == "" {
 		return nil, formatError
 	}
@@ -63,7 +63,7 @@ func linesToGzippedBytes(pointLines string) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func (reporter reporter) buildRequest(format string, body []byte) (*http.Request, error) {
+func (reporter batchingHTTPReporter) buildRequest(format string, body []byte) (*http.Request, error) {
 	apiURL := reporter.serverURL + reportEndpoint
 	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(body))
 	if err != nil {
@@ -84,7 +84,7 @@ func (reporter reporter) buildRequest(format string, body []byte) (*http.Request
 	return req, nil
 }
 
-func (reporter reporter) reportEvent(event string) (*http.Response, error) {
+func (reporter batchingHTTPReporter) reportEvent(event string) (*http.Response, error) {
 	if event == "" {
 		return nil, formatError
 	}
@@ -106,7 +106,7 @@ func (reporter reporter) reportEvent(event string) (*http.Response, error) {
 	return reporter.execute(req)
 }
 
-func (reporter reporter) execute(req *http.Request) (*http.Response, error) {
+func (reporter batchingHTTPReporter) execute(req *http.Request) (*http.Response, error) {
 	resp, err := reporter.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -116,10 +116,10 @@ func (reporter reporter) execute(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
-func (reporter reporter) Close() {
+func (reporter batchingHTTPReporter) Close() {
 	reporter.tokenService.Close()
 }
 
-func (reporter reporter) IsDirect() bool {
+func (reporter batchingHTTPReporter) IsDirect() bool {
 	return reporter.tokenService.IsDirect()
 }

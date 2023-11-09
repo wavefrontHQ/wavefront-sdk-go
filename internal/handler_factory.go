@@ -6,32 +6,54 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/internal/sdkmetrics"
 )
 
-type HandlerFactory struct {
+type SenderFactory struct {
 	metricsReporter    Reporter
 	tracesReporter     Reporter
 	flushInterval      time.Duration
 	bufferSize         int
-	lineHandlerOptions []LineHandlerOption
+	lineHandlerOptions []BatchAccumulatorOption
+	registry           sdkmetrics.Registry
 }
 
-func NewHandlerFactory(
+func NewSenderFactory(
 	metricsReporter,
 	tracesReporter Reporter,
 	flushInterval time.Duration,
 	bufferSize int,
-	registry sdkmetrics.Registry) *HandlerFactory {
-	return &HandlerFactory{
+	registry sdkmetrics.Registry) *SenderFactory {
+	return &SenderFactory{
+		registry:        registry,
 		metricsReporter: metricsReporter,
 		tracesReporter:  tracesReporter,
 		flushInterval:   flushInterval,
 		bufferSize:      bufferSize,
-		lineHandlerOptions: []LineHandlerOption{
+		lineHandlerOptions: []BatchAccumulatorOption{
 			SetRegistry(registry),
 		},
 	}
 }
 
-func (f *HandlerFactory) NewPointHandler(batchSize int) *RealLineHandler {
+func (f *SenderFactory) NewPointSender(batchSize int) TypedSender {
+	return NewTypedSender(f.registry.PointsTracker(), f.newPointHandler(batchSize))
+}
+
+func (f *SenderFactory) NewHistogramSender(batchSize int) TypedSender {
+	return NewTypedSender(f.registry.HistogramsTracker(), f.NewHistogramHandler(batchSize))
+}
+
+func (f *SenderFactory) NewSpanSender(batchSize int) TypedSender {
+	return NewTypedSender(f.registry.SpansTracker(), f.newSpanHandler(batchSize))
+}
+
+func (f *SenderFactory) NewEventsSender() TypedSender {
+	return NewTypedSender(f.registry.EventsTracker(), f.newEventHandler())
+}
+
+func (f *SenderFactory) NewSpanLogSender(batchSize int) TypedSender {
+	return NewTypedSender(f.registry.SpanLogsTracker(), f.newSpanLogHandler(batchSize))
+}
+
+func (f *SenderFactory) newPointHandler(batchSize int) *RealBatchBuilder {
 	return NewLineHandler(
 		f.metricsReporter,
 		metricFormat,
@@ -43,7 +65,7 @@ func (f *HandlerFactory) NewPointHandler(batchSize int) *RealLineHandler {
 	)
 }
 
-func (f *HandlerFactory) NewHistogramHandler(batchSize int) *RealLineHandler {
+func (f *SenderFactory) NewHistogramHandler(batchSize int) *RealBatchBuilder {
 	return NewLineHandler(
 		f.metricsReporter,
 		histogramFormat,
@@ -55,7 +77,7 @@ func (f *HandlerFactory) NewHistogramHandler(batchSize int) *RealLineHandler {
 	)
 }
 
-func (f *HandlerFactory) NewSpanHandler(batchSize int) *RealLineHandler {
+func (f *SenderFactory) newSpanHandler(batchSize int) *RealBatchBuilder {
 	return NewLineHandler(
 		f.tracesReporter,
 		traceFormat,
@@ -67,7 +89,7 @@ func (f *HandlerFactory) NewSpanHandler(batchSize int) *RealLineHandler {
 	)
 }
 
-func (f *HandlerFactory) NewSpanLogHandler(batchSize int) *RealLineHandler {
+func (f *SenderFactory) newSpanLogHandler(batchSize int) *RealBatchBuilder {
 	return NewLineHandler(
 		f.tracesReporter,
 		spanLogsFormat,
@@ -79,10 +101,10 @@ func (f *HandlerFactory) NewSpanLogHandler(batchSize int) *RealLineHandler {
 	)
 }
 
-// NewEventHandler creates a RealLineHandler for the Event type
+// NewEventHandler creates a RealBatchBuilder for the Event type
 // The Event handler always sets "ThrottleRequestsOnBackpressure" to true
 // And always uses a batch size of exactly 1.
-func (f *HandlerFactory) NewEventHandler() *RealLineHandler {
+func (f *SenderFactory) newEventHandler() *RealBatchBuilder {
 	return NewLineHandler(
 		f.metricsReporter,
 		eventFormat,
