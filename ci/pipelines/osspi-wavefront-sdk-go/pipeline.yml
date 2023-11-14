@@ -5,14 +5,14 @@ resources:
   icon: gitlab
   source:
     uri: git@gitlab.eng.vmware.com:source-insight-tooling/norsk-to-osspi.git
-    private_key: ((tas2to-osspi.norsk-to-osspi-private-key))
+    private_key: ((tas2to.norsk-to-osspi-private-key))
     branch: main
 - name: wavefront-sdk-go
   type: git
   source:
     uri: git@github.com:wavefrontHQ/wavefront-sdk-go
     branch: main
-    private_key: ((tas2to-osspi.github-private-key))
+    private_key: ((tas2to.github-private-key))
 
 jobs:
 - name: wavefront-sdk-go-scan
@@ -32,8 +32,8 @@ jobs:
       params:
         REPO: repo2
         OSM_ENVIRONMENT: ((osm-environment))
-        API_KEY: ((tas2to-osspi.apikey-((osm-environment))))
-        USERNAME: ((tas2to-osspi.user-((osm-environment))))
+        API_KEY: ((tas2to.apikey-((osm-environment))))
+        USERNAME: ((tas2to.user-((osm-environment))))
         PRODUCT: wavefront-sdk-go
         VERSION: ((version))
         OSM_PACKAGE_GROUP_NAME: wavefront-sdk-go
