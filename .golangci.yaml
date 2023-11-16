@@ -9,9 +9,18 @@ linters:
   - revive
   - ineffassign
   - staticcheck
+  - misspell
+  - gocyclo
+  - typecheck
+  - megacheck
+  - goimports
+  - goconst
+  - unconvert
+  - gocritic
 issues:
   exclude-rules:
   - path: example.*_test\.go
     linters:
     - ineffassign
     - revive
+  exclude-use-default: false
