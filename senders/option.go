@@ -44,8 +44,7 @@ func CSPBaseURL(baseURL string) CSPOption {
 // CSPOrgID sets an explicit orgID for Client Credentials authentication
 func CSPOrgID(orgID string) CSPOption {
 	return func(authentication any) {
-		switch a := authentication.(type) {
-		case auth.CSPClientCredentials:
+		if a, ok := authentication.(auth.CSPClientCredentials); ok {
 			a.OrgID = &orgID
 		}
 	}

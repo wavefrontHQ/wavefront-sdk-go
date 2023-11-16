@@ -2,21 +2,21 @@ linters:
   disable-all: true
   enable:
   - errcheck
+  - gci
+#  - goconst
+  - gocritic
+  - gocyclo
+  - gofmt
+  - goimports
   - gosimple
   - govet
-  - gofmt
-  - gci
-  - revive
   - ineffassign
-  - staticcheck
-  - misspell
-  - gocyclo
-  - typecheck
   - megacheck
-  - goimports
-  - goconst
+  - misspell
+  - revive
+  - staticcheck
+  - typecheck
   - unconvert
-  - gocritic
 issues:
   exclude-rules:
   - path: example.*_test\.go

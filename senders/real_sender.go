@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
@@ -197,29 +198,24 @@ func (sender *realSender) Close() {
 }
 
 func (sender *realSender) Flush() error {
-	errStr := ""
-	err := sender.pointHandler.Flush()
-	if err != nil {
-		errStr = errStr + err.Error() + "\n"
+	return combineErrorMessages(
+		sender.pointHandler.Flush(),
+		sender.histoHandler.Flush(),
+		sender.spanHandler.Flush(),
+		sender.spanLogHandler.Flush(),
+		sender.eventHandler.Flush(),
+	)
+}
+
+func combineErrorMessages(errs ...error) error {
+	var nonNilErrMessages []string
+	for _, err := range errs {
+		if err != nil {
+			nonNilErrMessages = append(nonNilErrMessages, err.Error())
+		}
 	}
-	err = sender.histoHandler.Flush()
-	if err != nil {
-		errStr = errStr + err.Error() + "\n"
-	}
-	err = sender.spanHandler.Flush()
-	if err != nil {
-		errStr = errStr + err.Error()
-	}
-	err = sender.spanLogHandler.Flush()
-	if err != nil {
-		errStr = errStr + err.Error()
-	}
-	err = sender.eventHandler.Flush()
-	if err != nil {
-		errStr = errStr + err.Error()
-	}
-	if errStr != "" {
-		return fmt.Errorf(errStr)
+	if len(nonNilErrMessages) > 0 {
+		return fmt.Errorf(strings.Join(nonNilErrMessages, "\n"))
 	}
 	return nil
 }

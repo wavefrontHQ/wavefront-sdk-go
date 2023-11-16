@@ -9,7 +9,7 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
 )
 
-// Line gets a span line in the Wavefront span data format:
+// Line returns a span line in the Wavefront span data format:
 // <tracingSpanName> source=<source> [pointTags] <start_millis> <duration_milli_seconds>
 // Example:
 // "getAllUsers source=localhost traceId=7b3bf470-9456-11e8-9eb6-529269fb1459 spanId=0313bafe-9457-11e8-9eb6-529269fb1459
@@ -80,6 +80,7 @@ func Line(name string, startMillis, durationMillis int64, source, traceID, spanI
 	return sb.String(), nil
 }
 
+// LogJSON returns Span Logs as a string in JSON format,
 func LogJSON(traceID, spanID string, spanLogs []Log, span string) (string, error) {
 	l := Logs{
 		TraceID: traceID,
@@ -91,7 +92,7 @@ func LogJSON(traceID, spanID string, spanLogs []Log, span string) (string, error
 	if err != nil {
 		return "", err
 	}
-	return string(out[:]) + "\n", nil
+	return string(out) + "\n", nil
 }
 
 func isUUIDFormat(str string) bool {
