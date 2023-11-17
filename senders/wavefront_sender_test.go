@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
+	"github.com/wavefronthq/wavefront-sdk-go/internal"
 	"github.com/wavefronthq/wavefront-sdk-go/internal/sdkmetrics"
 )
 
@@ -16,16 +17,7 @@ func TestWavefrontSender_SendMetric(t *testing.T) {
 	spanHandler := &mockHandler{}
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
-	sender := realSender{
-		defaultSource:    "test",
-		pointHandler:     pointHandler,
-		histoHandler:     histoHandler,
-		spanHandler:      spanHandler,
-		spanLogHandler:   spanLogHandler,
-		eventHandler:     eventHandler,
-		internalRegistry: registry,
-		proxy:            false,
-	}
+	sender := newSenderWithMocks(registry, pointHandler, histoHandler, spanHandler, spanLogHandler, eventHandler)
 
 	assert.NoError(t, sender.SendMetric("foo", 20, 0, "test", nil))
 	assert.Equal(t, 1, registry.PointsTracker().(*simpleTracker).valid)
@@ -43,6 +35,20 @@ func TestWavefrontSender_SendMetric(t *testing.T) {
 	assert.Equal(t, "\"foo\" 21 source=\"test\"\n", pointHandler.Lines[0])
 }
 
+func newSenderWithMocks(registry *mockRegistry, pointHandler, histoHandler, spanHandler, spanLogHandler, eventHandler *mockHandler) *realSender {
+	sender := realSender{
+		defaultSource:    "test",
+		pointSender:      internal.NewTypedSender(registry.PointsTracker(), pointHandler),
+		histoSender:      internal.NewTypedSender(registry.HistogramsTracker(), histoHandler),
+		spanSender:       internal.NewTypedSender(registry.SpansTracker(), spanHandler),
+		spanLogSender:    internal.NewTypedSender(registry.SpanLogsTracker(), spanLogHandler),
+		eventSender:      internal.NewTypedSender(registry.EventsTracker(), eventHandler),
+		internalRegistry: registry,
+		proxy:            false,
+	}
+	return &sender
+}
+
 func TestWavefrontSender_SendDeltaCounter(t *testing.T) {
 	registry := &mockRegistry{}
 	pointHandler := &mockHandler{}
@@ -50,16 +56,7 @@ func TestWavefrontSender_SendDeltaCounter(t *testing.T) {
 	spanHandler := &mockHandler{}
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
-	sender := realSender{
-		defaultSource:    "test",
-		pointHandler:     pointHandler,
-		histoHandler:     histoHandler,
-		spanHandler:      spanHandler,
-		spanLogHandler:   spanLogHandler,
-		eventHandler:     eventHandler,
-		internalRegistry: registry,
-		proxy:            false,
-	}
+	sender := newSenderWithMocks(registry, pointHandler, histoHandler, spanHandler, spanLogHandler, eventHandler)
 
 	assert.NoError(t, sender.SendDeltaCounter("foo", 20.0, "test", nil))
 	assert.Equal(t, 1, registry.PointsTracker().(*simpleTracker).valid)
@@ -89,16 +86,7 @@ func TestWavefrontSender_SendDistribution(t *testing.T) {
 	spanHandler := &mockHandler{}
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
-	sender := realSender{
-		defaultSource:    "test",
-		pointHandler:     pointHandler,
-		histoHandler:     histoHandler,
-		spanHandler:      spanHandler,
-		spanLogHandler:   spanLogHandler,
-		eventHandler:     eventHandler,
-		internalRegistry: registry,
-		proxy:            false,
-	}
+	sender := newSenderWithMocks(registry, pointHandler, histoHandler, spanHandler, spanLogHandler, eventHandler)
 
 	centroids := []histogram.Centroid{{Value: 0, Count: 0}, {Value: 200, Count: 300}}
 	granularities := map[histogram.Granularity]bool{
@@ -133,16 +121,7 @@ func TestWavefrontSender_SendSpan(t *testing.T) {
 	spanHandler := &mockHandler{}
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
-	sender := realSender{
-		defaultSource:    "test",
-		pointHandler:     pointHandler,
-		histoHandler:     histoHandler,
-		spanHandler:      spanHandler,
-		spanLogHandler:   spanLogHandler,
-		eventHandler:     eventHandler,
-		internalRegistry: registry,
-		proxy:            false,
-	}
+	sender := newSenderWithMocks(registry, pointHandler, histoHandler, spanHandler, spanLogHandler, eventHandler)
 
 	traceID := "28e09666-9610-4690-a908-5298d95551ad"
 	spanID := "28b0ad93-58f5-4efe-a68b-7b7a84c8ace8"
@@ -199,16 +178,7 @@ func TestWavefrontSender_SendSpan_SpanLogs(t *testing.T) {
 	spanHandler := &mockHandler{}
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
-	sender := realSender{
-		defaultSource:    "test",
-		pointHandler:     pointHandler,
-		histoHandler:     histoHandler,
-		spanHandler:      spanHandler,
-		spanLogHandler:   spanLogHandler,
-		eventHandler:     eventHandler,
-		internalRegistry: registry,
-		proxy:            false,
-	}
+	sender := newSenderWithMocks(registry, pointHandler, histoHandler, spanHandler, spanLogHandler, eventHandler)
 
 	traceID := "28e09666-9610-4690-a908-5298d95551ad"
 	spanID := "28b0ad93-58f5-4efe-a68b-7b7a84c8ace8"
@@ -264,16 +234,7 @@ func TestWavefrontSender_SendEventWithProxyFalse(t *testing.T) {
 	spanHandler := &mockHandler{}
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
-	sender := realSender{
-		defaultSource:    "test",
-		pointHandler:     pointHandler,
-		histoHandler:     histoHandler,
-		spanHandler:      spanHandler,
-		spanLogHandler:   spanLogHandler,
-		eventHandler:     eventHandler,
-		internalRegistry: registry,
-		proxy:            false,
-	}
+	sender := newSenderWithMocks(registry, pointHandler, histoHandler, spanHandler, spanLogHandler, eventHandler)
 
 	assert.NoError(t, sender.SendEvent(
 		"foo", 200, 400, "test", nil))
@@ -294,16 +255,8 @@ func TestWavefrontSender_SendEventWithProxyTrue(t *testing.T) {
 	spanHandler := &mockHandler{}
 	spanLogHandler := &mockHandler{}
 	eventHandler := &mockHandler{}
-	sender := realSender{
-		defaultSource:    "test",
-		pointHandler:     pointHandler,
-		histoHandler:     histoHandler,
-		spanHandler:      spanHandler,
-		spanLogHandler:   spanLogHandler,
-		eventHandler:     eventHandler,
-		internalRegistry: registry,
-		proxy:            true,
-	}
+	sender := newSenderWithMocks(registry, pointHandler, histoHandler, spanHandler, spanLogHandler, eventHandler)
+	sender.proxy = true
 
 	assert.NoError(t, sender.SendEvent(
 		"foo", 200, 400, "test", nil))

@@ -13,11 +13,11 @@ type BackgroundFlusher interface {
 type backgroundFlusher struct {
 	ticker   *time.Ticker
 	interval time.Duration
-	handler  LineHandler
+	handler  BatchBuilder
 	stop     chan struct{}
 }
 
-func NewBackgroundFlusher(interval time.Duration, handler LineHandler) BackgroundFlusher {
+func NewBackgroundFlusher(interval time.Duration, handler BatchBuilder) BackgroundFlusher {
 	return &backgroundFlusher{
 		interval: interval,
 		handler:  handler,

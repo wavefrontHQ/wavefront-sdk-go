@@ -24,7 +24,7 @@ type ConnectionHandler interface {
 	Flusher
 }
 
-type LineHandler interface {
+type BatchBuilder interface {
 	HandleLine(line string) error
 	Start()
 	Stop()

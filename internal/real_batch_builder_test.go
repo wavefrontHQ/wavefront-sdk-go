@@ -94,7 +94,7 @@ func TestHandleLine_OnAuthError_DoNotBuffer(t *testing.T) {
 }
 
 func TestFlushWithThrottling_WhenThrottling_DelayUntilThrottleInterval(t *testing.T) {
-	lh := &RealLineHandler{
+	lh := &RealBatchBuilder{
 		Reporter:               &fakeReporter{},
 		MaxBufferSize:          100,
 		BatchSize:              10,
@@ -117,7 +117,7 @@ func TestFlushWithThrottling_WhenThrottling_DelayUntilThrottleInterval(t *testin
 }
 
 func TestBackgroundFlushWithThrottling_WhenThrottling_DelayUntilThrottleInterval(t *testing.T) {
-	lh := &RealLineHandler{
+	lh := &RealBatchBuilder{
 		Reporter:               &fakeReporter{},
 		MaxBufferSize:          100,
 		BatchSize:              10,
@@ -142,7 +142,7 @@ func TestBackgroundFlushWithThrottling_WhenThrottling_DelayUntilThrottleInterval
 func TestFlushTicker_WhenThrottlingEnabled_AndReceives406Error_ThrottlesRequestsUntilNextSleepDuration(t *testing.T) {
 	throttledSleepDuration := 250 * time.Millisecond
 	briskTickTime := 50 * time.Millisecond
-	lh := &RealLineHandler{
+	lh := &RealBatchBuilder{
 		Reporter:               &fakeReporter{},
 		MaxBufferSize:          100,
 		BatchSize:              10,
@@ -194,7 +194,7 @@ func checkLength(buffer chan string, length int, msg string, t *testing.T) {
 	}
 }
 
-func addLines(lh *RealLineHandler, linesToAdd int, expectedLen int, t *testing.T) {
+func addLines(lh *RealBatchBuilder, linesToAdd int, expectedLen int, t *testing.T) {
 	for i := 0; i < linesToAdd; i++ {
 		err := lh.HandleLine("dummyLine")
 		if err != nil {
@@ -214,8 +214,8 @@ func makeBuffer(num int) []string {
 	return buf
 }
 
-func makeLineHandler(bufSize, batchSize int) *RealLineHandler {
-	return &RealLineHandler{
+func makeLineHandler(bufSize, batchSize int) *RealBatchBuilder {
+	return &RealBatchBuilder{
 		Reporter:      &fakeReporter{},
 		MaxBufferSize: bufSize,
 		BatchSize:     batchSize,

@@ -22,7 +22,7 @@ const (
 	defaultThrottledSleepDuration = time.Second * 30
 )
 
-type RealLineHandler struct {
+type RealBatchBuilder struct {
 	// keep these two fields as first element of struct
 	// to guarantee 64-bit alignment on 32-bit machines.
 	// atomic.* functions crash if operands are not 64-bit aligned.
@@ -52,28 +52,28 @@ func (lh *RealLineHandler) Format() string {
 
 var errThrottled = errors.New("error: throttled event creation")
 
-type LineHandlerOption func(*RealLineHandler)
+type BatchAccumulatorOption func(*RealBatchBuilder)
 
-func SetRegistry(registry sdkmetrics.Registry) LineHandlerOption {
-	return func(handler *RealLineHandler) {
+func SetRegistry(registry sdkmetrics.Registry) BatchAccumulatorOption {
+	return func(handler *RealBatchBuilder) {
 		handler.internalRegistry = registry
 	}
 }
 
-func SetHandlerPrefix(prefix string) LineHandlerOption {
-	return func(handler *RealLineHandler) {
+func SetHandlerPrefix(prefix string) BatchAccumulatorOption {
+	return func(handler *RealBatchBuilder) {
 		handler.prefix = prefix
 	}
 }
 
-func ThrottleRequestsOnBackpressure() LineHandlerOption {
-	return func(handler *RealLineHandler) {
+func ThrottleRequestsOnBackpressure() BatchAccumulatorOption {
+	return func(handler *RealBatchBuilder) {
 		handler.throttleOnBackpressure = true
 	}
 }
 
-func NewLineHandler(reporter Reporter, format string, flushInterval time.Duration, batchSize, maxBufferSize int, setters ...LineHandlerOption) *RealLineHandler {
-	lh := &RealLineHandler{
+func NewLineHandler(reporter Reporter, format string, flushInterval time.Duration, batchSize, maxBufferSize int, setters ...BatchAccumulatorOption) *RealBatchBuilder {
+	lh := &RealBatchBuilder{
 		Reporter:               reporter,
 		BatchSize:              batchSize,
 		MaxBufferSize:          maxBufferSize,
@@ -99,11 +99,11 @@ func NewLineHandler(reporter Reporter, format string, flushInterval time.Duratio
 	return lh
 }
 
-func (lh *RealLineHandler) Start() {
+func (lh *RealBatchBuilder) Start() {
 	lh.flusher.Start()
 }
 
-func (lh *RealLineHandler) HandleLine(line string) error {
+func (lh *RealBatchBuilder) HandleLine(line string) error {
 	select {
 	case lh.buffer <- line:
 		return nil
@@ -120,7 +120,7 @@ func minInt(x, y int) int {
 	return y
 }
 
-func (lh *RealLineHandler) flush() error {
+func (lh *RealBatchBuilder) flush() error {
 	lh.mtx.Lock()
 	defer lh.mtx.Unlock()
 	bufLen := len(lh.buffer)
@@ -135,7 +135,7 @@ func (lh *RealLineHandler) flush() error {
 	return nil
 }
 
-func (lh *RealLineHandler) FlushWithThrottling() error {
+func (lh *RealBatchBuilder) FlushWithThrottling() error {
 	if time.Now().Before(lh.resumeAt) {
 		log.Println("attempting to flush, but flushing is currently throttled by the server")
 		log.Printf("sleeping until: %s\n", lh.resumeAt.Format(time.RFC3339))
@@ -144,7 +144,7 @@ func (lh *RealLineHandler) FlushWithThrottling() error {
 	return lh.Flush()
 }
 
-func (lh *RealLineHandler) Flush() error {
+func (lh *RealBatchBuilder) Flush() error {
 	flushErr := lh.flush()
 	if flushErr == errThrottled && lh.throttleOnBackpressure {
 		atomic.AddInt64(&lh.throttled, 1)
@@ -154,7 +154,7 @@ func (lh *RealLineHandler) Flush() error {
 	return flushErr
 }
 
-func (lh *RealLineHandler) FlushAll() error {
+func (lh *RealBatchBuilder) FlushAll() error {
 	lh.mtx.Lock()
 	defer lh.mtx.Unlock()
 	bufLen := len(lh.buffer)
@@ -178,7 +178,7 @@ func (lh *RealLineHandler) FlushAll() error {
 	return nil
 }
 
-func (lh *RealLineHandler) report(lines []string) error {
+func (lh *RealBatchBuilder) report(lines []string) error {
 	strLines := strings.Join(lines, "")
 	resp, err := lh.Reporter.Report(lh.format, strLines)
 
@@ -208,23 +208,23 @@ func shouldRetry(err error) bool {
 	return true
 }
 
-func (lh *RealLineHandler) bufferLines(batch []string) {
+func (lh *RealBatchBuilder) bufferLines(batch []string) {
 	log.Println("error reporting to Wavefront. buffering lines.")
 	for _, line := range batch {
 		_ = lh.HandleLine(line)
 	}
 }
 
-func (lh *RealLineHandler) GetFailureCount() int64 {
+func (lh *RealBatchBuilder) GetFailureCount() int64 {
 	return atomic.LoadInt64(&lh.failures)
 }
 
 // GetThrottledCount returns the number of Throttled errors received.
-func (lh *RealLineHandler) GetThrottledCount() int64 {
+func (lh *RealBatchBuilder) GetThrottledCount() int64 {
 	return atomic.LoadInt64(&lh.throttled)
 }
 
-func (lh *RealLineHandler) Stop() {
+func (lh *RealBatchBuilder) Stop() {
 	lh.flusher.Stop()
 	if err := lh.FlushAll(); err != nil {
 		log.Println(err)

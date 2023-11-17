@@ -8,6 +8,7 @@ import (
 	"github.com/wavefronthq/wavefront-sdk-go/event"
 	"github.com/wavefronthq/wavefront-sdk-go/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/internal"
+	"github.com/wavefronthq/wavefront-sdk-go/internal/delta"
 	eventInternal "github.com/wavefronthq/wavefront-sdk-go/internal/event"
 	histogramInternal "github.com/wavefronthq/wavefront-sdk-go/internal/histogram"
 	"github.com/wavefronthq/wavefront-sdk-go/internal/metric"
@@ -29,47 +30,34 @@ type Sender interface {
 
 type realSender struct {
 	defaultSource    string
-	pointHandler     internal.LineHandler
-	histoHandler     internal.LineHandler
-	spanHandler      internal.LineHandler
-	spanLogHandler   internal.LineHandler
-	eventHandler     internal.LineHandler
+	pointSender      internal.TypedSender
+	histoSender      internal.TypedSender
+	spanSender       internal.TypedSender
+	spanLogSender    internal.TypedSender
+	eventSender      internal.TypedSender
 	internalRegistry sdkmetrics.Registry
 	proxy            bool
 }
 
 func (sender *realSender) Start() {
-	sender.pointHandler.Start()
-	sender.histoHandler.Start()
-	sender.spanHandler.Start()
-	sender.spanLogHandler.Start()
 	sender.internalRegistry.Start()
-	sender.eventHandler.Start()
+	sender.pointSender.Start()
+	sender.histoSender.Start()
+	sender.spanSender.Start()
+	sender.spanLogSender.Start()
+	sender.eventSender.Start()
 }
 
 func (sender *realSender) private() {
 }
 
 func (sender *realSender) SendMetric(name string, value float64, ts int64, source string, tags map[string]string) error {
-	line, err := metric.Line(name, value, ts, source, tags, sender.defaultSource)
-	return trySendWith(
-		line,
-		err,
-		sender.pointHandler,
-		sender.internalRegistry.PointsTracker(),
-	)
+	return sender.pointSender.TrySend(metric.Line(name, value, ts, source, tags, sender.defaultSource))
 }
 
 func (sender *realSender) SendDeltaCounter(name string, value float64, source string, tags map[string]string) error {
-	if name == "" {
-		sender.internalRegistry.PointsTracker().IncInvalid()
-		return fmt.Errorf("empty metric name")
-	}
-	if !internal.HasDeltaPrefix(name) {
-		name = internal.DeltaCounterName(name)
-	}
 	if value > 0 {
-		return sender.SendMetric(name, value, 0, source, tags)
+		return sender.pointSender.TrySend(delta.Line(name, value, source, tags, sender.defaultSource))
 	}
 	return nil
 }
@@ -82,27 +70,7 @@ func (sender *realSender) SendDistribution(
 	source string,
 	tags map[string]string,
 ) error {
-	line, err := histogramInternal.Line(name, centroids, hgs, ts, source, tags, sender.defaultSource)
-	return trySendWith(
-		line,
-		err,
-		sender.histoHandler,
-		sender.internalRegistry.HistogramsTracker(),
-	)
-}
-
-func trySendWith(line string, err error, handler internal.LineHandler, tracker sdkmetrics.SuccessTracker) error {
-	if err != nil {
-		tracker.IncInvalid()
-		return err
-	}
-
-	tracker.IncValid()
-	err = handler.HandleLine(line)
-	if err != nil {
-		tracker.IncDropped()
-	}
-	return err
+	return sender.histoSender.TrySend(histogramInternal.Line(name, centroids, hgs, ts, source, tags, sender.defaultSource))
 }
 
 func (sender *realSender) SendSpan(
@@ -113,8 +81,6 @@ func (sender *realSender) SendSpan(
 	tags []SpanTag,
 	spanLogs []SpanLog,
 ) error {
-
-	logs := makeSpanLogs(spanLogs)
 	line, err := span.Line(
 		name,
 		startMillis,
@@ -125,25 +91,17 @@ func (sender *realSender) SendSpan(
 		parents,
 		followsFrom,
 		makeSpanTags(tags),
-		logs,
+		makeSpanLogs(spanLogs),
 		sender.defaultSource,
 	)
-	err = trySendWith(
-		line,
-		err,
-		sender.spanHandler,
-		sender.internalRegistry.SpansTracker())
+
+	err = sender.spanSender.TrySend(line, err)
 	if err != nil {
 		return err
 	}
 
 	if len(spanLogs) > 0 {
-		logJSON, logJSONErr := span.LogJSON(traceID, spanID, logs, line)
-		return trySendWith(
-			logJSON,
-			logJSONErr,
-			sender.spanLogHandler,
-			sender.internalRegistry.SpanLogsTracker())
+		return sender.spanLogSender.TrySend(span.LogJSON(traceID, spanID, makeSpanLogs(spanLogs), line))
 	}
 	return nil
 }
@@ -171,50 +129,40 @@ func (sender *realSender) SendEvent(
 	tags map[string]string,
 	setters ...event.Option,
 ) error {
-	var line string
-	var err error
 	if sender.proxy {
-		line, err = eventInternal.Line(name, startMillis, endMillis, source, tags, setters...)
-	} else {
-		line, err = eventInternal.LineJSON(name, startMillis, endMillis, source, tags, setters...)
+		return sender.eventSender.TrySend(eventInternal.Line(name, startMillis, endMillis, source, tags, setters...))
 	}
-
-	return trySendWith(
-		line,
-		err,
-		sender.eventHandler,
-		sender.internalRegistry.EventsTracker(),
-	)
+	return sender.eventSender.TrySend(eventInternal.LineJSON(name, startMillis, endMillis, source, tags, setters...))
 }
 
 func (sender *realSender) Close() {
-	sender.pointHandler.Stop()
-	sender.histoHandler.Stop()
-	sender.spanHandler.Stop()
-	sender.spanLogHandler.Stop()
+	sender.pointSender.Stop()
+	sender.histoSender.Stop()
+	sender.spanSender.Stop()
+	sender.spanLogSender.Stop()
 	sender.internalRegistry.Stop()
-	sender.eventHandler.Stop()
+	sender.eventSender.Stop()
 }
 
 func (sender *realSender) Flush() error {
 	errStr := ""
-	err := sender.pointHandler.Flush()
+	err := sender.pointSender.Flush()
 	if err != nil {
 		errStr = errStr + err.Error() + "\n"
 	}
-	err = sender.histoHandler.Flush()
+	err = sender.histoSender.Flush()
 	if err != nil {
 		errStr = errStr + err.Error() + "\n"
 	}
-	err = sender.spanHandler.Flush()
+	err = sender.spanSender.Flush()
 	if err != nil {
 		errStr = errStr + err.Error()
 	}
-	err = sender.spanLogHandler.Flush()
+	err = sender.spanLogSender.Flush()
 	if err != nil {
 		errStr = errStr + err.Error()
 	}
-	err = sender.eventHandler.Flush()
+	err = sender.eventSender.Flush()
 	if err != nil {
 		errStr = errStr + err.Error()
 	}
@@ -225,11 +173,11 @@ func (sender *realSender) Flush() error {
 }
 
 func (sender *realSender) GetFailureCount() int64 {
-	return sender.pointHandler.GetFailureCount() +
-		sender.histoHandler.GetFailureCount() +
-		sender.spanHandler.GetFailureCount() +
-		sender.spanLogHandler.GetFailureCount() +
-		sender.eventHandler.GetFailureCount()
+	return sender.pointSender.GetFailureCount() +
+		sender.histoSender.GetFailureCount() +
+		sender.spanSender.GetFailureCount() +
+		sender.spanLogSender.GetFailureCount() +
+		sender.eventSender.GetFailureCount()
 }
 
 func (sender *realSender) realInternalRegistry(cfg *configuration) sdkmetrics.Registry {

@@ -29,7 +29,7 @@ func NewSender(wfURL string, setters ...Option) (Sender, error) {
 		sender.internalRegistry = sdkmetrics.NewNoOpRegistry()
 	}
 
-	hf := internal.NewHandlerFactory(
+	hf := internal.NewSenderFactory(
 		metricsReporter,
 		tracesReporter,
 		cfg.FlushInterval,
@@ -37,11 +37,11 @@ func NewSender(wfURL string, setters ...Option) (Sender, error) {
 		sender.internalRegistry,
 	)
 
-	sender.pointHandler = hf.NewPointHandler(cfg.BatchSize)
-	sender.histoHandler = hf.NewHistogramHandler(cfg.BatchSize)
-	sender.spanHandler = hf.NewSpanHandler(cfg.BatchSize)
-	sender.spanLogHandler = hf.NewSpanLogHandler(cfg.BatchSize)
-	sender.eventHandler = hf.NewEventHandler()
+	sender.pointSender = hf.NewPointSender(cfg.BatchSize)
+	sender.histoSender = hf.NewHistogramSender(cfg.BatchSize)
+	sender.spanSender = hf.NewSpanSender(cfg.BatchSize)
+	sender.spanLogSender = hf.NewSpanLogSender(cfg.BatchSize)
+	sender.eventSender = hf.NewEventsSender()
 	sender.Start()
 	return sender, nil
 }
