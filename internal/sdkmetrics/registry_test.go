@@ -20,17 +20,17 @@ func (f *fakeSender) SendDeltaCounter(string, float64, string, map[string]string
 func (f *fakeSender) SendMetric(name string, _ float64, _ int64, _ string, tags map[string]string) error {
 	f.count = f.count + 1
 	if f.prefix != "" && !strings.HasPrefix(name, f.prefix) {
-		f.errors = f.errors + 1
+		f.errors++
 	}
 	if f.name != "" && f.prefix != "" && (name != f.prefix+"."+f.name) {
-		f.errors = f.errors + 1
+		f.errors++
 	}
 	for _, k := range f.tags {
 		if tags == nil {
-			f.errors = f.errors + 1
+			f.errors++
 		} else {
 			if _, ok := tags[k]; !ok {
-				f.errors = f.errors + 1
+				f.errors++
 			}
 		}
 	}

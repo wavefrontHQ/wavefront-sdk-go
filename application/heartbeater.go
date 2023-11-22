@@ -67,7 +67,7 @@ func (hb *heartbeater) beat() {
 		hb.send(tags)
 	}
 
-	//send customTags heartbeat
+	// send customTags heartbeat
 	hb.mux.Lock()
 	for len(hb.customTags) > 0 {
 		tags := hb.customTags[0]

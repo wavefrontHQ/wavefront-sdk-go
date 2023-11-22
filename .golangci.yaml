@@ -2,16 +2,25 @@ linters:
   disable-all: true
   enable:
   - errcheck
+  - gci
+#  - goconst
+  - gocritic
+  - gocyclo
+  - gofmt
+  - goimports
   - gosimple
   - govet
-  - gofmt
-  - gci
-  - revive
   - ineffassign
+  - megacheck
+  - misspell
+  - revive
   - staticcheck
+  - typecheck
+  - unconvert
 issues:
   exclude-rules:
   - path: example.*_test\.go
     linters:
     - ineffassign
     - revive
+  exclude-use-default: false
