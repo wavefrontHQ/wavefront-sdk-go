@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/caio/go-tdigest/v4 v4.0.1
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 )
 
 require (
